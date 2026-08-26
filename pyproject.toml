@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "compact-vio-uav"
+version = "0.1.0.dev0"
+description = "Evidence-gated research infrastructure for compact UAV visual-inertial odometry"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "compact-vio-uav contributors" }]
+dependencies = []
+
+[project.scripts]
+compact-vio-artifacts = "compact_vio.artifacts:main"
+compact-vio-repo-check = "compact_vio.repository_policy:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

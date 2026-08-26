@@ -1,0 +1,17 @@
+* text=auto
+
+*.py text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+
+# These formats are binary even when intentionally attached to a release.
+*.pt binary
+*.pth binary
+*.ckpt binary
+*.onnx binary
+*.engine binary
+*.plan binary

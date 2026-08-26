@@ -1,0 +1,44 @@
+# Python build and interpreter state
+__pycache__/
+*.py[cod]
+*.egg-info/
+/.pytest_cache/
+/.ruff_cache/
+/.mypy_cache/
+/.coverage
+/build/
+/dist/
+/.venv/
+/venv/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Root-level disposable research state. Keep these patterns anchored so
+# governance/datasets and src/compact_vio/data remain version-controlled.
+/data/
+/artifacts/
+/checkpoints/
+/outputs/
+/mlruns/
+/mlartifacts/
+/mlflow.db
+/cache/
+
+# Large or target-specific binaries are governed outside normal Git history.
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.engine
+*.plan
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+*.swp

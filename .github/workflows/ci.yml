@@ -1,0 +1,63 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile source and tests
+        run: python -m compileall -q src tests scripts
+
+      - name: Build and install package
+        run: python -m pip install --disable-pip-version-check --no-deps .
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Exercise installed command-line tools
+        run: |
+          compact-vio-artifacts --help
+          compact-vio-repo-check .
+
+      - name: Check root-anchored scratch exclusions
+        run: |
+          git check-ignore --no-index data/example.bin
+          git check-ignore --no-index checkpoints/example.pt
+          if git check-ignore --no-index governance/data/example.yaml; then exit 1; fi
+          if git check-ignore --no-index src/compact_vio/data/example.py; then exit 1; fi
+
+      - name: Install pinned validation tools
+        run: >-
+          python -m pip install --disable-pip-version-check
+          "jsonschema[format-nongpl]==4.26.0"
+          "ruff==0.16.4"
+
+      - name: Check lint and formatting
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Validate schemas and contract fixtures
+        run: python scripts/validate_schemas.py
