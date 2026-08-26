@@ -1,45 +1,58 @@
-# ADR-0002: Estimator scope and state contract
+# ADR-0002: Estimator scope
 
-- Status: Unresolved
-- Decision owner: TBD
-- Decision date: TBD
+- Status: Accepted
+- Decision owner: Project owner
+- Decision date: 2026-08-26
 
 ## Context
 
-“VIO” does not uniquely specify local odometry versus mapping/relocalization, loop closure, estimated state, initialization, or output semantics. These choices determine labels, baselines, metrics, and integration interfaces.
+“VIO” can mean local odometry or a larger mapping/relocalization system. Mixing
+those scopes would make baseline comparisons and latency claims unclear.
 
-## Decision required
+## Decision
 
-Choose and document:
+- The primary task is causal, metric-scale local visual-inertial odometry.
+- Mapping, relocalization, global optimization, and loop closure are excluded
+  from the primary comparison.
+- The estimator produces odometry only; it does not command motors or replace
+  PX4 stabilization, pilot override, or failsafes.
+- The scientific comparison includes straightforward classical references and a
+  physically anchored compact hybrid candidate. Direct learned fusion,
+  visual-only, and IMU-only implementations are controls where needed.
+- Every estimator receives sensor events through the same causal replay boundary
+  and is evaluated without Sim(3) scale correction for the primary metric-scale
+  result.
 
-- Local causal VIO or VI-SLAM/mapping.
-- Loop-closure policy for each comparison table.
-- Incremental or absolute output and transform direction.
-- World, body/IMU, and camera frame conventions.
-- State contents: pose, velocity, biases, gravity, scale, covariance, and health.
-- Initialization and reset rules.
-- Measurement timestamp, publication timestamp, output rate, and maximum age.
-- Missing-image, missing-IMU, discontinuity, and reinitialization behavior.
+The exact state vector, transform direction, frames, initialization, reset,
+health, output-rate, and latency interface remain M3 contract work. They are not
+needed to implement the modality-neutral event replay primitive, but must be
+frozen before a dataset adapter or estimator claims compliance.
 
-## Options to evaluate
+## Evidence
 
-- Compact classical estimator.
-- Physically anchored hybrid estimator with learned component.
-- End-to-end learned estimator.
+- The project feedback consistently identifies local UAV odometry as the first
+  deliverable and keeps PX4 responsible for flight control.
+- The reviewed research direction recommends a physically anchored hybrid while
+  retaining classical comparisons instead of selecting a winner from published
+  cross-platform results.
 
-These are experiment families, not a selection. A scientific winner and deployable winner may differ.
+## Rejected alternatives
 
-## Evidence required before acceptance
+- VI-SLAM, mapping, and loop closure in the primary comparison are rejected.
+- Direct motor control or replacement of PX4 stabilization is rejected.
+- A pure end-to-end learned estimator as the only research path is rejected
+  because it would remove the physical and classical controls needed to test the
+  contribution.
 
-- Mission/use-case requirements.
-- Observability and initialization analysis.
-- A frame/timestamp interface specification.
-- A predeclared baseline-feasibility and failure-analysis plan.
-- A causal replay test specification with planned fixtures and acceptance checks.
+## Consequences
 
-## Follow-up evidence
+Generic sensor records, causal replay, evaluator geometry, and baseline adapters
+may proceed. VI-SLAM results, if explored later, must be reported separately and
+cannot be mixed into the local-odometry comparison.
 
-- Common causal replay test results from M7.
-- Baseline feasibility and failure results from M8.
-- If follow-up evidence invalidates the accepted state, timing, initialization,
-  or candidate-family assumptions, reopen or supersede this ADR before selection.
+## Follow-up
+
+- Freeze the detailed estimator interface and failure semantics in M3 before
+  real-data adapter acceptance or estimator integration.
+- Record causal replay results in M7 and baseline feasibility/failure evidence in
+  M8. Reopen this ADR only if those results invalidate the local-VIO scope.

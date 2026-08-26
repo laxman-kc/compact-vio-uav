@@ -49,6 +49,14 @@ by an implementation.
 
 ## Artifacts and infrastructure
 
+The durability and spending controls in `R-INFRA-002`, `R-INFRA-003`,
+`R-INFRA-005`, and `R-INFRA-007` gate important retained or extended paid GPU
+work. They do not block ordinary local source development, documentation,
+synthetic fixtures, unit tests, or bounded CPU experiments whose outputs are
+reproducible from Git.
+Short paid-worker smoke or reproduction checks may also proceed from a pushed
+revision when their duration, cost, outputs, and teardown owner are bounded.
+
 | ID | Requirement | Verification |
 |---|---|---|
 | R-INFRA-001 | A rented worker MUST NOT be the only location holding versioned work or a retained artifact. | Teardown audit. |
@@ -73,16 +81,20 @@ by an implementation.
 | R-SAFE-002 | Any vehicle integration MUST preserve independent stabilization, pilot override, failsafe, watchdog, and stale/invalid-odometry rejection. | SITL/HIL and safety review. |
 | R-SAFE-003 | A vehicle interface MUST pin compatible PX4/message/transport versions and validate frames, sample timestamps/clock synchronization, delay, lever arm, fused fields, covariance/noise source, reset counter, unknown fields, and position-loss behavior. | Interface-control tests, logs, SITL, and HIL fault evidence. |
 
-## Unresolved requirements
+## Fixed boundaries and unresolved requirements
 
 The following must be decided through ADRs before dependent implementation:
 
-- Project purpose, release lane, and project license: **TBD**.
-- Local VIO versus VI-SLAM and loop-closure policy: **TBD**.
+- Project purpose and lane: **public-source, research-only, and non-commercial**;
+  exact source licence and any future binary/data release package: **TBD**.
+- Estimator scope: **causal metric-scale local VIO with no loop closure in the
+  primary comparison**; exact state/frame/time/reset interface: **TBD**.
 - Monocular versus stereo and complete camera/IMU timing/calibration envelope: **TBD**.
 - Estimated state, output rate, initialization mode, and latency ceiling: **TBD**.
 - Primary research contribution and primary hypothesis: **TBD**.
 - Dataset roles and exact source-group splits: **TBD**.
 - Numerical accuracy, failure, latency, memory, power, and thermal thresholds: **TBD**.
 - Artifact vault, independent backup, retention capacity, and spending ceiling: **TBD**.
-- Edge hardware, runtime, precision, ROS 2/PX4, simulator, and physical-flight scope: **TBD**.
+- Control boundary: **PX4 retains stabilization, failsafes, and motor control**;
+  edge hardware, runtime, precision, ROS 2 transport, simulator, and physical
+  test scope: **TBD**.

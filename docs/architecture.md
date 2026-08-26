@@ -1,11 +1,15 @@
 # System architecture
 
-Status: Versioned foundation invariants; estimator and deployment choices unresolved
+Status: Local-VIO research direction fixed; detailed estimator and deployment choices unresolved
 Last reviewed: 2026-08-26
 
 ## Purpose
 
-The architecture separates durable project state from disposable computation and separates the common scientific substrate from estimator-specific implementations. This allows classical, hybrid learned/classical, and end-to-end learned candidates to be compared without embedding a preferred answer in the infrastructure.
+The architecture separates durable project state from disposable computation
+and the common scientific substrate from estimator-specific implementations.
+The main research direction is causal metric-scale local VIO, with classical
+references and a physically anchored compact hybrid candidate. Mapping, loop
+closure, flight control, and target deployment are outside the current core.
 
 ## Planes
 
@@ -15,7 +19,11 @@ GitHub stores source, tests, environment definitions, requirements, ADRs, experi
 
 ### Development and staging plane
 
-The local workstation supports planning, review, lightweight validation, and temporary transfer staging. It is not assumed to have sufficient capacity or a configured backup. Its use for critical artifacts requires a recorded capacity check and verified backup.
+The local workstation holds the development checkout and supports planning,
+implementation, lightweight validation, and temporary transfer staging. It is
+not assumed to have enough capacity or a configured backup for large retained
+artifacts; that check is required before important paid GPU runs, not before
+ordinary source development or synthetic tests.
 
 ### Disposable execution plane
 
@@ -46,7 +54,7 @@ causal streaming replay + frozen evaluator
           +--------------------+-----------------------+
           |                    |                       |
           v                    v                       v
-   classical VIO       hybrid learned VIO      end-to-end learned VIO
+   classical VIO       compact hybrid VIO       learned diagnostics
           |                    |                       |
           +--------------------+-----------------------+
                                |
@@ -75,11 +83,21 @@ All candidates must share:
 - An experiment manifest conforming to `experiments/schemas/run-manifest.schema.json`.
 - Dataset and artifact governance independent of the chosen estimator.
 
+The first implemented replay primitive distinguishes
+`measurement_time_ns`—when a measurement applies—from
+`available_time_ns`—when an online estimator may observe it. All events use one
+declared clock per replay; same-time ordering is explicit; and reset or invalid
+events are delivered rather than filtered. Dataset adapters will later map
+source timestamps and payloads into this contract.
+
 ## Deployment boundary
 
 Training-platform throughput does not establish onboard fitness. Target-device selection requires a declared power, mass, thermal, memory, sensor-interface, and latency envelope. ONNX/TensorRT, Jetson, ROS 2, PX4, and physical sensor integration remain conditional decisions; no target-specific interface is part of the foundation.
 
-If vehicle integration is later approved, the flight controller retains stabilization and motor control. VIO begins as an externally health-gated measurement source. Physical tests cannot begin directly from an offline benchmark result.
+If vehicle integration is later approved, PX4 retains stabilization, pilot
+override, failsafes, and motor control. VIO begins only as an externally
+health-gated odometry measurement source. Physical tests cannot begin directly
+from an offline benchmark result.
 
 ## Failure containment
 

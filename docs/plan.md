@@ -13,27 +13,36 @@ Evidence ledger: [Progress](progress.md)
 ## Planning contract
 
 This roadmap owns milestone order, dependencies, permitted work, prohibited
-premature work, and exit evidence. It does not redefine requirements, accept an
-ADR, assign a dataset role, or select a model, sensor, edge board, license, or
-flight scope.
+premature work, and exit evidence. It does not redefine requirements, assign a
+dataset role, accept an ADR, or silently select a sensor, edge board, licence,
+or flight scope.
 
 The project advances only when a milestone's exit evidence exists. A later
 milestone may be explored in a disposable, non-claiming spike only when the
 earlier milestone explicitly permits it; a spike cannot be reported as project
 evidence.
 
+Local implementation, synthetic fixtures, evaluator work, bounded CPU tests,
+and short reproducible A10 checks may proceed before the durability gate. Such
+A10 checks must use a pushed revision, a time/cost bound, and disposable outputs.
+M2 gates important or extended paid GPU work and irreplaceable retained
+artifacts; it is not a global implementation gate.
+
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
 experiment lifecycle, that linked record governs the procedure and wins over a
 roadmap summary if wording drifts.
 
-## Evidence-based recommendation awaiting decisions
+## Accepted scope and proposed research direction
 
-The following is the recommended package to evaluate in ADR-0002 through
-ADR-0004. It is not an accepted architecture:
+ADR-0001 and ADR-0002 record the accepted public non-commercial research lane,
+causal local-VIO scope, and PX4 control boundary. The physically anchored hybrid
+below is the proposed research hypothesis in unresolved ADR-0004, not a selected
+winner. Exact state interfaces, sensor profiles, thresholds, datasets, and
+deployment choices remain milestone work:
 
-1. Make causal, metric-scale local odometry the first estimator scope; evaluate
-   mapping/relocalization separately if the mission requires it.
+1. Build causal, metric-scale local odometry; mapping, relocalization, and loop
+   closure are outside the primary comparison.
 2. Use a calibrated physical IMU propagation/preintegration path to anchor
    metric scale and time, then evaluate a compact learned visual correction or
    measurement as the primary hybrid candidate.
@@ -44,13 +53,14 @@ ADR-0004. It is not an accepted architecture:
    post-encoder gate is reliability fusion, not compute skipping.
 5. Treat uncertainty as secondary unless ADR-0004 explicitly selects calibrated
    uncertainty as the single primary contribution.
-6. Do not select mono versus stereo from dataset convenience. Decide it from
+6. PX4 retains stabilization, failsafes, pilot override, and motor control. VIO
+   is only a future health-gated odometry measurement source.
+7. Do not select mono versus stereo from dataset convenience. Decide it from
    mission, payload, synchronization, robustness, bandwidth, and exact-target
    measurements.
 
-This recommendation preserves the simplified, physically grounded direction
-from the design feedback while keeping a falsifiable classical reference and
-preventing architecture preference from becoming evidence.
+This direction keeps the research physically grounded and the comparison
+falsifiable without locking hardware or final-test outcomes prematurely.
 
 ## Milestone overview
 
@@ -58,12 +68,12 @@ preventing architecture preference from becoming evidence.
 |---|---|---|---|
 | M0 | Reproducible repository foundation | Complete | Foundation commit and CI evidence |
 | M1 | Planning traceability and static durability preflight | Complete | M0 |
-| M2 | Project authority, artifact durability, and paid-worker control | Blocked | M1; ADR-0001 and ADR-0005 |
-| M3 | Scientific question and estimator contract | Blocked | M2; authorized provisional estimator/contribution choices |
-| M4 | Replay sensor, time, frame, and calibration contract | Blocked | M3; generic contract requirements |
-| M5 | Reproducible execution environments | Blocked | M2–M4 |
-| M6 | Dataset approval and representative ingestion | Blocked | M3–M5 |
-| M7 | Common causal replay and evaluator | Blocked | M3, M4, representative M6 data |
+| M2 | Artifact durability for important GPU work | Blocked | Required before long or irreplaceable paid runs |
+| M3 | Scientific question and estimator contract | In progress | M1; local-VIO direction fixed, details remain |
+| M4 | Replay sensor, time, frame, and calibration contract | In progress | Synthetic timing contract unblocked; calibration profile remains |
+| M5 | Reproducible execution environments | In progress | Local and bounded A10 smoke paths are unblocked |
+| M6 | Dataset approval and representative ingestion | Blocked | M3/M4 details and per-dataset rights review |
+| M7 | Common causal replay and evaluator | In progress | Synthetic replay unblocked; real-data exit depends on M6 |
 | M8 | Classical baseline reproduction | Blocked | M5–M7 and license review |
 | M9 | Conditional novel-candidate experiments | Conditional; blocked | M7, M8, and accepted estimator/contribution scope |
 | M10 | Optional uncertainty and health study | Conditional; blocked | Accepted estimator/contribution scope |
@@ -125,102 +135,52 @@ Exit evidence:
   satisfied static checks do not verify independence, outside-worker storage,
   writes, or restoration and do not complete M2.
 
-## M2 — Project authority, artifact durability, and paid-worker control
+## M2 — Artifact durability for important GPU work
 
 Status: Blocked.
 
-Dependencies: M1; project-owner authorization to evaluate provisional release
-and storage choices; `R-INFRA-*`. Accepted
+Dependencies: M1; `R-INFRA-*`. Accepted
 [ADR-0001](adr/0001-project-and-release-scope.md) and
 [ADR-0005](adr/0005-artifact-storage.md) are exit evidence, not entry
 dependencies.
 
-Required decisions/evidence:
+Required before long training, large sweeps, or any paid run expected to produce
+irreplaceable retained results:
 
-- Prepare non-template, owner-reviewed current-scope records for project
-  purpose, users, release lanes, source/model/report license intent,
-  dependency-license policy, and the rights of every asset selected or proposed
-  by the declared cutoff. Future assets remain follow-up reviews at their
-  adoption milestones.
-- Validate that the project scope links the exact rights-matrix bytes by
-  canonical path, ID, and SHA-256, uses the same scope cutoff, and defines every
-  lane referenced by a rights asset.
-- Prepare a phase-scoped storage plan recording the artifact-vault and
-  independent backup failure domains, access, encryption, capacity, retention,
-  recovery-point objective, cost envelope, validity period, re-estimation
-  triggers, and recovery owner.
-- Estimate worst-case retained bytes plus an explicit reserve. For filesystem-
-  backed candidates, run `compact-vio-preflight`; for another backend, approve
-  and record a provider-specific static check.
-- Semantically validate that primary and backup candidate IDs and locations are
-  distinct; total required bytes equal retained bytes plus reserve; each
-  candidate has that capacity; independence review follows both candidate
-  observations; the throughput-derived teardown time is not understated; and
-  all validity, review, retention, and transfer times are coherent.
-- Follow the authoritative [artifact policy](../governance/artifacts/policy.md)
-  and [experiment lifecycle](protocols/experiment-lifecycle.md) for the
-  representative export/backup/restore drill and evidence bundle.
-- Keep the frozen `run-manifest.json` and `artifact-manifest.json` inside the
-  immutable bundle. Record post-export locations and verification in the
-  artifact-storage evidence sidecar; do not rewrite either manifest after
-  export begins.
-- Record transfer throughput, expected teardown-transfer duration, A10 spending
-  ceiling, next review time, and who can authorize deletion.
+- Record the immutable Git revision, approved dataset subset, expected runtime,
+  cost limit, review time, and export destination.
+- Confirm enough space for selected retained artifacts and an independent
+  recovery copy outside the worker.
+- Run one representative export, checksum, restore-to-a-new-location, and
+  load/open test before relying on the worker for irreplaceable results.
+- Keep source, configuration, manifests, and small results in GitHub. Treat the
+  A10 disk as disposable scratch space.
+- Review the exact licence of each dataset or third-party implementation before
+  use in the non-commercial research lane.
 
-Before the restore gate passes, paid-worker activity is limited to an explicit,
-owner-approved `m2_evidence_gathering` slice with exact action-to-location-access
-scopes, an immutable Git revision, fixed time and spend ceilings, review time,
-and teardown authority. The closed action IDs separately name creation of the
-purpose-created disposable source copy, writes to the primary and independent
-backup, content audit, deletion of that exact disposable source, restore, and
-load/open verification. It permits no dataset download, training, or important
-experiment. It never permits a worker lifecycle change or deletion from the
-primary vault, independent backup, or another retained copy. A draft or
-`ready_for_owner_review` record is not approval. A durable `owner_approved`
-record that passes structural active-use validation for the exact worker, Git
-revision, one action, that action's complete typed read/write/delete
-location-access set, time, and remaining duration is a required input, not
-complete authority. External approver authentication, an unused
-single-execution ledger entry, and applicable pre-action evidence are also
-required before work; the record cannot accept ADR-0005. Its sole represented
-deletion scope is the exact source copy pinned in the record as purpose-created
-and `disposable`. Version 1 live validation permits only `static_checks`: it
-does not yet hash-link the reviewed storage plan needed to bind primary, backup,
-restore-source, and restore-destination roles, nor consume required pre-action
-evidence and the single-use ledger entry. Every non-static paid M2 action,
-including the disposable-copy deletion, remains blocked until that dedicated
-interface is implemented and validated; therefore a static-only result cannot
-complete the restore drill or M2.
+The existing storage/authorization records and validators are optional support
+for documenting this gate; they are not the research architecture and do not
+block local code, synthetic fixtures, evaluator work, bounded CPU tests, or a
+short A10 smoke/reproduction task whose outputs are disposable and reproducible
+from the pushed revision.
 
 Prohibited work:
 
 - No important or long-running GPU experiment before the restore drill passes.
 - No claim that GitHub, a GitHub Actions artifact, or two paths on one filesystem
   are independent backups.
-- No claim that a static preflight or successful `compact-vio-copy-audit`
-  satisfies the restore gate; copy audit is only a read-only checksum fragment.
+- No claim that a static preflight or checksum comparison alone proves a
+  successful restore.
 - No destructive `brev delete` without a separate explicit approval and the
   applicable preservation/teardown audit.
 
 Exit evidence:
 
-- Accepted ADR-0001 and ADR-0005.
-- Successful applicable static check and representative restore report.
-- Two checksum-verified copies outside Brev in reviewed independent failure
-  domains.
-- If paid-worker execution contributed to the drill, its verified sidecar links
-  the durable historical `owner_approved` record whose active window and typed
-  location-access scope covered that execution, plus authenticated approval and
-  single-use consumption evidence. If the drill ran in a non-paid environment,
-  its execution context records that fact and no worker authorization is
-  fabricated.
-
-Expiry or review after a correctly authorized paid drill does not regress M2.
-Every authorization is single-execution and requires an append-only consumption
-entry because the structural validator cannot prove non-reuse. Later paid work
-also requires a new acceptance-aware authorization contract that hash-links the
-accepted M2/ADR-0005 evidence and matches intended data; version 1 deliberately
-refuses active `post_m2_paid_work` records.
+- Accepted research-only project scope in ADR-0001. The exact licence remains a
+  later external-reuse/release decision.
+- Storage/export approach recorded in ADR-0005.
+- Representative restore report with two verified copies outside Brev and a
+  successful load/open check.
 
 ### Cost-control teardown exception
 
@@ -240,10 +200,10 @@ Destructive deletion or termination always requires explicit approval.
 
 ## M3 — Scientific question and estimator contract
 
-Status: Blocked.
+Status: In progress.
 
-Dependencies: M2; project-owner authorization to evaluate provisional estimator
-and contribution choices; `R-RI-*`, `R-EST-*`. Accepted
+Dependencies: M1; the local-VIO direction recorded in
+[ADR-0002](adr/0002-estimator-scope.md); `R-RI-*`, `R-EST-*`. Accepted
 [ADR-0002](adr/0002-estimator-scope.md) and
 [ADR-0004](adr/0004-primary-research-contribution.md) are exit evidence, not
 entry dependencies.
@@ -252,9 +212,9 @@ Required decisions/evidence:
 
 - Select one primary question, contribution, comparator, target population,
   metrics, thresholds, trials/seeds, and rejection rule before final testing.
-- Freeze local VIO versus VI-SLAM, loop-closure policy, state variables,
-  transform direction, frames, metric-scale mechanism, initialization, reset,
-  recurrence warm-up, output timestamp, output rate, and latency definition.
+- Freeze state variables, transform direction, frames, metric-scale mechanism,
+  initialization, reset, recurrence warm-up, output timestamp, output rate, and
+  latency definition. Local VIO and no loop closure are already fixed.
 - Define causality: for each output, list exactly which camera and IMU samples
   are available and when the estimate becomes available.
 - Separate scientific-winner criteria from deployable-winner criteria.
@@ -278,15 +238,20 @@ authorize changing ADR-0004's primary claim after results are seen.
 
 ## M4 — Replay sensor, time, frame, and calibration contract
 
-Status: Blocked.
+Status: In progress.
 
-Dependencies: M3; `R-DATA-*`, `R-EST-*`, and `R-CAL-*`.
+Dependencies: M1, the fixed local-VIO direction, and `R-DATA-*`, `R-EST-*`, and
+`R-CAL-*`. Synthetic timing/causality work may proceed while M3 interface details
+are completed.
 
 Physical-sensor selection in [ADR-0003](adr/0003-sensor-contract.md) remains
 deferred until the deployment and integration milestones require it.
 
 Required decisions/evidence:
 
+- Implement a deterministic event replay boundary that distinguishes sensor
+  measurement time from estimator availability time, uses one declared clock,
+  and preserves invalid/reset events.
 - Define a modality-neutral canonical schema for exposure time, IMU intervals,
   clock mapping/offset sign, frames, axes, units, gravity, validity, provenance,
   and calibration versioning.
@@ -313,9 +278,11 @@ Exit evidence:
 
 ## M5 — Reproducible execution environments
 
-Status: Blocked.
+Status: In progress.
 
-Dependencies: M2–M4.
+Dependencies: M1 for the local CPU environment. Important or extended paid A10
+work additionally depends on M2; estimator-specific environments depend on M3
+and M4.
 
 Permitted work:
 
@@ -339,7 +306,9 @@ Exit evidence:
 
 Status: Blocked.
 
-Dependencies: M3–M5; `R-DATA-*`; dataset governance.
+Dependencies: sufficient M3/M4 interface detail for the chosen adapter,
+`R-DATA-*`, and per-dataset rights review. Full or important paid-worker
+acquisition additionally depends on M2/M5.
 
 Required work:
 
@@ -351,9 +320,10 @@ and [candidate registry](../governance/datasets/registry.yaml).
   checksum strategy before download.
 - Assign a declared role and source-group ID; freeze train/validation/final-test
   membership before windows, normalization, corruption, or augmentation.
-- Acquire one representative sequence first and validate frames, units, timing,
-  calibration, missing data, ground-truth interpolation, and causal streaming.
-- Expand only to approved subsets that fit M2 capacity and retention budgets.
+- Acquire one rights-checked representative sequence first and validate frames,
+  units, timing, calibration, missing data, ground-truth interpolation, and
+  causal streaming. Expand only to approved subsets that fit the applicable
+  capacity and retention budget.
 
 Prohibited work:
 
@@ -369,10 +339,11 @@ Exit evidence:
 
 ## M7 — Common causal replay and evaluator
 
-Status: Blocked.
+Status: In progress.
 
-Dependencies: M3, M4, representative M6 data; `R-RI-*`, `R-DATA-*`,
-`R-EST-*`, `R-EVAL-*`.
+Dependencies: M3/M4 contracts and `R-RI-*`, `R-DATA-*`, `R-EST-*`,
+`R-EVAL-*`. Synthetic replay and geometry fixtures may proceed now; real-data
+exit evidence depends on representative M6 data.
 
 Required work:
 
@@ -400,7 +371,8 @@ Exit evidence:
 
 Status: Blocked.
 
-Dependencies: M5–M7; accepted dependency/license lane.
+Dependencies: M5–M7 and per-dependency licence review for the non-commercial
+research lane.
 
 Recommended comparison set to evaluate, not preselected dependencies:
 
@@ -616,40 +588,19 @@ Exit evidence:
 
 ## Immediate execution queue
 
-Only local, decision-neutral governance scaffolding and repository validation
-are unblocked after M1. Populating candidate records, gathering external
-evidence, accessing storage, or using the paid worker requires the applicable
-project-owner authorization. Templates are never ADR or milestone evidence.
+1. Freeze the remaining local-VIO state, frame, timestamp, initialization, and
+   reset interface.
+2. Extend the implemented causal replay core with canonical sensor records and
+   synthetic geometry fixtures.
+3. Complete the synthetic evaluator and its future-leakage, frame, unit,
+   timestamp, scale, and partial-trajectory negative tests.
+4. Rights-check and ingest one representative dataset sequence; do not download
+   a full corpus first.
+5. Reproduce one stable classical baseline on the same replay contract.
+6. Use the A10 only for a bounded task that benefits from GPU compute; complete
+   M2 before long training, sweeps, or irreplaceable outputs.
+7. Implement the physically anchored compact hybrid candidate and only the
+   controls needed to test its primary hypothesis.
 
-After that authorization, two independent decision tracks may proceed:
-
-Release/rights track for ADR-0001:
-
-1. Record intended purpose, users, distribution surfaces, and proposed lanes for
-   the declared current scope.
-2. Build the rights matrix for assets selected or proposed by the scope cutoff;
-   record later assets at M5/M6/M8/M11/M14 rather than guessing them now. Obtain
-   legal review wherever eligibility cannot be established by authoritative
-   terms.
-3. Select and explicitly accept or reject the project/license/release proposal.
-
-Durability/cost track for ADR-0005:
-
-1. Authorize provisional vault/backup candidates for a bounded phase; record
-   retained-byte estimate, reserve, retention/RPO, spend, review/re-estimation
-   triggers, and owners.
-2. Run the filesystem preflight or an approved provider-specific equivalent.
-3. Run the representative transfer/backup/restore drill under the artifact
-   policy and record evidence.
-4. Accept or reject ADR-0005 based on the durability evidence.
-
-M3 begins only after both tracks satisfy M2 exit evidence. A cost-saving worker
-teardown may occur earlier under the exception above; it is not evidence that M2
-or M14 passed.
-
-Until those inputs exist, local repository validation and decision-neutral
-documentation refinement are permitted; external evidence gathering, dataset
-download, training, and prolonged GPU work remain blocked absent their explicit
-authorization.
-Worker deletion remains a separate explicitly approved destructive action under
-the cost-control exception.
+The exact source licence remains a release decision. Worker deletion remains a
+separate destructive action requiring explicit approval.

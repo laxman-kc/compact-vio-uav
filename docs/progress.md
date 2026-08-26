@@ -189,6 +189,33 @@ result, and explicit remaining blockers.
 - M2 remains blocked; ADR-0001 and ADR-0005 remain unresolved and
   `artifact_restore_gate_passed` remains false.
 
+## 2026-08-26 — M4 causal replay slice implemented locally
+
+- Working-tree state at this entry: uncommitted; remote commit and CI evidence
+  are pending.
+- The owner clarified the project as publicly readable, research-only, and
+  non-commercial. The core direction is causal metric-scale local VIO with no
+  loop closure in the primary comparison; PX4 retains flight-control authority.
+- Corrected the roadmap so M2 gates long or irreplaceable paid A10 work, not
+  ordinary local implementation or short reproducible smoke checks.
+- Added a standard-library causal replay primitive with separate sensor
+  measurement and estimator-availability timestamps, one declared clock,
+  deterministic same-time ordering, exactly-once emission, monotonic watermarks,
+  and explicit delivery of invalid/reset events.
+- Added 13 focused replay tests covering boundary and delayed availability,
+  future-event exclusion, ordering, duplicate identities, mixed clocks,
+  malformed timestamps, backward watermarks, reset/invalid delivery, and empty
+  input. The complete local suite passed 65 tests.
+- Ruff lint and format passed for 39 Python files; repository policy passed for
+  56 files; source/test/script compilation, `git diff --check`, and the existing
+  seven-schema/five-template harness passed.
+- Recorded ADR-0001 and ADR-0002 as accepted owner decisions; exact licensing,
+  estimator-interface details, datasets, hardware, and thresholds remain later
+  decisions.
+- No dataset was downloaded, no model or estimator was implemented, and the A10
+  was not accessed in this local slice. M3, M4, M5, and M7 are in progress;
+  none is complete. M2 remains blocked for important paid GPU work.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

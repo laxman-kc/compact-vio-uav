@@ -1,19 +1,25 @@
 # compact-vio-uav
 
-`compact-vio-uav` is being established as a reproducible research project for evaluating compact visual-inertial odometry (VIO) for UAV use. The estimator design, sensor configuration, data splits, deployment hardware, integration scope, and release license are deliberately **not selected yet**. Those choices will be made through recorded decision gates and evidence.
+`compact-vio-uav` is a publicly readable, non-commercial research project for
+compact visual-inertial odometry (VIO) on UAVs. The primary scope is causal,
+metric-scale local odometry: mapping and loop closure are outside the main
+comparison, and PX4 retains stabilization, failsafe, and motor control. Exact
+sensor hardware, datasets and splits, numerical thresholds, deployment target,
+and source licence remain decisions for the milestones that need them.
 
 ## Current status
 
-This repository currently contains the governance, experiment-contract, and
-durability-preflight foundation only. It does not yet contain an implemented
-estimator, trained model, approved dataset split, deployable runtime, or
-flight-ready system.
+The repository contains the reproducibility foundation and the first executable
+research primitive: a deterministic causal replay boundary for timestamped
+camera, IMU, and reset events. It does not yet contain an estimator, trained
+model, approved dataset split, deployable runtime, or flight-ready system.
 
 The project follows these invariants:
 
 - Git is the source of truth for versioned code, configuration, decisions, manifests, and small reviewed results.
 - Rented GPU machines are disposable execution workers, never the sole copy of important state.
-- Critical binary artifacts require verified storage outside the worker and an independent backup.
+- Important retained artifacts from paid GPU work require verified storage
+  outside the worker and an independent recovery copy.
 - All estimator comparisons use one causal data/replay contract and one frozen evaluation protocol.
 - Dataset rights, provenance, grouping, and split membership are recorded before use.
 - Offline results do not authorize ROS/PX4 integration or physical flight.
@@ -81,26 +87,47 @@ and a caller-supplied record do not prove independent failure domains, storage
 outside the worker, successful writes, or restoration. Object stores and other
 backends require a provider-specific preflight.
 
+`compact_vio.replay.CausalReplay` separates sensor measurement time from the
+time an event becomes available to an estimator. It rejects mixed clocks,
+duplicate identities, malformed ordering, backward time advances, and
+availability before measurement. Reset and invalid events remain visible rather
+than being silently dropped. This is a synthetic contract primitive, not a
+dataset adapter or estimator.
+
 ## State ownership
 
 | State | Authoritative location | Brev/A10 treatment |
 |---|---|---|
 | Source, configuration, decisions, manifests | GitHub repository | Clean checkout of an immutable revision |
 | Raw/processed datasets and caches | Location recorded by dataset manifest | Disposable working copy |
-| Critical checkpoints, trajectories, and reports | Artifact vault plus independent verified backup | Temporary until exported and verified |
+| Selected checkpoints, trajectories, and reports | Reviewed local/archive location plus independent recovery copy for important retained runs | Temporary until exported and verified |
 | Credentials | Approved secret store or local credential mechanism | Never committed; minimum access only |
 
-The artifact-vault provider, backup destination, retention budget, and cost ceiling are unresolved. Important GPU experiments must not begin until the storage restore gate in the [artifact policy](governance/artifacts/policy.md) passes.
+The artifact destination, recovery copy, retention budget, and cost ceiling are
+unresolved. That does not block local development or short, reproducible A10
+checks made from a pushed Git revision. Important or extended GPU experiments
+that can create irreplaceable results must wait for the storage restore gate in
+the [artifact policy](governance/artifacts/policy.md). Every paid task still has
+a short run plan, time/cost bound, export destination, and teardown owner.
 
 ## Decision status
 
-No project license has been selected. GitHub's Terms permit platform-specific
-actions such as viewing and forking a public repository, but no general license
-to reproduce, distribute, or create derivative works should be inferred until
-the owner records that decision and intentionally adds a license file.
+The owner has fixed the project lane as public-source, research-only, and
+non-commercial. No exact source licence has been selected, so the repository
+does not yet claim OSI open-source status or grant general reproduction,
+distribution, or derivative-work rights beyond GitHub's platform terms. That
+licence decision gates external reuse and release packaging, not ordinary local
+research implementation.
 
-Open project decisions are listed in the [ADR index](docs/adr/README.md). An ADR marked `Proposed` or `Unresolved` is not an implementation choice.
+Accepted and open project decisions are listed in the
+[ADR index](docs/adr/README.md). An ADR marked `Proposed` or `Unresolved` is not
+an accepted implementation choice.
 
 ## Safety boundary
 
-This is research software. It is not flight-certified and must not command motors or authorize free flight. Any later vehicle integration must proceed through interface review, replay, software-in-the-loop, hardware-in-the-loop, bench, and contained-flight gates with independent flight-control and failsafe mechanisms.
+This is research software. It is not flight-certified and must not command
+motors or authorize free flight. If integration is later approved, VIO is only
+a health-gated external odometry measurement source; PX4 retains stabilization,
+pilot override, failsafes, and motor authority. Integration must progress through
+interface review, replay, software-in-the-loop, hardware-in-the-loop, bench, and
+contained-flight gates.

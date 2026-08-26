@@ -8,6 +8,16 @@
 
 Training-platform success does not choose an edge device or prove flight suitability. Jetson/other hardware, export runtime, ROS 2, PX4, simulation, HIL, and physical flight create separate compatibility and safety obligations.
 
+## Retained safety boundary
+
+- PX4 retains stabilization, pilot override, failsafes, and motor authority.
+- VIO may later provide only a health-gated external odometry measurement.
+- Offline replay or A10 performance never authorizes vehicle integration or
+  physical flight.
+- These boundaries follow the normative safety requirements. This unresolved ADR
+  blocks deployment and integration choices only; it does not block offline VIO
+  implementation, replay, evaluation, or baseline research.
+
 ## Decision required
 
 Choose and document:

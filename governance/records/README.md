@@ -1,9 +1,9 @@
 # Governance records
 
-Status: Decision-input scaffolding; no M2 decision accepted
+Status: Optional structured record support; not the research critical path
 Last reviewed: 2026-08-26
 
-This directory holds small, credential-free governance records. The JSON
+This directory holds optional small, credential-free governance records. The JSON
 Schemas define record shape only and do not verify that a statement is true,
 approve a candidate, accept an ADR, or pass a milestone. A worker record with
 `record_status: owner_approved` is an unauthenticated structural authority input,
@@ -11,7 +11,9 @@ not a complete execution gate. Its exact action-to-location-access scope must be
 active, externally authenticated, unused in the consumption ledger, and paired
 with every required pre-action evidence check. It cannot authorize a worker
 lifecycle change or deletion of a primary, backup, or other retained copy;
-version 1 also refuses standalone execution of every non-static scope.
+version 1 also refuses standalone execution of every non-static scope. The lean
+experiment lifecycle uses an explicitly approved bounded run plan rather than
+requiring this optional schema.
 
 ## Authority boundary
 
@@ -150,12 +152,10 @@ an append-only execution/consumption entry and confirm no prior entry uses that
 authorization. A structural validation result is not proof of owner identity,
 record truth, non-reuse, action execution, or billing.
 
-Version 1 live validation permits only `static_checks`; every non-static action
-is refused until an exact reviewed storage-plan link binds primary, backup,
-restore source, and restore destination roles and the required pre-action
-evidence and consumption interface exists. A current structural static check
-therefore has no location access (replace the example record, worker, revision,
-and time with reviewed values):
+Version 1 live validation permits only `static_checks`; it is supporting audit
+tooling, not the paid-run execution gate. A current structural static
+check therefore has no location access (replace the example record, worker,
+revision, and time with reviewed values):
 
 ```sh
 python scripts/validate_schemas.py \
@@ -170,11 +170,10 @@ Even `active_scope_record_valid=true` retains the explicit false flags for
 approver authentication, record truth, use-ledger consumption, execution, and
 the artifact restore gate.
 
-Version 1 deliberately refuses an active `post_m2_paid_work` authorization.
-That later path needs a canonical, hash-linked M2/ADR-0005 acceptance record and
-exact intended-data matching that do not exist yet. It must be introduced by a
-reviewed schema/validator revision after M2 rather than inferred from a string
-reference.
+Paid research work follows the short bounded run-plan procedure in the
+experiment lifecycle. M2 additionally gates long or irreplaceable paid runs.
+This optional validator deliberately does not claim to authorize or execute
+that work.
 
 For a review-ready storage plan, semantic validation must establish that the
 primary and backup candidate IDs and location references differ; the

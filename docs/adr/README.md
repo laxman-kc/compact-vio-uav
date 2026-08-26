@@ -14,12 +14,12 @@ An ADR is authoritative only when its status is `Accepted`. `Proposed` and `Unre
 
 | ADR | Topic | Status | Blocks |
 |---|---|---|---|
-| [0001](0001-project-and-release-scope.md) | Project purpose, release lanes, and license | Unresolved | Dependency adoption, model/data distribution, public release |
-| [0002](0002-estimator-scope.md) | Estimator scope and state contract | Unresolved | Data contract, metrics, model/baseline implementations |
+| [0001](0001-project-and-release-scope.md) | Non-commercial research scope | Accepted | Exact licence still gates external reuse/distribution |
+| [0002](0002-estimator-scope.md) | Local-VIO estimator scope | Accepted | Detailed M3 interface still gates estimator compliance |
 | [0003](0003-sensor-contract.md) | Camera/IMU configuration and timing envelope | Unresolved | Dataset roles, preprocessing, calibration, target selection |
-| [0004](0004-primary-research-contribution.md) | Primary research contribution | Unresolved | Hypothesis, ablations, candidate selection |
+| [0004](0004-primary-research-contribution.md) | Physically anchored hybrid hypothesis | Unresolved | Confirmatory thresholds, ablations, and candidate selection |
 | [0005](0005-artifact-storage.md) | Artifact vault, backup, retention, and spend | Unresolved | Important GPU experiments and worker teardown |
-| [0006](0006-deployment-scope.md) | Edge, ROS 2/PX4, and flight scope | Unresolved | Export, target runtime, integration and physical testing |
+| [0006](0006-deployment-scope.md) | PX4 boundary, edge, and flight scope | Unresolved | Export, target runtime, integration and physical testing |
 
 ## ADR completion rule
 

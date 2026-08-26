@@ -70,13 +70,17 @@ replace legal review.
 | [GitHub: Licensing a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository) | ADR-0001 public-repository and project-license input | GitHub explains that without a selected license default copyright supplies no general license to reproduce, distribute, or create derivative works, while GitHub's Terms still grant platform-specific rights such as viewing and forking a public repository. This supports an explicit owner decision without overstating the current restriction; it does not select a license or decide rights in third-party assets. |
 | [SPDX Specification 3.0.1: license expressions](https://spdx.github.io/spdx-spec/v3.0.1/annexes/spdx-license-expressions/) | ADR-0001 candidate-license and rights-matrix fields | SPDX defines a standard expression grammar for identifiers, references, exceptions, and compound terms. Use it when the reviewed terms can be represented accurately; recording an expression does not prove permission, compatibility, or commercial eligibility. |
 
-## Unresolved-decision routing
+## Decision routing
 
-- Purpose, license, and release lanes: [ADR-0001](adr/0001-project-and-release-scope.md).
-- Estimator state and local-VIO/VI-SLAM scope: [ADR-0002](adr/0002-estimator-scope.md).
+- Public non-commercial research scope and exact source licence:
+  [ADR-0001](adr/0001-project-and-release-scope.md).
+- Fixed local-VIO direction and remaining state/interface details:
+  [ADR-0002](adr/0002-estimator-scope.md).
 - Physical and dataset sensor contract: [ADR-0003](adr/0003-sensor-contract.md).
 - One primary research contribution and hypothesis: [ADR-0004](adr/0004-primary-research-contribution.md).
 - Artifact vault, backup, retention, spend, and teardown authority: [ADR-0005](adr/0005-artifact-storage.md).
-- Edge/export/ROS 2/PX4/physical-flight scope: [ADR-0006](adr/0006-deployment-scope.md).
+- Fixed PX4 control boundary and remaining edge/export/physical-test scope:
+  [ADR-0006](adr/0006-deployment-scope.md).
 
-Only an `Accepted` ADR with its required evidence resolves one of these choices.
+Accepted ADRs define the fixed boundaries above; unresolved ADRs continue to
+block only the dependent choices named in the ADR index.

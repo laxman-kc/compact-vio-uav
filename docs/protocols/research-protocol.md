@@ -5,19 +5,24 @@ Last reviewed: 2026-08-26
 
 ## 1. Protocol freeze points
 
-1. Accept the project/release, estimator, sensor, and primary-contribution ADRs.
-2. Approve dataset roles, rights, source groups, and split manifests.
-3. Validate the common causal replay and evaluator with negative controls.
-4. Reproduce selected classical references.
-5. Freeze primary metrics, failure policy, thresholds, seeds/trials, and candidate budget.
-6. Evaluate novel candidates and select without modifying the frozen final-test protocol.
+1. Implement and validate the modality-neutral causal replay/evaluator substrate
+   with synthetic negative controls.
+2. Approve dataset roles, rights, source groups, and split manifests before
+   using real data.
+3. Freeze the estimator interface and reproduce selected classical references.
+4. Before confirmatory novel-candidate comparison or final-test inspection,
+   accept the applicable estimator, sensor, and primary-contribution decisions.
+5. Freeze primary metrics, failure policy, thresholds, seeds/trials, and
+   candidate budget.
+6. Evaluate novel candidates and select without modifying the frozen final-test
+   protocol.
 7. Open export, target, and integration gates only for an evidence-selected candidate.
 
 Changes after a freeze require a new protocol revision. Results produced under different revisions must not be pooled without disclosure.
 
 ## 2. Hypothesis registration
 
-Before candidate implementation, record:
+Before confirmatory candidate comparison or final-test access, record:
 
 - One primary hypothesis with a falsifiable direction.
 - Primary comparator.
@@ -62,7 +67,9 @@ The accepted hypothesis determines the final set. A learned multimodal study nor
 - An always-compute causal visual-inertial diagnostic.
 - The proposed candidate and ablations isolating its claimed contribution.
 
-Named implementations and versions remain unresolved until estimator, sensor, and license ADRs are accepted.
+Writing generic adapters and fixtures does not adopt a third-party estimator.
+Before running or incorporating a named implementation, pin its version and
+review its licence for the non-commercial research lane.
 
 ## 6. Evaluation
 

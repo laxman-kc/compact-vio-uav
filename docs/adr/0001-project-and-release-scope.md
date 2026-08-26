@@ -1,53 +1,57 @@
-# ADR-0001: Project and release scope
+# ADR-0001: Project and research-release scope
 
-- Status: Unresolved
-- Decision owner: TBD
-- Decision date: TBD
+- Status: Accepted
+- Decision owner: Project owner
+- Decision date: 2026-08-26
 
 ## Context
 
-The repository is public, but public visibility does not decide whether the work is research-only, commercially usable, or intended for redistributed model/runtime releases. No project license has been selected. GitHub's Terms grant platform-specific viewing and forking rights, but they do not create a general reuse or redistribution license. Dataset and dependency rights differ and may require separate artifact lanes.
+The repository is public, but public visibility alone does not define permitted
+reuse. The owner explicitly fixed the work as research-only and non-commercial.
+The exact licence for third-party reuse can be selected later without blocking
+ordinary project implementation.
 
-## Decision required
+## Decision
 
-Choose and document:
+- Develop compact causal local VIO for UAV research in a publicly readable
+  repository.
+- Make no commercial-use or commercial-eligibility claim.
+- Publish source, documentation, configurations, manifests, and small reviewed
+  results as the research progresses.
+- Do not mirror datasets or publish model weights, calibration bundles,
+  containers, runtimes, or flight-system packages without a separate review.
+- Until an exact licence file is selected, describe the repository as
+  public-source research rather than claiming OSI open-source reuse rights.
+- Review the licence/terms of each dependency, dataset, and model when it is
+  actually selected; do not inventory hypothetical future assets.
 
-1. Research-only, commercially eligible, or parallel separated lanes.
-2. Project source-code license.
-3. Whether model weights, calibration, containers, and reports are released.
-4. The dependency-license policy, including treatment of reciprocal licenses.
-5. Attribution, NOTICE, data-statement, and model-card requirements.
+## Evidence
 
-## Evidence required before acceptance
+- The project owner explicitly stated on 2026-08-26 that the work is public
+  research and not commercial.
+- The GitHub repository is public and contains the versioned research source and
+  documentation.
 
-- A non-template project/release scope record conforming to the
-  [project/release scope schema](../../governance/schemas/project-release-scope.schema.json),
-  with intended purpose, users, distribution surfaces, release dispositions,
-  proposed source-license terms, dependency policy, and a named decision owner.
-- A non-template [rights matrix](../../governance/schemas/rights-matrix.schema.json)
-  covering every dependency, dataset, model, calibration, container, and report
-  selected or proposed by its declared scope cutoff. Assets not yet selected
-  are not guessed to make this ADR appear complete.
-- Cross-record validation that the scope links the exact rights-matrix bytes by
-  canonical path, ID, and SHA-256; both scope cutoffs match; and every intended
-  asset lane exists in the proposed release scope.
-- Authoritative terms evidence for every inventoried asset and legal review
-  wherever commercial eligibility is claimed or the terms remain ambiguous.
-- Evidence that assets assigned to different lanes can be kept separate.
+## Rejected alternatives
 
-## Follow-up evidence
+- A commercial or commercially eligible lane is rejected for the current
+  project scope.
+- Parallel commercial/non-commercial release lanes are unnecessary for this
+  one-person research project.
+- Treating public visibility as a general software licence is rejected.
 
-- Add and review each dependency at M5, dataset at M6, baseline at M8, selected
-  model/container/report at M11, and release asset at M14 before that asset is
-  adopted or distributed.
-- Re-review authoritative terms when a version, source, intended use,
-  distribution surface, or derived-artifact plan changes.
-- Reopen or supersede this ADR if later evidence invalidates the accepted
-  purpose, license, release disposition, lane boundary, or dependency policy.
+## Consequences
 
-## Consequences not yet accepted
+Local implementation, synthetic tests, rights-checked dataset research,
+baseline work, and non-commercial experiments may proceed. External reuse or
+redistribution rights must not be claimed until an exact licence is selected.
+Every selected third-party asset keeps its own terms and attribution duties.
 
-Until this ADR is accepted, the project must not claim commercial eligibility,
-publish model weights, or infer a general reuse or redistribution license from
-the public repository. This does not negate GitHub's platform-specific viewing
-and forking permissions.
+## Follow-up
+
+- Select and add an exact source licence before inviting third-party reuse or
+  presenting the repository as OSI open source.
+- Review each dependency at M5, dataset at M6, baseline at M8, selected model or
+  report at M11, and release asset at M14 when it is actually adopted.
+- Reopen or supersede this ADR if the project later proposes commercial use or a
+  broader binary/data release.
