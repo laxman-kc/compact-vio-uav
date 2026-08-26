@@ -1,0 +1,38 @@
+{
+  "artifact_restore_gate_passed": false,
+  "assessment": null,
+  "blockers": [
+    "Immutable run-manifest and artifact-manifest identities have not been recorded.",
+    "Primary-vault and independent-backup locations have not been selected or reviewed.",
+    "The representative export, disposable-source-copy deletion, restore, checksum, and load/open drill has not been run.",
+    "Failure-domain separation and outside-worker placement have not been reviewed."
+  ],
+  "bundle_identity": {
+    "artifact_manifest_bytes": null,
+    "artifact_manifest_sha256": null,
+    "bundle_bytes": null,
+    "bundle_file_count": null,
+    "payload_bytes": null,
+    "payload_file_count": null,
+    "representation_basis": null,
+    "representative_for_phase": null,
+    "run_id": null,
+    "run_manifest_sha256": null
+  },
+  "copies": [],
+  "created_at": null,
+  "evidence_id": null,
+  "execution_context": null,
+  "limitations": [
+    "This draft records unresolved evidence fields only and cannot establish storage durability, failure-domain independence, restoration, or M2 completion."
+  ],
+  "load_open": null,
+  "restore": null,
+  "record_type": "artifact_storage_evidence",
+  "schema_version": "1.0.0",
+  "source_test_copy_deletion": null,
+  "status": "draft",
+  "storage_review": null,
+  "supporting_evidence": [],
+  "worker_authorization": null
+}

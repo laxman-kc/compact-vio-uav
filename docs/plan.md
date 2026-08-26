@@ -137,25 +137,68 @@ dependencies.
 
 Required decisions/evidence:
 
-- Record project purpose, release lanes, source/model/report license intent, and
-  dependency-license policy.
-- Record the artifact-vault and independent backup failure domains, access,
-  encryption, capacity, retention, recovery-point objective, cost budget, and
-  recovery owner.
+- Prepare non-template, owner-reviewed current-scope records for project
+  purpose, users, release lanes, source/model/report license intent,
+  dependency-license policy, and the rights of every asset selected or proposed
+  by the declared cutoff. Future assets remain follow-up reviews at their
+  adoption milestones.
+- Validate that the project scope links the exact rights-matrix bytes by
+  canonical path, ID, and SHA-256, uses the same scope cutoff, and defines every
+  lane referenced by a rights asset.
+- Prepare a phase-scoped storage plan recording the artifact-vault and
+  independent backup failure domains, access, encryption, capacity, retention,
+  recovery-point objective, cost envelope, validity period, re-estimation
+  triggers, and recovery owner.
 - Estimate worst-case retained bytes plus an explicit reserve. For filesystem-
   backed candidates, run `compact-vio-preflight`; for another backend, approve
   and record a provider-specific static check.
+- Semantically validate that primary and backup candidate IDs and locations are
+  distinct; total required bytes equal retained bytes plus reserve; each
+  candidate has that capacity; independence review follows both candidate
+  observations; the throughput-derived teardown time is not understated; and
+  all validity, review, retention, and transfer times are coherent.
 - Follow the authoritative [artifact policy](../governance/artifacts/policy.md)
   and [experiment lifecycle](protocols/experiment-lifecycle.md) for the
   representative export/backup/restore drill and evidence bundle.
+- Keep the frozen `run-manifest.json` and `artifact-manifest.json` inside the
+  immutable bundle. Record post-export locations and verification in the
+  artifact-storage evidence sidecar; do not rewrite either manifest after
+  export begins.
 - Record transfer throughput, expected teardown-transfer duration, A10 spending
   ceiling, next review time, and who can authorize deletion.
+
+Before the restore gate passes, paid-worker activity is limited to an explicit,
+owner-approved `m2_evidence_gathering` slice with exact action-to-location-access
+scopes, an immutable Git revision, fixed time and spend ceilings, review time,
+and teardown authority. The closed action IDs separately name creation of the
+purpose-created disposable source copy, writes to the primary and independent
+backup, content audit, deletion of that exact disposable source, restore, and
+load/open verification. It permits no dataset download, training, or important
+experiment. It never permits a worker lifecycle change or deletion from the
+primary vault, independent backup, or another retained copy. A draft or
+`ready_for_owner_review` record is not approval. A durable `owner_approved`
+record that passes structural active-use validation for the exact worker, Git
+revision, one action, that action's complete typed read/write/delete
+location-access set, time, and remaining duration is a required input, not
+complete authority. External approver authentication, an unused
+single-execution ledger entry, and applicable pre-action evidence are also
+required before work; the record cannot accept ADR-0005. Its sole represented
+deletion scope is the exact source copy pinned in the record as purpose-created
+and `disposable`. Version 1 live validation permits only `static_checks`: it
+does not yet hash-link the reviewed storage plan needed to bind primary, backup,
+restore-source, and restore-destination roles, nor consume required pre-action
+evidence and the single-use ledger entry. Every non-static paid M2 action,
+including the disposable-copy deletion, remains blocked until that dedicated
+interface is implemented and validated; therefore a static-only result cannot
+complete the restore drill or M2.
 
 Prohibited work:
 
 - No important or long-running GPU experiment before the restore drill passes.
 - No claim that GitHub, a GitHub Actions artifact, or two paths on one filesystem
   are independent backups.
+- No claim that a static preflight or successful `compact-vio-copy-audit`
+  satisfies the restore gate; copy audit is only a read-only checksum fragment.
 - No destructive `brev delete` without a separate explicit approval and the
   applicable preservation/teardown audit.
 
@@ -165,7 +208,19 @@ Exit evidence:
 - Successful applicable static check and representative restore report.
 - Two checksum-verified copies outside Brev in reviewed independent failure
   domains.
-- Paid-worker authorization record.
+- If paid-worker execution contributed to the drill, its verified sidecar links
+  the durable historical `owner_approved` record whose active window and typed
+  location-access scope covered that execution, plus authenticated approval and
+  single-use consumption evidence. If the drill ran in a non-paid environment,
+  its execution context records that fact and no worker authorization is
+  fabricated.
+
+Expiry or review after a correctly authorized paid drill does not regress M2.
+Every authorization is single-execution and requires an append-only consumption
+entry because the structural validator cannot prove non-reuse. Later paid work
+also requires a new acceptance-aware authorization contract that hash-links the
+accepted M2/ADR-0005 evidence and matches intended data; version 1 deliberately
+refuses active `post_m2_paid_work` records.
 
 ### Cost-control teardown exception
 
@@ -561,20 +616,28 @@ Exit evidence:
 
 ## Immediate execution queue
 
-Two independent decision tracks are unblocked after M1 validation:
+Only local, decision-neutral governance scaffolding and repository validation
+are unblocked after M1. Populating candidate records, gathering external
+evidence, accessing storage, or using the paid worker requires the applicable
+project-owner authorization. Templates are never ADR or milestone evidence.
+
+After that authorization, two independent decision tracks may proceed:
 
 Release/rights track for ADR-0001:
 
-1. Record intended purpose, users, distribution surfaces, and research versus
-   commercial lanes.
-2. Build the dependency/data/model/report rights matrix and obtain legal review
-   wherever eligibility cannot be established by authoritative terms.
+1. Record intended purpose, users, distribution surfaces, and proposed lanes for
+   the declared current scope.
+2. Build the rights matrix for assets selected or proposed by the scope cutoff;
+   record later assets at M5/M6/M8/M11/M14 rather than guessing them now. Obtain
+   legal review wherever eligibility cannot be established by authoritative
+   terms.
 3. Select and explicitly accept or reject the project/license/release proposal.
 
 Durability/cost track for ADR-0005:
 
-1. Authorize provisional vault/backup candidates for evidence gathering; record
-   retained-byte estimate, reserve, retention/RPO, spend, and owners.
+1. Authorize provisional vault/backup candidates for a bounded phase; record
+   retained-byte estimate, reserve, retention/RPO, spend, review/re-estimation
+   triggers, and owners.
 2. Run the filesystem preflight or an approved provider-specific equivalent.
 3. Run the representative transfer/backup/restore drill under the artifact
    policy and record evidence.
@@ -584,7 +647,9 @@ M3 begins only after both tracks satisfy M2 exit evidence. A cost-saving worker
 teardown may occur earlier under the exception above; it is not evidence that M2
 or M14 passed.
 
-Until those inputs exist, repository validation and documentation refinement are
-permitted; dataset download, training, and prolonged GPU work remain blocked.
+Until those inputs exist, local repository validation and decision-neutral
+documentation refinement are permitted; external evidence gathering, dataset
+download, training, and prolonged GPU work remain blocked absent their explicit
+authorization.
 Worker deletion remains a separate explicitly approved destructive action under
 the cost-control exception.

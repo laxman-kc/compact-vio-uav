@@ -39,6 +39,7 @@ jobs:
       - name: Exercise installed command-line tools
         run: |
           compact-vio-artifacts --help
+          compact-vio-copy-audit --help
           set +e
           compact-vio-preflight > /tmp/compact-vio-preflight.json
           preflight_status=$?

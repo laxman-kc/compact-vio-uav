@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/laxman-kc/compact-vio-uav/experiments/schemas/run-manifest.schema.json",
   "title": "compact-vio-uav run manifest",
-  "description": "Portable provenance and artifact record for a planned, completed, failed, or aborted experiment. Secrets must not appear in any field.",
+  "description": "Immutable pre-export provenance and artifact-identity record for a planned, completed, failed, or aborted experiment. Post-export locations and verification belong in an artifact-storage-evidence sidecar. Secrets must not appear in any field.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -19,7 +19,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.0.0"
+      "const": "1.1.0"
     },
     "run_id": {
       "type": "string",
@@ -67,6 +67,8 @@
     },
     "artifacts": {
       "type": "array",
+      "uniqueItems": true,
+      "$comment": "Semantic validation must also reject repeated artifact_id or path values when the remaining fields differ.",
       "items": {
         "$ref": "#/$defs/artifact"
       }
@@ -127,58 +129,8 @@
     "credential_free_uri_reference": {
       "type": "string",
       "format": "uri-reference",
-      "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*://[^/?#]*@).*$"
-    },
-    "artifact_location": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["role", "uri", "verification_status"],
-      "properties": {
-        "role": {
-          "enum": ["worker", "primary_vault", "independent_backup", "release_mirror", "other"]
-        },
-        "uri": {
-          "$ref": "#/$defs/credential_free_uri_reference",
-          "description": "Must not contain embedded credentials."
-        },
-        "verification_status": {
-          "enum": ["not_verified", "checksum_verified", "restore_verified"]
-        },
-        "verified_at": {
-          "type": ["string", "null"],
-          "format": "date-time"
-        },
-        "verified_sha256": {
-          "anyOf": [
-            { "$ref": "#/$defs/sha256" },
-            { "type": "null" }
-          ]
-        }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "verification_status": {
-                "enum": ["checksum_verified", "restore_verified"]
-              }
-            },
-            "required": ["verification_status"]
-          },
-          "then": {
-            "required": ["verified_at", "verified_sha256"],
-            "properties": {
-              "verified_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "verified_sha256": {
-                "$ref": "#/$defs/sha256"
-              }
-            }
-          }
-        }
-      ]
+      "pattern": "^(?!.*[?#@])(?!.*%(?:23|25|3[fF]|40)).+$",
+      "description": "Non-empty credential-free reference without raw or encoded userinfo, query, or fragment delimiters."
     },
     "artifact": {
       "type": "object",
@@ -190,8 +142,7 @@
         "rights_lane",
         "path",
         "byte_size",
-        "sha256",
-        "locations"
+        "sha256"
       ],
       "properties": {
         "artifact_id": {
@@ -235,68 +186,11 @@
         "sha256": {
           "$ref": "#/$defs/sha256"
         },
-        "locations": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/$defs/artifact_location"
-          }
-        },
         "expires_at": {
           "type": ["string", "null"],
           "format": "date-time"
         }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "retention_class": {
-                "enum": ["reproducibility_critical", "release"]
-              }
-            },
-            "required": ["retention_class"]
-          },
-          "then": {
-            "properties": {
-              "locations": {
-                "allOf": [
-                  {
-                    "contains": {
-                      "type": "object",
-                      "properties": {
-                        "role": {
-                          "const": "primary_vault"
-                        },
-                        "verification_status": {
-                          "enum": ["checksum_verified", "restore_verified"]
-                        }
-                      },
-                      "required": ["role", "verification_status"]
-                    },
-                    "minContains": 1
-                  },
-                  {
-                    "contains": {
-                      "type": "object",
-                      "properties": {
-                        "role": {
-                          "const": "independent_backup"
-                        },
-                        "verification_status": {
-                          "enum": ["checksum_verified", "restore_verified"]
-                        }
-                      },
-                      "required": ["role", "verification_status"]
-                    },
-                    "minContains": 1
-                  }
-                ]
-              }
-            }
-          }
-        }
-      ]
+      }
     },
     "git": {
       "type": "object",

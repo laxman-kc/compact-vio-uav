@@ -20,6 +20,7 @@ not define, modify, accept, or waive a requirement.
 | Per-run operating procedure | [Experiment lifecycle](protocols/experiment-lifecycle.md) |
 | Dataset admissibility | [Dataset policy](../governance/datasets/policy.md) and [registry](../governance/datasets/registry.yaml) |
 | Artifact retention and restoration | [Artifact policy](../governance/artifacts/policy.md) |
+| M2 decision inputs and record lifecycle | [Governance records](../governance/records/README.md); only accepted ADRs decide |
 
 If these records conflict, work stops until the conflict is corrected at its
 authoritative source. A plan status cannot accept an ADR, and a progress entry
@@ -33,7 +34,7 @@ cannot change a requirement.
 | Data and causality | `R-DATA-*` | Dataset/split manifests, causal replay tests |
 | Estimator contract | `R-EST-*` | Accepted estimator/sensor ADRs and interface tests |
 | Calibration and synchronization | `R-CAL-*` | Versioned calibration profile, reports, residual/timing review |
-| Artifact and infrastructure safety | `R-INFRA-*` | Static preflight, restore drill, cost/teardown record |
+| Artifact and infrastructure safety | `R-INFRA-*` | Static preflight and copy audit as supporting fragments; post-export storage evidence, restore drill, and cost/teardown records as gate evidence |
 | Evaluation | `R-EVAL-*` | Per-sequence results, failures, coverage, same-platform profiling |
 | Deployment | `R-DEP-*` | Export parity and exact-target build/profiling evidence |
 | Vehicle safety | `R-SAFE-*` | Release-pinned interface, SITL/HIL fault evidence, safety approval |
@@ -57,6 +58,17 @@ that uses them.
 | [OpenVINS timing analysis](https://docs.openvins.com/eval-timing.html) | `R-EVAL-001`, `R-EVAL-003` | OpenVINS distinguishes same-platform comparison and timing distributions from cross-hardware claims; the evaluator requirements preserve that distinction. |
 | [NVIDIA TensorRT support matrix](https://docs.nvidia.com/deeplearning/tensorrt/latest/getting-started/support-matrix.html) and [engine compatibility](https://docs.nvidia.com/deeplearning/tensorrt/latest/inference-library/engine-compatibility.html) | `R-DEP-001` through `R-DEP-003` | NVIDIA documents platform/version/hardware compatibility limits. The deployment requirements therefore make export conditional and require exact-target provenance and regression evidence. |
 | [PX4 v1.17 VIO integration](https://docs.px4.io/v1.17/en/computer_vision/visual_inertial_odometry), [EKF2 external vision](https://docs.px4.io/v1.17/en/advanced_config/tuning_the_ecl_ekf), and [tagged VehicleOdometry source](https://github.com/PX4/PX4-Autopilot/blob/v1.17.0/msg/versioned/VehicleOdometry.msg) | `R-EST-001`, `R-EST-004`, `R-EST-005`, `R-SAFE-002`, `R-SAFE-003` | The stable-release documents expose frame, sample-time, delay, covariance/noise, reset, and estimator-loss contracts. The canonical requirements require a newly selected release to be pinned and reverified at integration time. |
+
+## Official decision-input sources
+
+These sources constrain how an unresolved ADR input is recorded. They do not
+define a canonical requirement, select a license, establish compatibility, or
+replace legal review.
+
+| Official source | Routed decision input | Limited project interpretation |
+|---|---|---|
+| [GitHub: Licensing a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository) | ADR-0001 public-repository and project-license input | GitHub explains that without a selected license default copyright supplies no general license to reproduce, distribute, or create derivative works, while GitHub's Terms still grant platform-specific rights such as viewing and forking a public repository. This supports an explicit owner decision without overstating the current restriction; it does not select a license or decide rights in third-party assets. |
+| [SPDX Specification 3.0.1: license expressions](https://spdx.github.io/spdx-spec/v3.0.1/annexes/spdx-license-expressions/) | ADR-0001 candidate-license and rights-matrix fields | SPDX defines a standard expression grammar for identifiers, references, exceptions, and compound terms. Use it when the reviewed terms can be represented accurately; recording an expression does not prove permission, compatibility, or commercial eligibility. |
 
 ## Unresolved-decision routing
 

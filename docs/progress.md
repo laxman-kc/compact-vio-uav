@@ -87,6 +87,86 @@ result, and explicit remaining blockers.
   remains blocked on the decisions and restore evidence listed in the prior
   entry.
 
+## 2026-08-26 — M2 decision-neutral governance scaffolding prepared
+
+- Working-tree state at this entry: uncommitted; an immutable evidence commit
+  and CI link remain pending.
+- Added strict draft/owner-review input schemas and blank templates for the
+  current-scope project/release proposal, rights matrix, phase-scoped artifact
+  storage plan, and bounded worker-authorization request.
+- Added the governance-record authority rule: templates and schema validity are
+  never evidence, ADR acceptance, milestone completion, paid-work approval, or
+  general destructive-action approval. The later review refinement represents
+  only the proposed exact purpose-created disposable restore-test source-copy
+  deletion scope; version 1 permits only live static checks and refuses every
+  non-static action without reviewed storage-role linkage, pre-action evidence,
+  and a single-use consumption check. Worker lifecycle and retained-copy
+  deletion remain outside it.
+- Aligned ADR-0001 with current-scope pre-acceptance evidence and per-asset
+  follow-up review. Aligned ADR-0005 with a phase-scoped capacity/spend envelope,
+  re-estimation triggers, post-export storage evidence, and periodic restore
+  follow-up.
+- Aligned the artifact policy and lifecycle around immutable run/artifact
+  manifests inside the frozen bundle and a separate post-export storage-evidence
+  sidecar. The read-only copy audit is only supporting checksum evidence.
+- Validation at that scaffolding checkpoint: 48 standard-library unit tests
+  passed; the pinned Draft 2020-12 harness validated seven schemas and five
+  matching draft records; an explicit positive/negative contract check
+  confirmed that only an `owner_approved` worker record can set
+  `authorizes_work: true`.
+- The subsequent review refinement preserves no general destructive authority
+  and keeps worker lifecycle and retained-copy deletion hard false. Its sole
+  narrowly represented exception is the exact purpose-created disposable
+  source-copy deletion described above, and execution remains blocked. Final
+  validator counts belong in the next evidence entry after integrated
+  validation completes.
+- No project purpose, user group, distribution surface, release lane, license,
+  provider, storage location, retention duration, budget, or owner was selected.
+- No external storage was accessed, no copy or restore drill was performed, no
+  paid-worker activity was authorized, and no stop, reboot, delete, termination,
+  or other destructive action was attempted by this governance work.
+- `artifact_restore_gate_passed` remains false. ADR-0001 and ADR-0005 remain
+  unresolved, and M2 remains blocked.
+
+## 2026-08-26 — M2 contract implementation locally validated
+
+- Working-tree state at this entry: uncommitted; the evidence commit and remote
+  CI run are intentionally deferred to the next append-only entry.
+- Implemented strict canonical governance-record discovery and cross-record
+  validation for project/release scope, rights, storage planning, worker scope,
+  immutable run and artifact manifests, and the post-export storage-evidence
+  sidecar. Added a read-only two-copy content-audit command whose successful
+  evidence uses opaque copy references and never claims a restore-gate pass.
+- The validator binds exact raw-byte hashes, record identifiers, canonical paths,
+  storage roles, action/access scopes, capacity and cost envelopes, artifact
+  inventory, and strict chronology. It rejects equality across copy verification,
+  disposable-source deletion, absence verification, restore, representative
+  load/open, storage review, and final assessment.
+- Local validation commands and results:
+  - `uv run --with "jsonschema[format-nongpl]==4.26.0" python
+    scripts/validate_schemas.py`: passed for seven schemas, five draft templates,
+    and zero real governance records; every authority, execution, and restore-gate
+    truth flag remained false.
+  - `uv run --with "jsonschema[format-nongpl]==4.26.0" python -m unittest
+    discover -s tests -v`: 52 tests passed.
+  - `uv run --with "ruff==0.16.4" ruff check .` and `ruff format --check .`:
+    passed for 37 Python files.
+  - `.venv/bin/python -m compact_vio.repository_policy .`: passed for 54
+    intended repository files with zero violations.
+  - `.venv/bin/python -m compileall -q src tests scripts` and
+    `git diff --check`: passed.
+- An independent read-only adversarial review reported no remaining P0, P1, or
+  P2 defect in this frozen implementation. That review does not authenticate an
+  owner, approve a record, or establish an external storage fact.
+- No real governance record was created, no storage candidate was selected, no
+  dataset or external vault was accessed, no paid worker action was run, and no
+  deletion or Brev lifecycle action was attempted. Version 1 live-scope checking
+  permits only exact `static_checks`; all non-static actions remain blocked.
+- M2 remains blocked on owner-reviewed ADR-0001/ADR-0005 inputs, verified external
+  capacity and failure-domain evidence, an authenticated single-use execution
+  ledger, the representative two-copy restore drill, and its accepted evidence.
+  `artifact_restore_gate_passed` remains false.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

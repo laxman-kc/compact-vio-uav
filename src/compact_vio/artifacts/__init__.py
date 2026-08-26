@@ -610,6 +610,18 @@ def load_manifest(
     return manifest_from_dict(parsed)
 
 
+def read_manifest_bytes(
+    bundle_root: os.PathLike[str] | str,
+    *,
+    manifest_path: str = DEFAULT_MANIFEST_PATH,
+) -> bytes:
+    """Read a manifest as bytes using the same no-follow safety checks as loading."""
+
+    root = _bundle_root(bundle_root)
+    relative, _ = _manifest_destination(root, manifest_path)
+    return _read_regular_file(root, relative)
+
+
 def verify_bundle(
     bundle_root: os.PathLike[str] | str,
     *,
@@ -710,5 +722,6 @@ __all__ = [
     "load_manifest",
     "main",
     "manifest_from_dict",
+    "read_manifest_bytes",
     "verify_bundle",
 ]

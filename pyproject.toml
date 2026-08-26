@@ -13,6 +13,7 @@ dependencies = []
 
 [project.scripts]
 compact-vio-artifacts = "compact_vio.artifacts:main"
+compact-vio-copy-audit = "compact_vio.copy_audit:main"
 compact-vio-preflight = "compact_vio.preflight:main"
 compact-vio-repo-check = "compact_vio.repository_policy:main"
 

@@ -1,0 +1,287 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/laxman-kc/compact-vio-uav/governance/schemas/rights-matrix.schema.json",
+  "title": "compact-vio-uav rights matrix decision input",
+  "description": "Current-scope rights evidence for ADR-0001. It does not determine a license, accept an ADR, or replace legal review.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "record_status",
+    "authority",
+    "accepts_adr",
+    "record_id",
+    "prepared_at",
+    "prepared_by",
+    "scope_cutoff",
+    "inventory_scope_statement",
+    "inventory_complete_for_scope",
+    "empty_inventory_rationale",
+    "assets",
+    "unresolved_items",
+    "adr_ref"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "record_type": { "const": "rights_matrix" },
+    "record_status": { "enum": ["draft", "ready_for_owner_review"] },
+    "authority": { "const": "evidence_input_only" },
+    "accepts_adr": { "const": false },
+    "record_id": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/record_id" }
+      ]
+    },
+    "prepared_at": { "type": ["string", "null"], "format": "date-time" },
+    "prepared_by": { "type": ["string", "null"], "minLength": 1 },
+    "scope_cutoff": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Only assets selected or proposed by this cutoff are claimed to be inventoried."
+    },
+    "inventory_scope_statement": { "type": ["string", "null"], "minLength": 1 },
+    "inventory_complete_for_scope": { "type": ["boolean", "null"] },
+    "empty_inventory_rationale": { "type": ["string", "null"], "minLength": 1 },
+    "assets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/asset" },
+      "uniqueItems": true,
+      "$comment": "Review tooling must also reject repeated asset_id values when the remaining fields differ."
+    },
+    "unresolved_items": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "adr_ref": { "const": "docs/adr/0001-project-and-release-scope.md" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "record_status": { "const": "ready_for_owner_review" } },
+        "required": ["record_status"]
+      },
+      "then": {
+        "properties": {
+          "record_id": { "$ref": "#/$defs/record_id" },
+          "prepared_at": { "type": "string", "format": "date-time" },
+          "prepared_by": { "type": "string", "minLength": 1 },
+          "scope_cutoff": { "type": "string", "format": "date-time" },
+          "inventory_scope_statement": { "type": "string", "minLength": 1 },
+          "inventory_complete_for_scope": { "const": true },
+          "assets": { "items": { "$ref": "#/$defs/review_ready_asset" } }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "record_status": { "const": "ready_for_owner_review" },
+          "assets": { "maxItems": 0 }
+        },
+        "required": ["record_status", "assets"]
+      },
+      "then": {
+        "properties": {
+          "empty_inventory_rationale": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "record_status": { "const": "ready_for_owner_review" },
+          "assets": { "minItems": 1 }
+        },
+        "required": ["record_status", "assets"]
+      },
+      "then": {
+        "properties": { "empty_inventory_rationale": { "type": "null" } }
+      }
+    }
+  ],
+  "$defs": {
+    "record_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "credential_free_reference": {
+      "type": "string",
+      "format": "uri-reference",
+      "minLength": 1,
+      "pattern": "^(?!.*[?#@])(?!.*%(?:23|25|3[fF]|40)).+$"
+    },
+    "non_template_reference": {
+      "allOf": [
+        { "$ref": "#/$defs/credential_free_reference" },
+        { "not": { "pattern": "(?:^|/)templates(?:/|$)" } },
+        { "not": { "pattern": "\\.(?:template|draft)\\.json(?:$|[?#])" } }
+      ]
+    },
+    "determination": {
+      "enum": ["unknown", "permitted", "prohibited", "review_required"]
+    },
+    "rights_determinations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "use",
+        "modify",
+        "redistribute_source",
+        "redistribute_binary",
+        "commercial_use",
+        "derived_artifacts"
+      ],
+      "properties": {
+        "use": { "$ref": "#/$defs/determination" },
+        "modify": { "$ref": "#/$defs/determination" },
+        "redistribute_source": { "$ref": "#/$defs/determination" },
+        "redistribute_binary": { "$ref": "#/$defs/determination" },
+        "commercial_use": { "$ref": "#/$defs/determination" },
+        "derived_artifacts": { "$ref": "#/$defs/determination" }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset_id",
+        "asset_type",
+        "name",
+        "immutable_identity",
+        "source_ref",
+        "authoritative_terms_ref",
+        "terms_observed_at",
+        "terms_sha256",
+        "license_expression",
+        "intended_lane_ids",
+        "determinations",
+        "obligations",
+        "separation_controls",
+        "review_status",
+        "reviewed_by",
+        "reviewed_at",
+        "review_evidence_ref"
+      ],
+      "properties": {
+        "asset_id": { "$ref": "#/$defs/record_id" },
+        "asset_type": {
+          "enum": [
+            "project_source",
+            "dependency",
+            "dataset",
+            "model_weights",
+            "calibration",
+            "container",
+            "report",
+            "other"
+          ]
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "immutable_identity": { "type": "string", "minLength": 1 },
+        "source_ref": { "$ref": "#/$defs/credential_free_reference" },
+        "authoritative_terms_ref": { "$ref": "#/$defs/credential_free_reference" },
+        "terms_observed_at": { "type": "string", "format": "date-time" },
+        "terms_sha256": { "$ref": "#/$defs/sha256" },
+        "license_expression": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Reviewed SPDX expression when applicable; null does not imply permission and must be explained by the review evidence."
+        },
+        "intended_lane_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/record_id" },
+          "uniqueItems": true
+        },
+        "determinations": { "$ref": "#/$defs/rights_determinations" },
+        "obligations": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "separation_controls": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "review_status": {
+          "enum": ["unreviewed", "reviewed", "legal_review_required"]
+        },
+        "reviewed_by": { "type": ["string", "null"], "minLength": 1 },
+        "reviewed_at": { "type": ["string", "null"], "format": "date-time" },
+        "review_evidence_ref": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/non_template_reference" }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "review_status": { "enum": ["reviewed", "legal_review_required"] } },
+            "required": ["review_status"]
+          },
+          "then": {
+            "properties": {
+              "reviewed_by": { "type": "string", "minLength": 1 },
+              "reviewed_at": { "type": "string", "format": "date-time" },
+              "review_evidence_ref": { "$ref": "#/$defs/non_template_reference" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "review_status": { "const": "unreviewed" } },
+            "required": ["review_status"]
+          },
+          "then": {
+            "properties": {
+              "reviewed_by": { "type": "null" },
+              "reviewed_at": { "type": "null" },
+              "review_evidence_ref": { "type": "null" }
+            }
+          }
+        }
+      ]
+    },
+    "resolved_determinations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "use",
+        "modify",
+        "redistribute_source",
+        "redistribute_binary",
+        "commercial_use",
+        "derived_artifacts"
+      ],
+      "properties": {
+        "use": { "enum": ["permitted", "prohibited", "review_required"] },
+        "modify": { "enum": ["permitted", "prohibited", "review_required"] },
+        "redistribute_source": { "enum": ["permitted", "prohibited", "review_required"] },
+        "redistribute_binary": { "enum": ["permitted", "prohibited", "review_required"] },
+        "commercial_use": { "enum": ["permitted", "prohibited", "review_required"] },
+        "derived_artifacts": { "enum": ["permitted", "prohibited", "review_required"] }
+      }
+    },
+    "review_ready_asset": {
+      "allOf": [
+        { "$ref": "#/$defs/asset" },
+        {
+          "properties": {
+            "intended_lane_ids": { "minItems": 1 },
+            "determinations": { "$ref": "#/$defs/resolved_determinations" },
+            "review_status": { "enum": ["reviewed", "legal_review_required"] }
+          }
+        }
+      ]
+    }
+  }
+}

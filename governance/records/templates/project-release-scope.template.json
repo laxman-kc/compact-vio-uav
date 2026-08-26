@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "project_release_scope",
+  "record_status": "draft",
+  "authority": "decision_input_only",
+  "accepts_adr": false,
+  "record_id": null,
+  "prepared_at": null,
+  "prepared_by": null,
+  "decision_owner": null,
+  "scope_cutoff": null,
+  "purpose_statement": null,
+  "intended_users": [],
+  "distribution_surfaces": [],
+  "release_lanes": [],
+  "project_source_license": {
+    "status": "unresolved",
+    "candidate_expression": null,
+    "terms_ref": null,
+    "rationale": null
+  },
+  "artifact_release_intent": {
+    "source_code": "unresolved",
+    "model_weights": "unresolved",
+    "calibration": "unresolved",
+    "containers": "unresolved",
+    "reports": "unresolved"
+  },
+  "dependency_license_policy": {
+    "status": "unresolved",
+    "policy_statement": null,
+    "reciprocal_license_treatment": null,
+    "attribution_notice_requirements": null,
+    "separation_controls": []
+  },
+  "rights_matrix_ref": null,
+  "legal_review": {
+    "required": "undetermined",
+    "status": "not_requested",
+    "evidence_ref": null,
+    "rationale": null
+  },
+  "open_questions": [],
+  "adr_ref": "docs/adr/0001-project-and-release-scope.md"
+}

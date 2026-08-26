@@ -1,0 +1,322 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/laxman-kc/compact-vio-uav/governance/schemas/project-release-scope.schema.json",
+  "title": "compact-vio-uav project and release scope decision input",
+  "description": "Decision-neutral input for ADR-0001. Validation does not accept the ADR or grant reuse or redistribution permission.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "record_status",
+    "authority",
+    "accepts_adr",
+    "record_id",
+    "prepared_at",
+    "prepared_by",
+    "decision_owner",
+    "scope_cutoff",
+    "purpose_statement",
+    "intended_users",
+    "distribution_surfaces",
+    "release_lanes",
+    "project_source_license",
+    "artifact_release_intent",
+    "dependency_license_policy",
+    "rights_matrix_ref",
+    "legal_review",
+    "open_questions",
+    "adr_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "record_type": {
+      "const": "project_release_scope"
+    },
+    "record_status": {
+      "enum": ["draft", "ready_for_owner_review"]
+    },
+    "authority": {
+      "const": "decision_input_only"
+    },
+    "accepts_adr": {
+      "const": false
+    },
+    "record_id": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/record_id" }
+      ]
+    },
+    "prepared_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "prepared_by": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "decision_owner": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "scope_cutoff": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Assets selected or proposed after this time require follow-up review rather than being guessed here."
+    },
+    "purpose_statement": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "intended_users": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "distribution_surfaces": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "release_lanes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/release_lane" },
+      "uniqueItems": true,
+      "$comment": "Review tooling must also reject repeated lane_id values when the remaining fields differ."
+    },
+    "project_source_license": {
+      "$ref": "#/$defs/source_license"
+    },
+    "artifact_release_intent": {
+      "$ref": "#/$defs/artifact_release_intent"
+    },
+    "dependency_license_policy": {
+      "$ref": "#/$defs/dependency_license_policy"
+    },
+    "rights_matrix_ref": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/rights_matrix_link" }
+      ]
+    },
+    "legal_review": {
+      "$ref": "#/$defs/legal_review"
+    },
+    "open_questions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "adr_ref": {
+      "const": "docs/adr/0001-project-and-release-scope.md"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "record_status": { "const": "ready_for_owner_review" } },
+        "required": ["record_status"]
+      },
+      "then": {
+        "properties": {
+          "record_id": { "$ref": "#/$defs/record_id" },
+          "prepared_at": { "type": "string", "format": "date-time" },
+          "prepared_by": { "type": "string", "minLength": 1 },
+          "decision_owner": { "type": "string", "minLength": 1 },
+          "scope_cutoff": { "type": "string", "format": "date-time" },
+          "purpose_statement": { "type": "string", "minLength": 1 },
+          "intended_users": { "minItems": 1 },
+          "distribution_surfaces": { "minItems": 1 },
+          "release_lanes": { "minItems": 1 },
+          "project_source_license": {
+            "properties": {
+              "status": { "const": "proposed" },
+              "candidate_expression": { "type": "string", "minLength": 1 },
+              "terms_ref": { "$ref": "#/$defs/non_template_reference" },
+              "rationale": { "type": "string", "minLength": 1 }
+            }
+          },
+          "artifact_release_intent": {
+            "properties": {
+              "source_code": { "$ref": "#/$defs/resolved_release_intent" },
+              "model_weights": { "$ref": "#/$defs/resolved_release_intent" },
+              "calibration": { "$ref": "#/$defs/resolved_release_intent" },
+              "containers": { "$ref": "#/$defs/resolved_release_intent" },
+              "reports": { "$ref": "#/$defs/resolved_release_intent" }
+            }
+          },
+          "dependency_license_policy": {
+            "properties": {
+              "status": { "const": "proposed" },
+              "policy_statement": { "type": "string", "minLength": 1 },
+              "reciprocal_license_treatment": { "type": "string", "minLength": 1 },
+              "attribution_notice_requirements": { "type": "string", "minLength": 1 },
+              "separation_controls": { "minItems": 1 }
+            }
+          },
+          "rights_matrix_ref": { "$ref": "#/$defs/rights_matrix_link" },
+          "legal_review": {
+            "allOf": [
+              { "$ref": "#/$defs/legal_review" },
+              { "properties": { "required": { "enum": ["yes", "no"] } } }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "record_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "credential_free_reference": {
+      "type": "string",
+      "format": "uri-reference",
+      "minLength": 1,
+      "pattern": "^(?!.*[?#@])(?!.*%(?:23|25|3[fF]|40)).+$"
+    },
+    "non_template_reference": {
+      "allOf": [
+        { "$ref": "#/$defs/credential_free_reference" },
+        { "not": { "pattern": "(?:^|/)templates(?:/|$)" } },
+        { "not": { "pattern": "\\.(?:template|draft)\\.json(?:$|[?#])" } }
+      ]
+    },
+    "rights_matrix_link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_ref", "record_sha256", "record_id"],
+      "properties": {
+        "record_ref": { "$ref": "#/$defs/non_template_reference" },
+        "record_sha256": { "$ref": "#/$defs/sha256" },
+        "record_id": { "$ref": "#/$defs/record_id" }
+      }
+    },
+    "release_lane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lane_id",
+        "description",
+        "permitted_use_statement",
+        "distribution_surfaces",
+        "asset_separation_required"
+      ],
+      "properties": {
+        "lane_id": { "$ref": "#/$defs/record_id" },
+        "description": { "type": "string", "minLength": 1 },
+        "permitted_use_statement": { "type": "string", "minLength": 1 },
+        "distribution_surfaces": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "asset_separation_required": { "type": "boolean" }
+      }
+    },
+    "source_license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "candidate_expression", "terms_ref", "rationale"],
+      "properties": {
+        "status": { "enum": ["unresolved", "proposed"] },
+        "candidate_expression": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Use a reviewed SPDX license expression when it accurately represents the candidate terms; otherwise use a reviewed custom terms reference. No value is selected by this schema."
+        },
+        "terms_ref": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/non_template_reference" }
+          ]
+        },
+        "rationale": { "type": ["string", "null"], "minLength": 1 }
+      }
+    },
+    "release_intent": {
+      "enum": ["unresolved", "release", "do_not_release"]
+    },
+    "resolved_release_intent": {
+      "enum": ["release", "do_not_release"]
+    },
+    "artifact_release_intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_code", "model_weights", "calibration", "containers", "reports"],
+      "properties": {
+        "source_code": { "$ref": "#/$defs/release_intent" },
+        "model_weights": { "$ref": "#/$defs/release_intent" },
+        "calibration": { "$ref": "#/$defs/release_intent" },
+        "containers": { "$ref": "#/$defs/release_intent" },
+        "reports": { "$ref": "#/$defs/release_intent" }
+      }
+    },
+    "dependency_license_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "policy_statement",
+        "reciprocal_license_treatment",
+        "attribution_notice_requirements",
+        "separation_controls"
+      ],
+      "properties": {
+        "status": { "enum": ["unresolved", "proposed"] },
+        "policy_statement": { "type": ["string", "null"], "minLength": 1 },
+        "reciprocal_license_treatment": { "type": ["string", "null"], "minLength": 1 },
+        "attribution_notice_requirements": { "type": ["string", "null"], "minLength": 1 },
+        "separation_controls": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "legal_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "status", "evidence_ref", "rationale"],
+      "properties": {
+        "required": { "enum": ["undetermined", "yes", "no"] },
+        "status": { "enum": ["not_requested", "pending", "completed", "not_required"] },
+        "evidence_ref": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/non_template_reference" }
+          ]
+        },
+        "rationale": { "type": ["string", "null"], "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "required": { "const": "yes" } }, "required": ["required"] },
+          "then": {
+            "properties": {
+              "status": { "const": "completed" },
+              "evidence_ref": { "$ref": "#/$defs/non_template_reference" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "required": { "const": "no" } }, "required": ["required"] },
+          "then": {
+            "properties": {
+              "status": { "const": "not_required" },
+              "rationale": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -60,6 +60,367 @@ class FoundationFileTests(unittest.TestCase):
         definitions = re.findall(r"^\| R-[A-Z]+-\d{3} \|", document, re.MULTILINE)
         self.assertEqual(definitions, [])
 
+    def test_m2_governance_templates_are_strict_non_authoritative_drafts(self) -> None:
+        pairs = {
+            "project-release-scope": (
+                "project_release_scope",
+                "decision_input_only",
+                ["draft", "ready_for_owner_review"],
+            ),
+            "rights-matrix": (
+                "rights_matrix",
+                "evidence_input_only",
+                ["draft", "ready_for_owner_review"],
+            ),
+            "artifact-storage-plan": (
+                "artifact_storage_plan",
+                "decision_input_only",
+                ["draft", "ready_for_owner_review"],
+            ),
+            "worker-authorization": (
+                "worker_authorization",
+                "bounded_action_authorization",
+                ["draft", "ready_for_owner_review", "owner_approved"],
+            ),
+        }
+        for stem, (record_type, authority, allowed_statuses) in pairs.items():
+            with self.subTest(record=stem):
+                schema = json.loads(
+                    (ROOT / f"governance/schemas/{stem}.schema.json").read_text(encoding="utf-8")
+                )
+                template = json.loads(
+                    (ROOT / f"governance/records/templates/{stem}.template.json").read_text(
+                        encoding="utf-8"
+                    )
+                )
+                self.assertIs(schema.get("additionalProperties"), False)
+                self.assertEqual(
+                    schema["properties"]["record_status"]["enum"],
+                    allowed_statuses,
+                )
+                self.assertEqual(template["record_status"], "draft")
+                self.assertEqual(schema["properties"]["record_type"]["const"], record_type)
+                self.assertEqual(template["record_type"], record_type)
+                self.assertEqual(template["authority"], authority)
+                self.assertIs(template["accepts_adr"], False)
+                self.assertNotIn("default", json.dumps(schema))
+
+        project = json.loads(
+            (ROOT / "governance/records/templates/project-release-scope.template.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIsNone(project["purpose_statement"])
+        self.assertEqual(project["release_lanes"], [])
+        self.assertEqual(project["project_source_license"]["status"], "unresolved")
+        self.assertTrue(
+            all(value == "unresolved" for value in project["artifact_release_intent"].values())
+        )
+
+        rights = json.loads(
+            (ROOT / "governance/records/templates/rights-matrix.template.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(rights["assets"], [])
+        self.assertIsNone(rights["inventory_complete_for_scope"])
+
+        storage = json.loads(
+            (ROOT / "governance/records/templates/artifact-storage-plan.template.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        for field in ("primary_vault", "independent_backup", "capacity_envelope", "cost_envelope"):
+            self.assertIsNone(storage[field])
+
+        worker = json.loads(
+            (ROOT / "governance/records/templates/worker-authorization.template.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIsNone(worker["authorization_kind"])
+        self.assertIs(worker["authorizes_work"], False)
+        self.assertIs(worker["general_destructive_action_authorized"], False)
+        self.assertEqual(worker["requested_action_ids"], [])
+        self.assertEqual(worker["action_scopes"], [])
+        self.assertIsNone(worker["disposable_restore_test_source_copy"])
+        self.assertEqual(worker["max_executions"], 1)
+        self.assertFalse(any(worker["permissions"].values()))
+        for approval_field in (
+            "approved_by",
+            "approved_at",
+            "approval_statement",
+            "approval_evidence_ref",
+        ):
+            self.assertIsNone(worker[approval_field])
+
+        worker_schema = json.loads(
+            (ROOT / "governance/schemas/worker-authorization.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIs(
+            worker_schema["properties"]["general_destructive_action_authorized"]["const"],
+            False,
+        )
+        self.assertEqual(worker_schema["properties"]["max_executions"]["const"], 1)
+        self.assertIn("action_scopes", worker_schema["required"])
+        action_scope = worker_schema["$defs"]["action_scope"]
+        self.assertEqual(set(action_scope["required"]), {"action_id", "location_accesses"})
+        self.assertEqual(
+            action_scope["properties"]["action_id"]["$ref"],
+            "#/$defs/action_id",
+        )
+        location_access = worker_schema["$defs"]["location_access"]
+        self.assertEqual(
+            set(location_access["properties"]["access"]["enum"]),
+            {"read", "write", "delete"},
+        )
+        owner_approval_rules = [
+            rule
+            for rule in worker_schema["allOf"]
+            if rule.get("if", {}).get("properties", {}).get("record_status", {}).get("const")
+            == "owner_approved"
+        ]
+        self.assertEqual(len(owner_approval_rules), 1)
+        self.assertIs(
+            owner_approval_rules[0]["then"]["properties"]["authorizes_work"]["const"],
+            True,
+        )
+
+        action_ids = set(worker_schema["$defs"]["action_id"]["enum"])
+        m2_action_ids = set(worker_schema["$defs"]["m2_action_id"]["enum"])
+        hard_prohibited = set(worker["hard_prohibited_action_ids"])
+        self.assertTrue(hard_prohibited.isdisjoint(action_ids))
+        self.assertTrue(
+            {"dataset_download", "training", "important_experiment"}.isdisjoint(m2_action_ids)
+        )
+        self.assertEqual(
+            {
+                "create_disposable_restore_test_source_copy",
+                "write_primary_restore_test_copy",
+                "write_independent_backup_restore_test_copy",
+                "two_copy_content_audit",
+                "disposable_source_copy_delete",
+                "representative_restore",
+                "representative_load_open",
+            }
+            - m2_action_ids,
+            set(),
+        )
+
+        permission_properties = worker_schema["$defs"]["permissions"]["properties"]
+        for prohibited_id in hard_prohibited:
+            self.assertIs(permission_properties[prohibited_id]["const"], False)
+
+        deletion_rules = [
+            rule
+            for rule in worker_schema["allOf"]
+            if rule.get("if", {})
+            .get("properties", {})
+            .get("requested_action_ids", {})
+            .get("contains", {})
+            .get("const")
+            == "disposable_source_copy_delete"
+        ]
+        self.assertEqual(len(deletion_rules), 1)
+        deletion_then = deletion_rules[0]["then"]["properties"]
+        prerequisites = {
+            condition["contains"]["const"]
+            for condition in deletion_then["requested_action_ids"]["allOf"]
+        }
+        self.assertEqual(
+            prerequisites,
+            {
+                "create_disposable_restore_test_source_copy",
+                "write_primary_restore_test_copy",
+                "write_independent_backup_restore_test_copy",
+                "two_copy_content_audit",
+                "representative_restore",
+                "representative_load_open",
+            },
+        )
+        self.assertIs(
+            deletion_then["permissions"]["properties"]["disposable_source_copy_delete"]["const"],
+            True,
+        )
+        disposable_copy_schema = worker_schema["$defs"]["disposable_restore_test_source_copy"]
+        self.assertIs(
+            disposable_copy_schema["properties"]["purpose_created_for_restore_test"]["const"],
+            True,
+        )
+        self.assertEqual(
+            disposable_copy_schema["properties"]["retention_class"]["const"],
+            "disposable",
+        )
+
+    def test_governance_references_are_credential_free_and_record_ids_are_unique(self) -> None:
+        schema_names = (
+            "project-release-scope",
+            "rights-matrix",
+            "artifact-storage-plan",
+            "worker-authorization",
+        )
+        for name in schema_names:
+            schema = json.loads(
+                (ROOT / f"governance/schemas/{name}.schema.json").read_text(encoding="utf-8")
+            )
+            pattern = schema["$defs"]["credential_free_reference"]["pattern"]
+            with self.subTest(schema=name):
+                self.assertIsNotNone(re.fullmatch(pattern, "https://example.invalid/evidence"))
+                self.assertIsNone(re.fullmatch(pattern, "https://user@example.invalid/evidence"))
+                self.assertIsNone(re.fullmatch(pattern, "//user:secret@example.invalid/evidence"))
+                self.assertIsNone(re.fullmatch(pattern, "user:secret@example.invalid:path"))
+                self.assertIsNone(re.fullmatch(pattern, "user%3Asecret%40example.invalid"))
+                self.assertIsNone(re.fullmatch(pattern, "user%253Asecret%2540example.invalid"))
+                self.assertIsNone(
+                    re.fullmatch(pattern, "https://example.invalid/path%253Ftoken=secret")
+                )
+                self.assertIsNone(re.fullmatch(pattern, "https://example.invalid/evidence?token=x"))
+                self.assertIsNone(re.fullmatch(pattern, "https://example.invalid/evidence#secret"))
+
+            non_template = schema["$defs"]["non_template_reference"]
+            exclusion_patterns = [
+                rule["not"]["pattern"] for rule in non_template["allOf"] if "not" in rule
+            ]
+            self.assertTrue(exclusion_patterns)
+            for forbidden in (
+                "governance/records/templates/approval.json",
+                "governance/records/worker_authorization/request.draft.json",
+                "governance/records/worker_authorization/request.template.json",
+            ):
+                self.assertTrue(
+                    any(re.search(rule, forbidden) for rule in exclusion_patterns),
+                    f"non-template reference accepted {forbidden!r} in {name}",
+                )
+
+        records_root = ROOT / "governance/records"
+        for path in sorted(records_root.rglob("*.json")):
+            if "templates" in path.parts:
+                continue
+            record = json.loads(path.read_text(encoding="utf-8"))
+            for array_name, id_name in (("release_lanes", "lane_id"), ("assets", "asset_id")):
+                if array_name not in record:
+                    continue
+                identifiers = [item[id_name] for item in record[array_name]]
+                self.assertEqual(
+                    len(identifiers),
+                    len(set(identifiers)),
+                    f"duplicate {id_name} in {path.relative_to(ROOT)}",
+                )
+
+    def test_governance_real_record_discovery_contract_is_unambiguous(self) -> None:
+        record_types = {
+            "project_release_scope": "project-release-scope",
+            "rights_matrix": "rights-matrix",
+            "artifact_storage_plan": "artifact-storage-plan",
+            "worker_authorization": "worker-authorization",
+        }
+        readme = (ROOT / "governance/records/README.md").read_text(encoding="utf-8")
+        self.assertIn("governance/records/<record_type>/<record_identifier>.json", readme)
+
+        for record_type, schema_stem in record_types.items():
+            schema = json.loads(
+                (ROOT / f"governance/schemas/{schema_stem}.schema.json").read_text(encoding="utf-8")
+            )
+            template = json.loads(
+                (ROOT / f"governance/records/templates/{schema_stem}.template.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(schema["properties"]["record_type"]["const"], record_type)
+            self.assertEqual(template["record_type"], record_type)
+
+            record_directory = ROOT / "governance/records" / record_type
+            for path in sorted(record_directory.glob("*.json")):
+                record = json.loads(path.read_text(encoding="utf-8"))
+                self.assertEqual(record["record_type"], record_type)
+                self.assertEqual(record["record_id"], path.stem)
+                self.assertFalse(path.name.endswith((".template.json", ".draft.json")))
+
+        evidence_schema = json.loads(
+            (ROOT / "experiments/schemas/artifact-storage-evidence.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        evidence_template = json.loads(
+            (ROOT / "governance/records/templates/artifact-storage-evidence.draft.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            evidence_schema["properties"]["record_type"]["const"],
+            "artifact_storage_evidence",
+        )
+        self.assertEqual(evidence_template["record_type"], "artifact_storage_evidence")
+        evidence_directory = ROOT / "governance/records/artifact_storage_evidence"
+        for path in sorted(evidence_directory.glob("*.json")):
+            record = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(record["record_type"], "artifact_storage_evidence")
+            self.assertEqual(record["evidence_id"], path.stem)
+            self.assertFalse(path.name.endswith((".template.json", ".draft.json")))
+
+    def test_storage_plan_declares_cross_field_semantic_contract(self) -> None:
+        schema = json.loads(
+            (ROOT / "governance/schemas/artifact-storage-plan.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        semantic_contract = schema["$comment"]
+        for clause in (
+            "distinct primary/backup candidate_id and location_ref",
+            "total_required_bytes = worst_case_retained_bytes + reserve_bytes",
+            "available_bytes >= total_required_bytes",
+            "expected_teardown_transfer_seconds >= total_required_bytes",
+            "expected_teardown_transfer_seconds <= cost_envelope.review_at",
+        ):
+            self.assertIn(clause, semantic_contract)
+
+        for field_schema in schema["$defs"]["evidence_refs"]["properties"].values():
+            self.assertEqual(field_schema["anyOf"][0], {"type": "null"})
+            self.assertEqual(
+                field_schema["anyOf"][1],
+                {"$ref": "#/$defs/credential_free_reference"},
+            )
+
+    def test_unresolved_release_adr_has_no_license_or_template_exit_evidence(self) -> None:
+        adr_0001 = (ROOT / "docs/adr/0001-project-and-release-scope.md").read_text(encoding="utf-8")
+        if "- Status: Unresolved" in adr_0001:
+            self.assertEqual(sorted(path.name for path in ROOT.glob("LICENSE*")), [])
+
+        authoritative_gate_text = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in (
+                ROOT / "docs/plan.md",
+                ROOT / "docs/adr/0001-project-and-release-scope.md",
+                ROOT / "docs/adr/0005-artifact-storage.md",
+            )
+        )
+        self.assertNotIn(".template.json", authoritative_gate_text)
+
+    def test_m2_cannot_be_complete_while_required_adrs_are_unresolved(self) -> None:
+        adr_statuses = []
+        for name in (
+            "0001-project-and-release-scope.md",
+            "0005-artifact-storage.md",
+        ):
+            text = (ROOT / "docs/adr" / name).read_text(encoding="utf-8")
+            match = re.search(r"^- Status: ([A-Za-z]+)$", text, re.MULTILINE)
+            self.assertIsNotNone(match)
+            assert match is not None
+            adr_statuses.append(match.group(1))
+
+        if any(status != "Accepted" for status in adr_statuses):
+            plan = (ROOT / "docs/plan.md").read_text(encoding="utf-8")
+            m2 = re.search(
+                r"^## M2 —[^\n]+\n\nStatus: ([^\n]+)",
+                plan,
+                flags=re.MULTILINE,
+            )
+            self.assertIsNotNone(m2)
+            assert m2 is not None
+            self.assertEqual(m2.group(1), "Blocked.")
+
     def test_adr_index_matches_files_and_statuses(self) -> None:
         index_text = (ROOT / "docs/adr/README.md").read_text(encoding="utf-8")
         index_rows = re.findall(

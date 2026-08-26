@@ -1,0 +1,527 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/laxman-kc/compact-vio-uav/governance/schemas/worker-authorization.schema.json",
+  "title": "compact-vio-uav bounded worker authorization record",
+  "description": "Unauthenticated structural record for bounded paid-worker action scope. Only an externally authenticated, unused owner_approved record evaluated with the required evidence can contribute to authority for its exact action-to-location-access scopes, worker, revision, duration, and spend. It cannot accept an ADR or select a project policy; version 1 standalone active-use validation permits only static_checks.",
+  "$comment": "Semantic validation is mandatory. For owner_approved records enforce prepared_at <= approved_at < review_at <= expires_at and approved_at plus expected_duration_minutes <= review_at. Historical records remain evidence after review or expiry but are not active authority. Active-use structural validation must additionally enforce approved_at <= at_time < review_at, at_time plus expected_duration_minutes <= review_at, exact worker/revision/action-to-location-access scope, and the disposable-source-copy location rule. Authentication, consumption, required pre-action evidence, execution, and storage-plan role linkage are external checks; until the latter interfaces exist, version 1 refuses every non-static live action.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "record_status",
+    "authority",
+    "accepts_adr",
+    "authorizes_work",
+    "general_destructive_action_authorized",
+    "record_id",
+    "prepared_at",
+    "prepared_by",
+    "authorization_kind",
+    "purpose_statement",
+    "run_owner",
+    "git_commit",
+    "worker_ref",
+    "requested_action_ids",
+    "action_scopes",
+    "intended_data",
+    "named_test_locations",
+    "disposable_restore_test_source_copy",
+    "max_executions",
+    "expected_duration_minutes",
+    "spending_ceiling",
+    "review_at",
+    "expires_at",
+    "teardown_authority",
+    "recovery_owner",
+    "restore_gate_evidence_ref",
+    "permissions",
+    "hard_prohibited_action_ids",
+    "owner_approval_required",
+    "approved_by",
+    "approved_at",
+    "approval_statement",
+    "approval_evidence_ref",
+    "adr_ref"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "record_type": { "const": "worker_authorization" },
+    "record_status": { "enum": ["draft", "ready_for_owner_review", "owner_approved"] },
+    "authority": { "const": "bounded_action_authorization" },
+    "accepts_adr": { "const": false },
+    "authorizes_work": { "type": "boolean" },
+    "general_destructive_action_authorized": {
+      "const": false,
+      "description": "No general destructive authority is granted. This schema can represent only the proposed narrow deletion scope for the exact disposable restore-test source copy; version 1 refuses every non-static standalone action until storage roles, pre-action evidence, and a single-use consumption check are enforced."
+    },
+    "record_id": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/record_id" }
+      ]
+    },
+    "prepared_at": { "type": ["string", "null"], "format": "date-time" },
+    "prepared_by": { "type": ["string", "null"], "minLength": 1 },
+    "authorization_kind": {
+      "anyOf": [
+        { "type": "null" },
+        { "enum": ["m2_evidence_gathering", "post_m2_paid_work"] }
+      ]
+    },
+    "purpose_statement": { "type": ["string", "null"], "minLength": 1 },
+    "run_owner": { "type": ["string", "null"], "minLength": 1 },
+    "git_commit": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[a-f0-9]{40}$" }
+      ]
+    },
+    "worker_ref": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/credential_free_reference" }
+      ]
+    },
+    "requested_action_ids": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/action_id" },
+      "uniqueItems": true,
+      "description": "Closed action vocabulary; free text cannot expand this authorization."
+    },
+    "action_scopes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/action_scope" },
+      "uniqueItems": true,
+      "description": "One exact location-and-access set per requested action. Semantic validation rejects repeated action IDs and requires exact action-ID equality with requested_action_ids."
+    },
+    "intended_data": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "named_test_locations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/credential_free_reference" },
+      "uniqueItems": true
+    },
+    "disposable_restore_test_source_copy": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/disposable_restore_test_source_copy" }
+      ]
+    },
+    "max_executions": {
+      "const": 1,
+      "description": "This authorization is intentionally single-execution. Reuse is prohibited; the schema cannot itself prove consumption state."
+    },
+    "expected_duration_minutes": { "type": ["integer", "null"], "minimum": 1 },
+    "spending_ceiling": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/spending_ceiling" }
+      ]
+    },
+    "review_at": { "type": ["string", "null"], "format": "date-time" },
+    "expires_at": { "type": ["string", "null"], "format": "date-time" },
+    "teardown_authority": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "Owner for a separately reviewed lifecycle action; this record does not authorize that action."
+    },
+    "recovery_owner": { "type": ["string", "null"], "minLength": 1 },
+    "restore_gate_evidence_ref": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/non_template_reference" }
+      ]
+    },
+    "permissions": { "$ref": "#/$defs/permissions" },
+    "hard_prohibited_action_ids": {
+      "const": [
+        "worker_lifecycle_change",
+        "primary_vault_copy_delete",
+        "independent_backup_copy_delete",
+        "other_retained_copy_delete"
+      ]
+    },
+    "owner_approval_required": { "const": true },
+    "approved_by": { "type": ["string", "null"], "minLength": 1 },
+    "approved_at": { "type": ["string", "null"], "format": "date-time" },
+    "approval_statement": { "type": ["string", "null"], "minLength": 1 },
+    "approval_evidence_ref": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/non_template_reference" }
+      ]
+    },
+    "adr_ref": { "const": "docs/adr/0005-artifact-storage.md" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "record_status": { "enum": ["ready_for_owner_review", "owner_approved"] }
+        },
+        "required": ["record_status"]
+      },
+      "then": {
+        "properties": {
+          "record_id": { "$ref": "#/$defs/record_id" },
+          "prepared_at": { "type": "string", "format": "date-time" },
+          "prepared_by": { "type": "string", "minLength": 1 },
+          "authorization_kind": { "enum": ["m2_evidence_gathering", "post_m2_paid_work"] },
+          "purpose_statement": { "type": "string", "minLength": 1 },
+          "run_owner": { "type": "string", "minLength": 1 },
+          "git_commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+          "worker_ref": { "$ref": "#/$defs/credential_free_reference" },
+          "requested_action_ids": { "minItems": 1 },
+          "action_scopes": { "minItems": 1 },
+          "expected_duration_minutes": { "type": "integer", "minimum": 1 },
+          "spending_ceiling": { "$ref": "#/$defs/spending_ceiling" },
+          "review_at": { "type": "string", "format": "date-time" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "teardown_authority": { "type": "string", "minLength": 1 },
+          "recovery_owner": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "record_status": { "enum": ["draft", "ready_for_owner_review"] }
+        },
+        "required": ["record_status"]
+      },
+      "then": {
+        "properties": {
+          "authorizes_work": { "const": false },
+          "approved_by": { "type": "null" },
+          "approved_at": { "type": "null" },
+          "approval_statement": { "type": "null" },
+          "approval_evidence_ref": { "type": "null" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "record_status": { "const": "owner_approved" } },
+        "required": ["record_status"]
+      },
+      "then": {
+        "properties": {
+          "authorizes_work": { "const": true },
+          "approved_by": { "type": "string", "minLength": 1 },
+          "approved_at": { "type": "string", "format": "date-time" },
+          "approval_statement": { "type": "string", "minLength": 1 },
+          "approval_evidence_ref": { "$ref": "#/$defs/non_template_reference" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "authorization_kind": { "const": "m2_evidence_gathering" } },
+        "required": ["authorization_kind"]
+      },
+      "then": {
+        "properties": {
+          "requested_action_ids": {
+            "items": { "$ref": "#/$defs/m2_action_id" }
+          },
+          "action_scopes": {
+            "items": {
+              "allOf": [
+                { "$ref": "#/$defs/action_scope" },
+                { "properties": { "action_id": { "$ref": "#/$defs/m2_action_id" } } }
+              ]
+            }
+          },
+          "intended_data": { "maxItems": 0 },
+          "restore_gate_evidence_ref": { "type": "null" },
+          "permissions": {
+            "properties": {
+              "dataset_download": { "const": false },
+              "training": { "const": false },
+              "important_experiment": { "const": false }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "authorization_kind": { "const": "post_m2_paid_work" } },
+        "required": ["authorization_kind"]
+      },
+      "then": {
+        "properties": {
+          "record_status": { "enum": ["draft", "ready_for_owner_review"] },
+          "authorizes_work": { "const": false },
+          "restore_gate_evidence_ref": { "$ref": "#/$defs/non_template_reference" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_action_ids": { "contains": { "const": "disposable_source_copy_delete" } }
+        },
+        "required": ["requested_action_ids"]
+      },
+      "then": {
+        "properties": {
+          "requested_action_ids": {
+            "allOf": [
+              { "contains": { "const": "create_disposable_restore_test_source_copy" } },
+              { "contains": { "const": "write_primary_restore_test_copy" } },
+              { "contains": { "const": "write_independent_backup_restore_test_copy" } },
+              { "contains": { "const": "two_copy_content_audit" } },
+              { "contains": { "const": "representative_restore" } },
+              { "contains": { "const": "representative_load_open" } }
+            ]
+          },
+          "named_test_locations": { "minItems": 1 },
+          "disposable_restore_test_source_copy": {
+            "allOf": [
+              { "$ref": "#/$defs/disposable_restore_test_source_copy" },
+              { "properties": { "deletion_permitted": { "const": true } } }
+            ]
+          },
+          "permissions": {
+            "properties": { "disposable_source_copy_delete": { "const": true } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "permissions": {
+            "properties": { "disposable_source_copy_delete": { "const": true } },
+            "required": ["disposable_source_copy_delete"]
+          }
+        },
+        "required": ["permissions"]
+      },
+      "then": {
+        "properties": {
+          "requested_action_ids": {
+            "contains": { "const": "disposable_source_copy_delete" }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_action_ids": { "contains": { "const": "dataset_download" } }
+        },
+        "required": ["requested_action_ids"]
+      },
+      "then": {
+        "properties": {
+          "permissions": { "properties": { "dataset_download": { "const": true } } }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "permissions": {
+            "properties": { "dataset_download": { "const": true } },
+            "required": ["dataset_download"]
+          }
+        },
+        "required": ["permissions"]
+      },
+      "then": {
+        "properties": {
+          "requested_action_ids": { "contains": { "const": "dataset_download" } }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_action_ids": { "contains": { "const": "training" } }
+        },
+        "required": ["requested_action_ids"]
+      },
+      "then": {
+        "properties": {
+          "permissions": { "properties": { "training": { "const": true } } }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "permissions": {
+            "properties": { "training": { "const": true } },
+            "required": ["training"]
+          }
+        },
+        "required": ["permissions"]
+      },
+      "then": {
+        "properties": {
+          "requested_action_ids": { "contains": { "const": "training" } }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_action_ids": { "contains": { "const": "important_experiment" } }
+        },
+        "required": ["requested_action_ids"]
+      },
+      "then": {
+        "properties": {
+          "permissions": { "properties": { "important_experiment": { "const": true } } }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "permissions": {
+            "properties": { "important_experiment": { "const": true } },
+            "required": ["important_experiment"]
+          }
+        },
+        "required": ["permissions"]
+      },
+      "then": {
+        "properties": {
+          "requested_action_ids": { "contains": { "const": "important_experiment" } }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "record_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "credential_free_reference": {
+      "type": "string",
+      "format": "uri-reference",
+      "minLength": 1,
+      "pattern": "^(?!.*[?#@])(?!.*%(?:23|25|3[fF]|40)).+$"
+    },
+    "non_template_reference": {
+      "allOf": [
+        { "$ref": "#/$defs/credential_free_reference" },
+        { "not": { "pattern": "(?:^|/)templates(?:/|$)" } },
+        { "not": { "pattern": "\\.(?:template|draft)\\.json$" } }
+      ]
+    },
+    "action_id": {
+      "enum": [
+        "static_checks",
+        "create_disposable_restore_test_source_copy",
+        "write_primary_restore_test_copy",
+        "write_independent_backup_restore_test_copy",
+        "two_copy_content_audit",
+        "disposable_source_copy_delete",
+        "representative_restore",
+        "representative_load_open",
+        "dataset_download",
+        "training",
+        "important_experiment"
+      ]
+    },
+    "m2_action_id": {
+      "enum": [
+        "static_checks",
+        "create_disposable_restore_test_source_copy",
+        "write_primary_restore_test_copy",
+        "write_independent_backup_restore_test_copy",
+        "two_copy_content_audit",
+        "disposable_source_copy_delete",
+        "representative_restore",
+        "representative_load_open"
+      ]
+    },
+    "action_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_id", "location_accesses"],
+      "properties": {
+        "action_id": { "$ref": "#/$defs/action_id" },
+        "location_accesses": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/location_access" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "location_access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["location_ref", "access"],
+      "properties": {
+        "location_ref": { "$ref": "#/$defs/credential_free_reference" },
+        "access": { "enum": ["read", "write", "delete"] }
+      }
+    },
+    "disposable_restore_test_source_copy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "copy_id",
+        "location_ref",
+        "artifact_manifest_sha256",
+        "retention_class",
+        "purpose_created_for_restore_test",
+        "deletion_permitted"
+      ],
+      "properties": {
+        "copy_id": { "$ref": "#/$defs/record_id" },
+        "location_ref": { "$ref": "#/$defs/credential_free_reference" },
+        "artifact_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "retention_class": { "const": "disposable" },
+        "purpose_created_for_restore_test": { "const": true },
+        "deletion_permitted": { "type": "boolean" }
+      }
+    },
+    "spending_ceiling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount", "currency"],
+      "properties": {
+        "amount": { "type": "number", "exclusiveMinimum": 0 },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataset_download",
+        "training",
+        "important_experiment",
+        "disposable_source_copy_delete",
+        "worker_lifecycle_change",
+        "primary_vault_copy_delete",
+        "independent_backup_copy_delete",
+        "other_retained_copy_delete"
+      ],
+      "properties": {
+        "dataset_download": { "type": "boolean" },
+        "training": { "type": "boolean" },
+        "important_experiment": { "type": "boolean" },
+        "disposable_source_copy_delete": { "type": "boolean" },
+        "worker_lifecycle_change": { "const": false },
+        "primary_vault_copy_delete": { "const": false },
+        "independent_backup_copy_delete": { "const": false },
+        "other_retained_copy_delete": { "const": false }
+      }
+    }
+  }
+}

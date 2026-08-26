@@ -39,9 +39,13 @@
         "sha256"
       ],
       "properties": {
-        "path": {
-          "$ref": "#/$defs/canonical_relative_path"
-        },
+      "path": {
+        "allOf": [
+          { "$ref": "#/$defs/canonical_relative_path" },
+          { "not": { "const": "artifact-manifest.json" } }
+        ],
+        "description": "Payload path. artifact-manifest.json is self-excluded and must never appear in its own file inventory."
+      },
         "bytes": {
           "type": "integer",
           "minimum": 0

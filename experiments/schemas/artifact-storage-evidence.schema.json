@@ -1,0 +1,704 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/laxman-kc/compact-vio-uav/experiments/schemas/artifact-storage-evidence.schema.json",
+  "title": "compact-vio-uav artifact storage evidence",
+  "description": "External sidecar for post-export copy, deletion, restore, and load/open evidence. It identifies an immutable run bundle by the raw SHA-256 values of run-manifest.json and artifact-manifest.json. Schema validity or verified status does not accept ADR-0005 or pass the project artifact restore gate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "evidence_id",
+    "status",
+    "created_at",
+    "execution_context",
+    "bundle_identity",
+    "copies",
+    "source_test_copy_deletion",
+    "restore",
+    "load_open",
+    "storage_review",
+    "worker_authorization",
+    "assessment",
+    "supporting_evidence",
+    "blockers",
+    "limitations",
+    "artifact_restore_gate_passed"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "record_type": {
+      "const": "artifact_storage_evidence"
+    },
+    "evidence_id": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "status": {
+      "enum": ["draft", "verified", "failed"]
+    },
+    "created_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "execution_context": {
+      "anyOf": [
+        { "$ref": "#/$defs/execution_context" },
+        { "type": "null" }
+      ]
+    },
+    "bundle_identity": {
+      "$ref": "#/$defs/bundle_identity"
+    },
+    "copies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/copy_evidence"
+      }
+    },
+    "source_test_copy_deletion": {
+      "anyOf": [
+        { "$ref": "#/$defs/source_test_copy_deletion" },
+        { "type": "null" }
+      ]
+    },
+    "restore": {
+      "anyOf": [
+        { "$ref": "#/$defs/restore_evidence" },
+        { "type": "null" }
+      ]
+    },
+    "load_open": {
+      "anyOf": [
+        { "$ref": "#/$defs/load_open_evidence" },
+        { "type": "null" }
+      ]
+    },
+    "storage_review": {
+      "anyOf": [
+        { "$ref": "#/$defs/storage_review" },
+        { "type": "null" }
+      ]
+    },
+    "worker_authorization": {
+      "anyOf": [
+        { "$ref": "#/$defs/worker_authorization_link" },
+        { "type": "null" }
+      ],
+      "description": "Required by project policy when paid-worker activity contributed to this drill; null is permitted only when no such authorization was applicable."
+    },
+    "assessment": {
+      "anyOf": [
+        { "$ref": "#/$defs/assessment" },
+        { "type": "null" }
+      ]
+    },
+    "supporting_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/supporting_evidence"
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "artifact_restore_gate_passed": {
+      "const": false,
+      "description": "Only explicit project-owner acceptance of the applicable evidence and ADR can pass the gate; this sidecar and its validator never do so."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": { "const": "draft" }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "assessment": { "type": "null" },
+          "blockers": { "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": { "const": "failed" }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "evidence_id": { "$ref": "#/$defs/identifier" },
+          "created_at": { "$ref": "#/$defs/date_time" },
+          "assessment": {
+            "allOf": [
+              { "$ref": "#/$defs/assessment" },
+              {
+                "properties": { "result": { "const": "failed" } },
+                "required": ["result"]
+              }
+            ]
+          },
+          "blockers": { "minItems": 1 },
+          "limitations": { "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": { "const": "verified" }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "evidence_id": { "$ref": "#/$defs/identifier" },
+          "created_at": { "$ref": "#/$defs/date_time" },
+          "execution_context": { "$ref": "#/$defs/execution_context" },
+          "bundle_identity": { "$ref": "#/$defs/verified_bundle_identity" },
+          "copies": {
+            "minItems": 2,
+            "maxItems": 2,
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": { "role": { "const": "primary_vault" } },
+                  "required": ["role"]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": { "role": { "const": "independent_backup" } },
+                  "required": ["role"]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          },
+          "source_test_copy_deletion": { "$ref": "#/$defs/source_test_copy_deletion" },
+          "restore": { "$ref": "#/$defs/restore_evidence" },
+          "load_open": { "$ref": "#/$defs/load_open_evidence" },
+          "storage_review": { "$ref": "#/$defs/storage_review" },
+          "assessment": {
+            "allOf": [
+              { "$ref": "#/$defs/assessment" },
+              {
+                "properties": { "result": { "const": "verified" } },
+                "required": ["result"]
+              }
+            ]
+          },
+          "supporting_evidence": {
+            "minItems": 1,
+            "contains": {
+              "type": "object",
+              "properties": { "kind": { "const": "two_copy_content_audit" } },
+              "required": ["kind"]
+            },
+            "minContains": 1
+          },
+          "blockers": { "maxItems": 0 },
+          "limitations": { "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "execution_context": {
+            "type": "object",
+            "properties": { "kind": { "const": "paid_worker" } },
+            "required": ["kind"]
+          }
+        },
+        "required": ["execution_context"]
+      },
+      "then": {
+        "properties": {
+          "worker_authorization": { "$ref": "#/$defs/worker_authorization_link" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "execution_context": {
+            "type": "object",
+            "properties": { "kind": { "const": "non_paid_environment" } },
+            "required": ["kind"]
+          }
+        },
+        "required": ["execution_context"]
+      },
+      "then": {
+        "properties": { "worker_authorization": { "type": "null" } }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "date_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "credential_free_reference": {
+      "type": "string",
+      "format": "uri-reference",
+      "minLength": 1,
+      "pattern": "^(?!.*[?#%@]).+$"
+    },
+    "execution_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "execution_ref",
+        "started_at",
+        "finished_at",
+        "cost_evidence"
+      ],
+      "properties": {
+        "kind": { "enum": ["paid_worker", "non_paid_environment"] },
+        "execution_ref": { "$ref": "#/$defs/credential_free_reference" },
+        "started_at": { "$ref": "#/$defs/date_time" },
+        "finished_at": { "$ref": "#/$defs/date_time" },
+        "cost_evidence": {
+          "anyOf": [
+            { "$ref": "#/$defs/paid_execution_cost_evidence" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "paid_worker" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "cost_evidence": { "$ref": "#/$defs/paid_execution_cost_evidence" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "non_paid_environment" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": { "cost_evidence": { "type": "null" } }
+          }
+        }
+      ]
+    },
+    "paid_execution_cost_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observed_amount",
+        "currency",
+        "basis",
+        "observed_at",
+        "evidence_ref",
+        "evidence_sha256"
+      ],
+      "properties": {
+        "observed_amount": { "type": "number", "minimum": 0 },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "basis": { "type": "string", "minLength": 1 },
+        "observed_at": { "$ref": "#/$defs/date_time" },
+        "evidence_ref": { "$ref": "#/$defs/non_template_relative_path" },
+        "evidence_sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "description": "Observed paid-execution spend and the raw external evidence used to compare it with the owner-approved ceiling."
+    },
+    "canonical_relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*/$)[A-Za-z0-9._/-]+$"
+    },
+    "non_template_relative_path": {
+      "allOf": [
+        { "$ref": "#/$defs/canonical_relative_path" },
+        { "not": { "pattern": "(?:^|/)templates(?:/|$)" } },
+        { "not": { "pattern": "\\.(?:template|draft)\\.json$" } }
+      ]
+    },
+    "location_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,255}$",
+      "description": "Credential-free opaque reference resolved only through an approved storage record; never a secret-bearing URI."
+    },
+    "bundle_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "run_manifest_sha256",
+        "artifact_manifest_sha256",
+        "representative_for_phase",
+        "representation_basis",
+        "payload_file_count",
+        "payload_bytes",
+        "artifact_manifest_bytes",
+        "bundle_file_count",
+        "bundle_bytes"
+      ],
+      "properties": {
+        "run_id": {
+          "anyOf": [
+            { "$ref": "#/$defs/identifier" },
+            { "type": "null" }
+          ]
+        },
+        "run_manifest_sha256": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "artifact_manifest_sha256": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "representative_for_phase": {
+          "type": ["boolean", "null"]
+        },
+        "representation_basis": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "payload_file_count": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Number of payload file records governed by artifact-manifest.json; the self-excluded artifact-manifest.json file is not counted."
+        },
+        "payload_bytes": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Sum of bytes across payload file records governed by artifact-manifest.json, including run-manifest.json and excluding the self-excluded artifact-manifest.json file."
+        },
+        "artifact_manifest_bytes": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Raw byte size of the self-excluded artifact-manifest.json file whose SHA-256 is recorded above."
+        },
+        "bundle_file_count": {
+          "type": ["integer", "null"],
+          "minimum": 2,
+          "description": "payload_file_count plus the artifact-manifest.json control file."
+        },
+        "bundle_bytes": {
+          "type": ["integer", "null"],
+          "minimum": 2,
+          "description": "payload_bytes plus artifact_manifest_bytes; the complete physical frozen bundle size used for transfer and restore throughput."
+        }
+      }
+    },
+    "verified_bundle_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "run_manifest_sha256",
+        "artifact_manifest_sha256",
+        "representative_for_phase",
+        "representation_basis",
+        "payload_file_count",
+        "payload_bytes",
+        "artifact_manifest_bytes",
+        "bundle_file_count",
+        "bundle_bytes"
+      ],
+      "properties": {
+        "run_id": { "$ref": "#/$defs/identifier" },
+        "run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "artifact_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "representative_for_phase": { "const": true },
+        "representation_basis": { "type": "string", "minLength": 1 },
+        "payload_file_count": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of payload file records governed by artifact-manifest.json; the self-excluded artifact-manifest.json file is not counted."
+        },
+        "payload_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sum of bytes across payload file records governed by artifact-manifest.json, including run-manifest.json and excluding the self-excluded artifact-manifest.json file."
+        },
+        "artifact_manifest_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Raw byte size of artifact-manifest.json."
+        },
+        "bundle_file_count": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "payload_file_count plus artifact-manifest.json."
+        },
+        "bundle_bytes": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "payload_bytes plus artifact_manifest_bytes."
+        }
+      }
+    },
+    "content_verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "artifact_manifest_sha256",
+        "payload_files_verified",
+        "payload_bytes_verified",
+        "artifact_manifest_bytes_verified",
+        "bundle_files_verified",
+        "bundle_bytes_verified",
+        "verified_at",
+        "result"
+      ],
+      "properties": {
+        "method": { "const": "artifact_manifest_sha256_all_files" },
+        "artifact_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "payload_files_verified": { "type": "integer", "minimum": 1 },
+        "payload_bytes_verified": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Verified governed payload bytes; excludes the self-excluded artifact-manifest.json file."
+        },
+        "artifact_manifest_bytes_verified": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Verified raw artifact-manifest.json bytes."
+        },
+        "bundle_files_verified": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Verified payload files plus artifact-manifest.json."
+        },
+        "bundle_bytes_verified": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Verified payload bytes plus raw artifact-manifest.json bytes."
+        },
+        "verified_at": { "$ref": "#/$defs/date_time" },
+        "result": { "const": "passed" }
+      }
+    },
+    "copy_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "storage_candidate_id",
+        "location_ref",
+        "transfer_started_at",
+        "transfer_finished_at",
+        "duration_seconds",
+        "bytes_transferred",
+        "throughput_bytes_per_second",
+        "verification"
+      ],
+      "properties": {
+        "role": { "enum": ["primary_vault", "independent_backup"] },
+        "storage_candidate_id": { "$ref": "#/$defs/identifier" },
+        "location_ref": { "$ref": "#/$defs/location_ref" },
+        "transfer_started_at": { "$ref": "#/$defs/date_time" },
+        "transfer_finished_at": { "$ref": "#/$defs/date_time" },
+        "duration_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "bytes_transferred": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Complete physical bundle bytes, including artifact-manifest.json, used for the recorded throughput."
+        },
+        "throughput_bytes_per_second": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "bytes_transferred divided by duration_seconds for the complete physical bundle."
+        },
+        "verification": { "$ref": "#/$defs/content_verification" }
+      }
+    },
+    "source_test_copy_deletion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target",
+        "source_copy_ref",
+        "worker_termination",
+        "deleted_at",
+        "absence_verified_at",
+        "method",
+        "result"
+      ],
+      "properties": {
+        "target": { "const": "disposable_source_test_copy" },
+        "source_copy_ref": { "$ref": "#/$defs/location_ref" },
+        "worker_termination": { "const": false },
+        "deleted_at": { "$ref": "#/$defs/date_time" },
+        "absence_verified_at": { "$ref": "#/$defs/date_time" },
+        "method": { "type": "string", "minLength": 1 },
+        "result": { "const": "passed" }
+      }
+    },
+    "restore_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_role",
+        "destination_ref",
+        "destination_was_new",
+        "restore_started_at",
+        "restore_finished_at",
+        "duration_seconds",
+        "bytes_restored",
+        "throughput_bytes_per_second",
+        "verification"
+      ],
+      "properties": {
+        "source_role": { "enum": ["primary_vault", "independent_backup"] },
+        "destination_ref": { "$ref": "#/$defs/location_ref" },
+        "destination_was_new": { "const": true },
+        "restore_started_at": { "$ref": "#/$defs/date_time" },
+        "restore_finished_at": { "$ref": "#/$defs/date_time" },
+        "duration_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "bytes_restored": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Restored complete physical bundle bytes, including artifact-manifest.json."
+        },
+        "throughput_bytes_per_second": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "bytes_restored divided by duration_seconds for the complete physical bundle."
+        },
+        "verification": { "$ref": "#/$defs/content_verification" }
+      }
+    },
+    "load_open_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_path",
+        "method",
+        "tool",
+        "tool_version",
+        "started_at",
+        "finished_at",
+        "duration_seconds",
+        "result",
+        "evidence_ref",
+        "evidence_sha256"
+      ],
+      "properties": {
+        "artifact_path": { "$ref": "#/$defs/canonical_relative_path" },
+        "method": { "type": "string", "minLength": 1 },
+        "tool": { "type": "string", "minLength": 1 },
+        "tool_version": { "type": "string", "minLength": 1 },
+        "started_at": { "$ref": "#/$defs/date_time" },
+        "finished_at": { "$ref": "#/$defs/date_time" },
+        "duration_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "result": { "const": "passed" },
+        "evidence_ref": { "$ref": "#/$defs/non_template_relative_path" },
+        "evidence_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "storage_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_record_ref",
+        "review_record_sha256",
+        "review_record_id",
+        "assessor",
+        "assessed_at",
+        "primary_outside_worker",
+        "backup_outside_worker",
+        "independent_failure_domains"
+      ],
+      "properties": {
+        "review_record_ref": { "$ref": "#/$defs/non_template_relative_path" },
+        "review_record_sha256": { "$ref": "#/$defs/sha256" },
+        "review_record_id": { "$ref": "#/$defs/identifier" },
+        "assessor": { "type": "string", "minLength": 1 },
+        "assessed_at": { "$ref": "#/$defs/date_time" },
+        "primary_outside_worker": { "const": true },
+        "backup_outside_worker": { "const": true },
+        "independent_failure_domains": { "const": true }
+      }
+    },
+    "worker_authorization_link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_ref", "record_sha256", "record_id"],
+      "properties": {
+        "record_ref": { "$ref": "#/$defs/non_template_relative_path" },
+        "record_sha256": { "$ref": "#/$defs/sha256" },
+        "record_id": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assessor", "assessed_at", "result", "summary"],
+      "properties": {
+        "assessor": { "type": "string", "minLength": 1 },
+        "assessed_at": { "$ref": "#/$defs/date_time" },
+        "result": { "enum": ["verified", "failed"] },
+        "summary": { "type": "string", "minLength": 1 }
+      }
+    },
+    "supporting_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "sha256"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "two_copy_content_audit",
+            "transfer_log",
+            "load_open_log",
+            "failure_domain_review",
+            "other"
+          ]
+        },
+        "path": { "$ref": "#/$defs/non_template_relative_path" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

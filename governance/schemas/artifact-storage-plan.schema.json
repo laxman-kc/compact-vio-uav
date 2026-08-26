@@ -1,0 +1,406 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/laxman-kc/compact-vio-uav/governance/schemas/artifact-storage-plan.schema.json",
+  "title": "compact-vio-uav artifact storage plan decision input",
+  "description": "Phase-scoped storage, retention, recovery, and cost input for ADR-0005. Schema validity does not establish independence, durability, restoration, or ADR acceptance.",
+  "$comment": "Semantic validation is mandatory for ready_for_owner_review records. Enforce distinct primary/backup candidate_id and location_ref values; total_required_bytes = worst_case_retained_bytes + reserve_bytes; each location available_bytes >= total_required_bytes; prepared_at < capacity_envelope.valid_until and every retention/cost review time; expected_teardown_transfer_seconds >= total_required_bytes / measured_throughput_bytes_per_second; and prepared_at plus expected_teardown_transfer_seconds <= cost_envelope.review_at.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "record_status",
+    "authority",
+    "accepts_adr",
+    "record_id",
+    "prepared_at",
+    "prepared_by",
+    "decision_owner",
+    "phase_scope",
+    "primary_vault",
+    "independent_backup",
+    "independence_review",
+    "capacity_envelope",
+    "retention_rules",
+    "recovery_point_objective",
+    "transfer_plan",
+    "restore_test_cadence",
+    "cost_envelope",
+    "owners",
+    "evidence_refs",
+    "open_questions",
+    "adr_ref"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "record_type": { "const": "artifact_storage_plan" },
+    "record_status": { "enum": ["draft", "ready_for_owner_review"] },
+    "authority": { "const": "decision_input_only" },
+    "accepts_adr": { "const": false },
+    "record_id": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/record_id" }
+      ]
+    },
+    "prepared_at": { "type": ["string", "null"], "format": "date-time" },
+    "prepared_by": { "type": ["string", "null"], "minLength": 1 },
+    "decision_owner": { "type": ["string", "null"], "minLength": 1 },
+    "phase_scope": { "type": ["string", "null"], "minLength": 1 },
+    "primary_vault": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/primary_location" }
+      ]
+    },
+    "independent_backup": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/backup_location" }
+      ]
+    },
+    "independence_review": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/independence_review" }
+      ]
+    },
+    "capacity_envelope": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/capacity_envelope" }
+      ]
+    },
+    "retention_rules": { "$ref": "#/$defs/retention_rules" },
+    "recovery_point_objective": { "type": ["string", "null"], "minLength": 1 },
+    "transfer_plan": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/transfer_plan" }
+      ]
+    },
+    "restore_test_cadence": { "type": ["string", "null"], "minLength": 1 },
+    "cost_envelope": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/cost_envelope" }
+      ]
+    },
+    "owners": { "$ref": "#/$defs/owners" },
+    "evidence_refs": { "$ref": "#/$defs/evidence_refs" },
+    "open_questions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "adr_ref": { "const": "docs/adr/0005-artifact-storage.md" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "record_status": { "const": "ready_for_owner_review" } },
+        "required": ["record_status"]
+      },
+      "then": {
+        "properties": {
+          "record_id": { "$ref": "#/$defs/record_id" },
+          "prepared_at": { "type": "string", "format": "date-time" },
+          "prepared_by": { "type": "string", "minLength": 1 },
+          "decision_owner": { "type": "string", "minLength": 1 },
+          "phase_scope": { "type": "string", "minLength": 1 },
+          "primary_vault": { "$ref": "#/$defs/primary_location" },
+          "independent_backup": { "$ref": "#/$defs/backup_location" },
+          "independence_review": {
+            "allOf": [
+              { "$ref": "#/$defs/independence_review" },
+              { "properties": { "status": { "const": "reviewed_independent" } } }
+            ]
+          },
+          "capacity_envelope": { "$ref": "#/$defs/capacity_envelope" },
+          "retention_rules": { "$ref": "#/$defs/resolved_retention_rules" },
+          "recovery_point_objective": { "type": "string", "minLength": 1 },
+          "transfer_plan": { "$ref": "#/$defs/transfer_plan" },
+          "restore_test_cadence": { "type": "string", "minLength": 1 },
+          "cost_envelope": { "$ref": "#/$defs/cost_envelope" },
+          "owners": { "$ref": "#/$defs/resolved_owners" },
+          "evidence_refs": { "$ref": "#/$defs/review_ready_evidence_refs" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "record_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "credential_free_reference": {
+      "type": "string",
+      "format": "uri-reference",
+      "minLength": 1,
+      "pattern": "^(?!.*[?#@])(?!.*%(?:23|25|3[fF]|40)).+$"
+    },
+    "non_template_reference": {
+      "allOf": [
+        { "$ref": "#/$defs/credential_free_reference" },
+        { "not": { "pattern": "(?:^|/)templates(?:/|$)" } },
+        { "not": { "pattern": "\\.(?:template|draft)\\.json$" } }
+      ]
+    },
+    "location_base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "role",
+        "backend_kind",
+        "provider_or_operator",
+        "location_ref",
+        "outside_worker_status",
+        "outside_worker_evidence_ref",
+        "failure_domain_statement",
+        "access_control_statement",
+        "encryption_statement",
+        "available_bytes",
+        "observed_at",
+        "static_check_ref"
+      ],
+      "properties": {
+        "candidate_id": { "$ref": "#/$defs/record_id" },
+        "role": { "enum": ["primary_vault", "independent_backup"] },
+        "backend_kind": {
+          "enum": ["filesystem", "object_store", "managed_artifact_store", "other"]
+        },
+        "provider_or_operator": { "type": "string", "minLength": 1 },
+        "location_ref": { "$ref": "#/$defs/credential_free_reference" },
+        "outside_worker_status": { "enum": ["unverified", "verified"] },
+        "outside_worker_evidence_ref": { "$ref": "#/$defs/non_template_reference" },
+        "failure_domain_statement": { "type": "string", "minLength": 1 },
+        "access_control_statement": { "type": "string", "minLength": 1 },
+        "encryption_statement": { "type": "string", "minLength": 1 },
+        "available_bytes": { "type": "integer", "minimum": 0 },
+        "observed_at": { "type": "string", "format": "date-time" },
+        "static_check_ref": { "$ref": "#/$defs/non_template_reference" }
+      }
+    },
+    "primary_location": {
+      "allOf": [
+        { "$ref": "#/$defs/location_base" },
+        {
+          "properties": {
+            "role": { "const": "primary_vault" },
+            "outside_worker_status": { "const": "verified" }
+          }
+        }
+      ]
+    },
+    "backup_location": {
+      "allOf": [
+        { "$ref": "#/$defs/location_base" },
+        {
+          "properties": {
+            "role": { "const": "independent_backup" },
+            "outside_worker_status": { "const": "verified" }
+          }
+        }
+      ]
+    },
+    "independence_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reviewed_by", "reviewed_at", "evidence_ref", "limitations"],
+      "properties": {
+        "status": {
+          "enum": ["unreviewed", "reviewed_independent", "reviewed_not_independent"]
+        },
+        "reviewed_by": { "type": "string", "minLength": 1 },
+        "reviewed_at": { "type": "string", "format": "date-time" },
+        "evidence_ref": { "$ref": "#/$defs/non_template_reference" },
+        "limitations": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "capacity_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "estimation_method",
+        "worst_case_retained_bytes",
+        "reserve_bytes",
+        "total_required_bytes",
+        "valid_until",
+        "reestimate_triggers"
+      ],
+      "properties": {
+        "estimation_method": { "type": "string", "minLength": 1 },
+        "worst_case_retained_bytes": { "type": "integer", "minimum": 1 },
+        "reserve_bytes": { "type": "integer", "minimum": 0 },
+        "total_required_bytes": { "type": "integer", "minimum": 1 },
+        "valid_until": { "type": "string", "format": "date-time" },
+        "reestimate_triggers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      },
+      "description": "Review must verify that total_required_bytes equals worst_case_retained_bytes plus reserve_bytes."
+    },
+    "retention_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retention_statement", "review_at"],
+      "properties": {
+        "retention_statement": { "type": "string", "minLength": 1 },
+        "review_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "retention_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reproducibility_critical",
+        "resume_only",
+        "diagnostic",
+        "disposable",
+        "release"
+      ],
+      "properties": {
+        "reproducibility_critical": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/retention_rule" }] },
+        "resume_only": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/retention_rule" }] },
+        "diagnostic": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/retention_rule" }] },
+        "disposable": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/retention_rule" }] },
+        "release": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/retention_rule" }] }
+      }
+    },
+    "resolved_retention_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reproducibility_critical",
+        "resume_only",
+        "diagnostic",
+        "disposable",
+        "release"
+      ],
+      "properties": {
+        "reproducibility_critical": { "$ref": "#/$defs/retention_rule" },
+        "resume_only": { "$ref": "#/$defs/retention_rule" },
+        "diagnostic": { "$ref": "#/$defs/retention_rule" },
+        "disposable": { "$ref": "#/$defs/retention_rule" },
+        "release": { "$ref": "#/$defs/retention_rule" }
+      }
+    },
+    "transfer_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tool",
+        "version",
+        "resumable",
+        "integrity_method",
+        "measured_throughput_bytes_per_second",
+        "expected_teardown_transfer_seconds",
+        "measurement_ref"
+      ],
+      "properties": {
+        "tool": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "resumable": { "type": "boolean" },
+        "integrity_method": { "type": "string", "minLength": 1 },
+        "measured_throughput_bytes_per_second": { "type": "number", "exclusiveMinimum": 0 },
+        "expected_teardown_transfer_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Measured planning allowance; semantic validation checks the throughput-derived lower bound and that it fits before the cost review time."
+        },
+        "measurement_ref": { "$ref": "#/$defs/non_template_reference" }
+      }
+    },
+    "cost_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "currency",
+        "storage_spend_ceiling",
+        "worker_spend_ceiling",
+        "period_statement",
+        "review_at",
+        "rate_observation_ref"
+      ],
+      "properties": {
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "storage_spend_ceiling": { "type": "number", "minimum": 0 },
+        "worker_spend_ceiling": { "type": "number", "minimum": 0 },
+        "period_statement": { "type": "string", "minLength": 1 },
+        "review_at": { "type": "string", "format": "date-time" },
+        "rate_observation_ref": { "$ref": "#/$defs/non_template_reference" }
+      }
+    },
+    "owners": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recovery_owner", "teardown_authority", "deletion_authority"],
+      "properties": {
+        "recovery_owner": { "type": ["string", "null"], "minLength": 1 },
+        "teardown_authority": { "type": ["string", "null"], "minLength": 1 },
+        "deletion_authority": { "type": ["string", "null"], "minLength": 1 }
+      }
+    },
+    "resolved_owners": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recovery_owner", "teardown_authority", "deletion_authority"],
+      "properties": {
+        "recovery_owner": { "type": "string", "minLength": 1 },
+        "teardown_authority": { "type": "string", "minLength": 1 },
+        "deletion_authority": { "type": "string", "minLength": 1 }
+      }
+    },
+    "evidence_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "static_check_ref",
+        "copy_audit_ref",
+        "storage_evidence_ref",
+        "credential_access_audit_ref"
+      ],
+      "properties": {
+        "static_check_ref": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/credential_free_reference" }]
+        },
+        "copy_audit_ref": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/credential_free_reference" }]
+        },
+        "storage_evidence_ref": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/credential_free_reference" }]
+        },
+        "credential_access_audit_ref": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/credential_free_reference" }]
+        }
+      }
+    },
+    "review_ready_evidence_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "static_check_ref",
+        "copy_audit_ref",
+        "storage_evidence_ref",
+        "credential_access_audit_ref"
+      ],
+      "properties": {
+        "static_check_ref": { "$ref": "#/$defs/non_template_reference" },
+        "copy_audit_ref": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/non_template_reference" }],
+          "description": "Optional supporting evidence; a copy audit cannot pass the restore gate."
+        },
+        "storage_evidence_ref": { "$ref": "#/$defs/non_template_reference" },
+        "credential_access_audit_ref": { "$ref": "#/$defs/non_template_reference" }
+      }
+    }
+  }
+}

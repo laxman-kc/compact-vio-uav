@@ -31,8 +31,14 @@ The project follows these invariants:
 - [Dataset governance policy](governance/datasets/policy.md)
 - [Candidate dataset registry](governance/datasets/registry.yaml)
 - [Artifact policy](governance/artifacts/policy.md)
+- [Governance-record authority and draft templates](governance/records/README.md)
+- [Project/release scope record schema](governance/schemas/project-release-scope.schema.json)
+- [Rights-matrix record schema](governance/schemas/rights-matrix.schema.json)
+- [Artifact-storage plan schema](governance/schemas/artifact-storage-plan.schema.json)
+- [Bounded worker-authorization schema](governance/schemas/worker-authorization.schema.json)
 - [Run-manifest JSON Schema](experiments/schemas/run-manifest.schema.json)
 - [Bundle-inventory JSON Schema](experiments/schemas/artifact-manifest.schema.json)
+- [Post-export artifact-storage evidence schema](experiments/schemas/artifact-storage-evidence.schema.json)
 
 ## Foundation checks
 
@@ -47,6 +53,7 @@ PYTHONPATH=src python3 -m compact_vio.repository_policy .
 PYTHONPATH=src python3 -m compact_vio.preflight
 PYTHONPATH=src python3 -m compact_vio.artifacts create /path/to/frozen-run-bundle
 PYTHONPATH=src python3 -m compact_vio.artifacts verify /path/to/restored-run-bundle
+compact-vio-copy-audit --expected-manifest-sha256 <sha256> --primary /path/to/primary-copy --primary-ref primary-vault-copy --backup /path/to/backup-copy --backup-ref independent-backup-copy
 ```
 
 The repository-policy command checks cached and non-ignored files for oversized
@@ -57,6 +64,14 @@ replace any existing entry at that path. `verify` exits `0` for an exact match,
 `1` for content differences, and `2` for invalid or unsafe input. These checks
 establish file identity; they do not by themselves approve the run, its dataset
 rights, or its scientific claims.
+
+`compact-vio-copy-audit` is also read-only. It can compare two accessible bundle
+copies against the exact raw SHA-256 of a frozen artifact manifest. Success is a
+supporting checksum fragment only: it does not prove copy independence, event
+chronology, deletion of a disposable source test copy, restoration into a new
+location, representative load/open behavior, or completion of the artifact
+restore gate. Successful JSON records only the caller-supplied opaque copy
+references; local filesystem paths are deliberately omitted.
 
 The preflight command is intentionally read-only. With no approved storage
 inputs it exits `1` and reports the missing decisions. Even with satisfactory
@@ -79,7 +94,10 @@ The artifact-vault provider, backup destination, retention budget, and cost ceil
 
 ## Decision status
 
-No project license has been selected. No permission to reuse or redistribute project content should be inferred until that decision is recorded and a license file is intentionally added.
+No project license has been selected. GitHub's Terms permit platform-specific
+actions such as viewing and forking a public repository, but no general license
+to reproduce, distribute, or create derivative works should be inferred until
+the owner records that decision and intentionally adds a license file.
 
 Open project decisions are listed in the [ADR index](docs/adr/README.md). An ADR marked `Proposed` or `Unresolved` is not an implementation choice.
 

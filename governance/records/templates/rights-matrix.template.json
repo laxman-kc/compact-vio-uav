@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "rights_matrix",
+  "record_status": "draft",
+  "authority": "evidence_input_only",
+  "accepts_adr": false,
+  "record_id": null,
+  "prepared_at": null,
+  "prepared_by": null,
+  "scope_cutoff": null,
+  "inventory_scope_statement": null,
+  "inventory_complete_for_scope": null,
+  "empty_inventory_rationale": null,
+  "assets": [],
+  "unresolved_items": [],
+  "adr_ref": "docs/adr/0001-project-and-release-scope.md"
+}
