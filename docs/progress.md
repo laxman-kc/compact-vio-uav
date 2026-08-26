@@ -167,6 +167,28 @@ result, and explicit remaining blockers.
   ledger, the representative two-copy restore drill, and its accepted evidence.
   `artifact_restore_gate_passed` remains false.
 
+## 2026-08-26 — M2 contract evidence commit verified remotely
+
+- Evidence commit: `9dcb52546eae562a928f7e56c3ccc58a1c5782f8` on branch `main`.
+- GitHub Actions run
+  [33015547062](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33015547062)
+  completed successfully for both Python 3.10 and Python 3.12.
+- Each matrix job compiled the source/tests, built and installed the package,
+  passed all 52 unit tests, exercised the installed command-line tools, checked
+  root-anchored scratch exclusions, passed repository policy and Ruff
+  lint/format, and passed the seven-schema/five-template contract harness.
+- The evidence commit contains schemas, blank non-authoritative templates,
+  validators, tests, policies, and supporting read-only audit tooling. It contains
+  zero real governance records and does not contain an owner approval, a license
+  choice, storage-provider choice, paid-work approval, dataset, checkpoint, or
+  restore-drill result.
+- The A10 was not used for this evidence slice because the validated live
+  authorization interface permits only exact local/static checks and no
+  authenticated owner-approved non-static execution record exists. No Brev
+  lifecycle action was attempted.
+- M2 remains blocked; ADR-0001 and ADR-0005 remain unresolved and
+  `artifact_restore_gate_passed` remains false.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
