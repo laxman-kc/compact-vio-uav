@@ -21,10 +21,19 @@ Choose and document:
 - Camera-to-IMU extrinsic and temporal calibration procedure.
 - Permitted initialization motion.
 
-## Evidence required
+## Evidence required before acceptance
 
 - Target mission dynamics and compute envelope.
 - Candidate sensor interface and synchronization evidence.
 - Calibration repeatability and residuals.
 - Timing/calibration sensitivity experiments.
 - Dataset-to-target sensor-gap analysis.
+
+## Follow-up evidence
+
+- Integration-time clock, frame, transport, calibration, and fault evidence from
+  M13 when vehicle integration is in scope.
+- Revalidation after every declared hardware, mount, focus, resolution, exposure,
+  rate, firmware, driver, or timestamp-behavior change.
+- Reopen or supersede this ADR if follow-up evidence violates an accepted sensor
+  assumption or threshold.

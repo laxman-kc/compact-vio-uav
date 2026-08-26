@@ -4,7 +4,10 @@
 
 ## Current status
 
-This repository currently contains the governance and experiment-contract foundation only. It does not yet contain an implemented estimator, trained model, approved dataset split, deployable runtime, or flight-ready system.
+This repository currently contains the governance, experiment-contract, and
+durability-preflight foundation only. It does not yet contain an implemented
+estimator, trained model, approved dataset split, deployable runtime, or
+flight-ready system.
 
 The project follows these invariants:
 
@@ -17,6 +20,9 @@ The project follows these invariants:
 
 ## Documentation map
 
+- [Implementation plan](docs/plan.md)
+- [Progress evidence](docs/progress.md)
+- [Requirements index and official-source traceability](docs/requirements.md)
 - [Architecture](docs/architecture.md)
 - [Project requirements](docs/requirements/project-requirements.md)
 - [Architecture decision records](docs/adr/README.md)
@@ -30,15 +36,17 @@ The project follows these invariants:
 
 ## Foundation checks
 
-The current executable component is a standard-library-only bundle inventory.
-It records every regular file by canonical relative path, byte size, and SHA-256,
+The current executable components are a standard-library-only bundle inventory,
+repository policy check, and read-only durability preflight. The inventory
+records every regular file by canonical relative path, byte size, and SHA-256,
 and rejects symbolic links and unsupported filesystem entries.
 
 ```bash
-PYTHONPATH=src python -m unittest discover -s tests -v
-PYTHONPATH=src python -m compact_vio.repository_policy .
-PYTHONPATH=src python -m compact_vio.artifacts create /path/to/frozen-run-bundle
-PYTHONPATH=src python -m compact_vio.artifacts verify /path/to/restored-run-bundle
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+PYTHONPATH=src python3 -m compact_vio.repository_policy .
+PYTHONPATH=src python3 -m compact_vio.preflight
+PYTHONPATH=src python3 -m compact_vio.artifacts create /path/to/frozen-run-bundle
+PYTHONPATH=src python3 -m compact_vio.artifacts verify /path/to/restored-run-bundle
 ```
 
 The repository-policy command checks cached and non-ignored files for oversized
@@ -49,6 +57,14 @@ replace any existing entry at that path. `verify` exits `0` for an exact match,
 `1` for content differences, and `2` for invalid or unsafe input. These checks
 establish file identity; they do not by themselves approve the run, its dataset
 rights, or its scientific claims.
+
+The preflight command is intentionally read-only. With no approved storage
+inputs it exits `1` and reports the missing decisions. Even with satisfactory
+static filesystem inputs it reports only `static_checks_satisfied`; it can never
+mark the artifact restore gate passed. A client-visible filesystem identifier
+and a caller-supplied record do not prove independent failure domains, storage
+outside the worker, successful writes, or restoration. Object stores and other
+backends require a provider-specific preflight.
 
 ## State ownership
 

@@ -29,10 +29,17 @@ Choose and document:
 
 These are experiment families, not a selection. A scientific winner and deployable winner may differ.
 
-## Evidence required
+## Evidence required before acceptance
 
 - Mission/use-case requirements.
 - Observability and initialization analysis.
 - A frame/timestamp interface specification.
-- Baseline feasibility and failure analysis.
-- Causal replay tests.
+- A predeclared baseline-feasibility and failure-analysis plan.
+- A causal replay test specification with planned fixtures and acceptance checks.
+
+## Follow-up evidence
+
+- Common causal replay test results from M7.
+- Baseline feasibility and failure results from M8.
+- If follow-up evidence invalidates the accepted state, timing, initialization,
+  or candidate-family assumptions, reopen or supersede this ADR before selection.

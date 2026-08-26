@@ -1,6 +1,6 @@
 # System architecture
 
-Status: Foundation approved; estimator and deployment choices unresolved
+Status: Versioned foundation invariants; estimator and deployment choices unresolved
 Last reviewed: 2026-08-26
 
 ## Purpose
@@ -21,7 +21,12 @@ The local workstation supports planning, review, lightweight validation, and tem
 
 GPU workers receive an immutable Git revision and approved data subsets, then perform preprocessing, baseline execution, training, evaluation, and profiling. Worker-local datasets, caches, tracking databases, checkpoints, and logs are disposable until exported and verified.
 
-The currently identified Brev A10 type is non-stoppable. Disconnecting or ending a shell session is not cost control. Termination is destructive and must follow the teardown checklist in the experiment lifecycle.
+The [2026-08-26 Brev observation](../environments/a10/inventory-2026-08-26.md)
+identified the A10 type as non-stoppable. That volatile capability must be
+rechecked before action. Disconnecting or ending a shell session is not cost
+control; destructive termination requires the applicable preservation checklist
+and explicit approval, but may be authorized between runs rather than deferred
+until final release.
 
 ### Durable artifact plane
 

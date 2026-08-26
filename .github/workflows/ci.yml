@@ -39,6 +39,12 @@ jobs:
       - name: Exercise installed command-line tools
         run: |
           compact-vio-artifacts --help
+          set +e
+          compact-vio-preflight > /tmp/compact-vio-preflight.json
+          preflight_status=$?
+          set -e
+          test "$preflight_status" -eq 1
+          python -c 'import json; report=json.load(open("/tmp/compact-vio-preflight.json")); assert report["assessment"] == "blocked" and not report["artifact_restore_gate_passed"]'
           compact-vio-repo-check .
 
       - name: Check root-anchored scratch exclusions

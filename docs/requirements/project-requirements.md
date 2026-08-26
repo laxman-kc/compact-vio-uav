@@ -1,9 +1,11 @@
 # Project requirements
 
-Status: Draft foundation
+Status: Normative foundation; decision-dependent values unresolved
 Last reviewed: 2026-08-26
 
-`MUST` items below are implementation invariants approved by the project plan. Fields marked `TBD` are unresolved and must not be converted into defaults by an implementation.
+`MUST` items below are current repository invariants. They do not resolve an
+ADR. Fields marked `TBD` are unresolved and must not be converted into defaults
+by an implementation.
 
 ## Research integrity
 
@@ -35,15 +37,27 @@ Last reviewed: 2026-08-26
 | R-EST-004 | Covariance, if produced, MUST define its state, frame, tangent convention, propagation, and calibration procedure. | Interface specification and calibration report. |
 | R-EST-005 | Estimator health MUST cover initialization, staleness, input gaps, resets, and invalid outputs independently of covariance. | Fault-injection tests. |
 
+## Calibration and synchronization
+
+| ID | Requirement | Verification |
+|---|---|---|
+| R-CAL-001 | A physical or replayed sensor profile MUST version camera intrinsics/distortion, camera–IMU transform, temporal-offset value and sign convention, axes, units, rates, and exposure/sample timestamp semantics. | Profile-schema validation and frame/time contract tests. |
+| R-CAL-002 | IMU characterization MUST record gyroscope and accelerometer noise density, bias random walk, update rate, method, and diagnostic report for the chosen operating configuration. | IMU configuration and calibration-report review. |
+| R-CAL-003 | Camera–IMU calibration data MUST provide sufficient declared motion excitation, controlled blur/visibility, and timestamp continuity; acceptance MUST inspect residual/timing/bias diagnostics and physical plausibility rather than solver convergence alone. | Calibration checklist and signed review. |
+| R-CAL-004 | Calibration acceptance thresholds MUST be set for the selected sensor, lens, resolution, target, and operating mode; example thresholds from another device MUST NOT become defaults. | Accepted ADR-0003 and calibration protocol. |
+| R-CAL-005 | A change to sensor hardware, mount, focus, resolution, exposure mode, sampling, firmware, driver timestamp behavior, or another declared validity condition MUST invalidate or explicitly revalidate the profile. | Calibration version/provenance audit. |
+
 ## Artifacts and infrastructure
 
 | ID | Requirement | Verification |
 |---|---|---|
 | R-INFRA-001 | A rented worker MUST NOT be the only location holding versioned work or a retained artifact. | Teardown audit. |
 | R-INFRA-002 | Reproducibility-critical and release artifacts MUST have a verified primary copy and an independent verified backup outside the worker. | Artifact index and hash verification. |
-| R-INFRA-003 | Important GPU work MUST NOT begin until a representative bundle has completed export, deletion, restoration, and checksum validation. | Restore-test report. |
+| R-INFRA-003 | Important GPU work MUST NOT begin until a representative bundle has completed export, deletion of its disposable source test copy (not worker termination), restoration into a new location, checksum validation, and representative load/open verification. | Restore-test report. |
 | R-INFRA-004 | Credentials MUST NOT be recorded in source, configuration, manifests, logs, or artifacts. | Secret scan and manifest review. |
 | R-INFRA-005 | Worker cost ceiling, review time, and teardown authority MUST be recorded before extended paid work. | Run authorization record. |
+| R-INFRA-006 | Normal Git history and GitHub Actions artifacts MUST NOT be treated as the general binary-artifact vault or independent backup. | Repository/artifact-location audit. |
+| R-INFRA-007 | Capacity/path inspection alone MUST NOT satisfy R-INFRA-003 or establish storage independence. | Static-check report cross-referenced to the R-INFRA-003 restore record. |
 
 ## Evaluation and deployment
 
@@ -51,10 +65,13 @@ Last reviewed: 2026-08-26
 |---|---|---|
 | R-EVAL-001 | Results MUST include per-sequence trajectory accuracy, scale behavior, initialization, coverage, failures, and resource measurements appropriate to the execution platform. | Evaluation bundle review. |
 | R-EVAL-002 | Training-GPU timing MUST NOT be used as evidence of edge-device latency, power, memory, or thermal suitability. | Claim/evidence audit. |
+| R-EVAL-003 | Runtime comparisons MUST report the distribution including tail latency and MUST compare candidates on the same declared platform/configuration; cross-hardware measurements MUST be separated. | Profiler configuration and result audit. |
 | R-DEP-001 | Export equivalence MUST cover step outputs, complete trajectories, recurrent/reset state, validity paths, and failures—not only one tensor comparison. | Export parity report. |
 | R-DEP-002 | Target-specific engines MUST be built and validated for the exact selected target stack. | Engine provenance record. |
+| R-DEP-003 | Target runtime, version/hardware compatibility mode, supported operators, shapes, precision, and plugins MUST be explicit; every precision/runtime artifact MUST repeat trajectory and failure regression. | Target compatibility and parity report. |
 | R-SAFE-001 | Offline evaluation MUST NOT authorize physical flight. | Safety-gate record. |
 | R-SAFE-002 | Any vehicle integration MUST preserve independent stabilization, pilot override, failsafe, watchdog, and stale/invalid-odometry rejection. | SITL/HIL and safety review. |
+| R-SAFE-003 | A vehicle interface MUST pin compatible PX4/message/transport versions and validate frames, sample timestamps/clock synchronization, delay, lever arm, fused fields, covariance/noise source, reset counter, unknown fields, and position-loss behavior. | Interface-control tests, logs, SITL, and HIL fault evidence. |
 
 ## Unresolved requirements
 
