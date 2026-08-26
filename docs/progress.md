@@ -216,6 +216,22 @@ result, and explicit remaining blockers.
   was not accessed in this local slice. M3, M4, M5, and M7 are in progress;
   none is complete. M2 remains blocked for important paid GPU work.
 
+## 2026-08-26 — M4 causal replay slice verified remotely
+
+- Evidence commit: `5da148bc1d125f897ed79c30e0d5d0bf7cceb652` on branch
+  `main`.
+- GitHub Actions run
+  [33018452275](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33018452275)
+  completed successfully for Python 3.10 and Python 3.12.
+- The running `compact-vio-uav-gpu` checkout fast-forwarded cleanly to the exact
+  evidence commit. Its standard-library suite passed all 65 tests and repository
+  policy passed for 56 files; the checkout remained clean.
+- The remote smoke installed no dependency, downloaded no dataset, trained no
+  model, and produced no retained artifact. No Brev lifecycle action was taken.
+- The next implementation slice is the remaining estimator interface, canonical
+  sensor records, synthetic geometry fixtures, and evaluator core. M4 and M7
+  remain in progress rather than complete.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
