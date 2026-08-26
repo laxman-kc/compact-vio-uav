@@ -65,6 +65,28 @@ result, and explicit remaining blockers.
   retention/RPO, spending ceiling, review time, recovery owner, teardown owner,
   and representative restore drill.
 
+## 2026-08-26 — M1 planning traceability and static preflight completed
+
+- Evidence commit: `18d68de8b861ae8aae1f642231dd22ed06092bd6`.
+- Added the detailed M0–M14 implementation roadmap, non-normative official-source
+  requirements traceability, this dated ledger, ADR pre-acceptance/follow-up
+  evidence boundaries, and filesystem-candidate durability preflight.
+- Local validation at the evidence commit: 36 unit tests passed; Draft 2020-12
+  schema and format checks passed; repository policy passed for 41 intended Git
+  files; Ruff lint/format and installed command-line smoke checks passed.
+- GitHub Actions Python 3.10/3.12 CI succeeded in
+  [run 33002473548](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33002473548).
+- The authenticated `brev shell compact-vio-uav-gpu` checkout fast-forwarded
+  cleanly to the evidence commit. Python 3.10.12 compiled the sources, all 36
+  standard-library tests passed, repository policy passed for 41 files, and the
+  blocked-by-design preflight smoke passed. The checkout remained clean.
+- No dataset was downloaded, no model was trained, no dependency was installed
+  into the A10 global environment, and no stop/reboot/delete/termination action
+  was attempted.
+- M1 is complete. `artifact_restore_gate_passed` remains false by design; M2
+  remains blocked on the decisions and restore evidence listed in the prior
+  entry.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

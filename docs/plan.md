@@ -57,7 +57,7 @@ preventing architecture preference from becoming evidence.
 | ID | Milestone | Status at this review | Dependency that controls status |
 |---|---|---|---|
 | M0 | Reproducible repository foundation | Complete | Foundation commit and CI evidence |
-| M1 | Planning traceability and static durability preflight | In progress | M0 |
+| M1 | Planning traceability and static durability preflight | Complete | M0 |
 | M2 | Project authority, artifact durability, and paid-worker control | Blocked | M1; ADR-0001 and ADR-0005 |
 | M3 | Scientific question and estimator contract | Blocked | M2; authorized provisional estimator/contribution choices |
 | M4 | Replay sensor, time, frame, and calibration contract | Blocked | M3; generic contract requirements |
@@ -95,7 +95,7 @@ Exit evidence:
 
 ## M1 — Planning traceability and static durability preflight
 
-Status: In progress.
+Status: Complete.
 
 Dependencies: M0.
 
