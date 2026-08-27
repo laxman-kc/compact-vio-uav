@@ -121,6 +121,10 @@ The following must be decided through ADRs before dependent implementation:
   alignment, or scale correction**; final ATE/RPE association/alignment
   protocols and numerical accuracy, failure, latency, memory, power, and
   thermal thresholds: **TBD**.
+- Raw exact-pair signed translation-residual series: **implemented as
+  estimated-minus-reference Cartesian components under the same explicit no
+  interpolation, alignment, or scale-correction policy**; it is in-memory only
+  and is not ATE/RPE, coverage/completion evidence, or frame-correctness proof.
 - Explicit output-coverage kernel: **implemented for a caller-declared nonempty
   opportunity ledger**, retaining missing/invalid/valid state, reference
   availability, usability, and non-usable reason codes; exact schedule,

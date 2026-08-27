@@ -19,14 +19,18 @@ from compact_vio.evaluation.coverage_binding import (
     bind_output_coverage,
 )
 from compact_vio.evaluation.translation import (
+    EXACT_PAIR_TRANSLATION_RESIDUALS_ID,
     EXACT_PAIR_TRANSLATION_RMSE_ID,
     ScaleCorrection,
     TimestampAssociation,
     TrajectoryAlignment,
     TrajectoryInterpolation,
     TranslationMetricError,
+    TranslationResidualSample,
+    TranslationResidualSeries,
     TranslationRmsePolicy,
     TranslationRmseResult,
+    exact_pair_translation_residuals,
     exact_pair_translation_rmse,
 )
 
@@ -34,6 +38,7 @@ __all__ = [
     "BoundOutputCoverage",
     "CoverageContractError",
     "CoverageBindingError",
+    "EXACT_PAIR_TRANSLATION_RESIDUALS_ID",
     "EXACT_PAIR_TRANSLATION_RMSE_ID",
     "EXACT_OUTPUT_COVERAGE_BINDING_ID",
     "EXPLICIT_OUTPUT_COVERAGE_ID",
@@ -49,9 +54,12 @@ __all__ = [
     "TrajectoryAlignment",
     "TrajectoryInterpolation",
     "TranslationMetricError",
+    "TranslationResidualSample",
+    "TranslationResidualSeries",
     "TranslationRmsePolicy",
     "TranslationRmseResult",
     "bind_output_coverage",
+    "exact_pair_translation_residuals",
     "exact_pair_translation_rmse",
     "summarize_output_coverage",
 ]

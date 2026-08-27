@@ -150,24 +150,24 @@ source/build provenance. Checkpoints and large histories stay out of Git.
 Implemented now: repository/evidence tooling, the generic causal event-release
 primitive, a framework-neutral estimator envelope with a required declaration
 shape and initialization/reset validation, a direct causal execution recorder,
-typed camera/IMU payload records, immutable translation-trajectory records, one
-raw exact-pair translation-RMSE kernel, explicit output-coverage accounting and
-binding, and strict persisted calibration-profile plus separate assessment
-contracts. The committed fixture is synthetic and rejected; there is no
-accepted real sensor or dataset profile. Planned next: additional
-geometry/evaluator behavior, one rights-approved dataset adapter with its actual
-profile, and one classical baseline. No estimator algorithm, complete
-evaluator, numerical backend, model, training loop, dataset files, approved
-split, dataset adapter, checkpoint, ONNX graph, TensorRT engine, ROS 2 node, or
-PX4 bridge exists yet. A candidate-only dataset registry exists, but it is not
-data-use approval.
+typed camera/IMU payload records, immutable translation-trajectory records, raw
+exact-pair signed translation-residual and translation-RMSE kernels, explicit
+output-coverage accounting and binding, and strict persisted calibration-profile
+plus separate assessment contracts. The committed fixture is synthetic and
+rejected; there is no accepted real sensor or dataset profile. Planned next:
+additional geometry/evaluator behavior, one rights-approved dataset adapter
+with its actual profile, and one classical baseline. No estimator algorithm,
+complete evaluator, numerical backend, model, training loop, dataset files,
+approved split, dataset adapter, checkpoint, ONNX graph, TensorRT engine, ROS 2
+node, or PX4 bridge exists yet. A candidate-only dataset registry exists, but it
+is not data-use approval.
 
 ## Technology stack by status
 
 | Layer | Current implementation | Planned or conditional boundary |
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Numerical array/vision library for estimator work is unresolved. |
-| Common VIO substrate | Generic causal replay, estimator envelope with an explicit interface-declaration shape and initialization/reset validation, direct replay-to-session execution recording, typed camera/IMU records, translation trajectories, raw exact-pair translation RMSE, output-coverage accounting/binding, and strict persisted calibration profile/assessment contracts | Additional geometry/evaluator and lifecycle behavior, actual dataset profiles, and adapters are planned; exact state and policy identifiers, final metric protocols, sensor configuration, concrete conventions, thresholds, and numerical backend remain unresolved. |
+| Common VIO substrate | Generic causal replay, estimator envelope with an explicit interface-declaration shape and initialization/reset validation, direct replay-to-session execution recording, typed camera/IMU records, translation trajectories, raw exact-pair signed translation residuals and translation RMSE, output-coverage accounting/binding, and strict persisted calibration profile/assessment contracts | Additional geometry/evaluator and lifecycle behavior, actual dataset profiles, and adapters are planned; exact state and policy identifiers, final metric protocols, sensor configuration, concrete conventions, thresholds, and numerical backend remain unresolved. |
 | Classical lane | Not implemented | Later rights-reviewed baseline uses its native build/runtime with no PyTorch or MLflow dependency. |
 | Learned/hybrid lane | Not implemented; no training framework is installed as a project dependency | A learned training/inference adapter is conditional on ADR-0004; PyTorch is proposed, while exact framework/version, topology, losses, optimizer, and schedule remain unresolved. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
@@ -202,7 +202,7 @@ compact-vio-uav/
 │   ├── contracts/                         [current: sensor payload/calibration-identity runtime records]
 │   ├── data/                              [planned: approved dataset adapters]
 │   ├── geometry/                          [current: translation trajectory records]
-│   ├── evaluation/                        [current: translation RMSE, coverage, replay/output binding]
+│   ├── evaluation/                        [current: translation residuals/RMSE, coverage, replay/output binding]
 │   ├── baselines/                         [planned: native classical adapters]
 │   ├── learning/                          [conditional on ADR-0004]
 │   │   ├── models/                        [conditional: direct and hybrid learned parts]
@@ -249,14 +249,20 @@ values rather than global defaults. The wrapper applies the declared reset
 state before delivering reset but cannot prove adapter-internal state was reset.
 The concrete profile and estimator remain M3 work.
 
-The first geometry/evaluation kernel stores Cartesian translations under an
+The first geometry/evaluation kernels store Cartesian translations under an
 explicit reference frame, tracked frame, transform direction, unit, clock, and
 timestamp-semantics convention plus a shared sequence/segment scope. Its only
-metric requires exact ordered sample identity and time and an explicit policy whose supported modes are exact
-association with no interpolation, trajectory alignment, or scale correction.
-Constant offsets, rotations, and scale errors therefore remain visible. This
-kernel is deliberately not labelled ATE and does not establish association,
-coverage, failures, metric scale, or any final evaluation protocol.
+pairing mode requires exact ordered sample identity and time and an explicit
+policy whose supported modes are exact association with no interpolation,
+trajectory alignment, or scale correction.
+
+One kernel retains the raw signed Cartesian difference, estimated translation
+minus reference translation, for every exact pair; the other reduces exact-pair
+translation error to RMSE. Constant offsets, rotations, and scale errors
+therefore remain visible. The residual series is in-memory only. Neither kernel
+is labelled ATE or RPE, establishes coverage or completion, proves declared
+frame metadata is scientifically correct, or defines a final evaluation
+protocol.
 
 The first coverage kernel consumes a nonempty ordered ledger whose expected
 opportunities, classification policy, and reason schema are named explicitly.

@@ -465,6 +465,9 @@ Implemented evaluator slice (not M7 exit evidence by itself):
 - One stable raw translation RMSE primitive requires exact pre-paired samples
   and a no-default policy explicitly declaring exact association, no
   interpolation, no alignment, and no scale correction.
+- A raw signed translation-residual series reuses that policy and retains
+  estimated-minus-reference Cartesian components for every exact pair. It is an
+  in-memory diagnostic record only.
 - Synthetic controls prove offsets, rotations, and scale errors are retained;
   empty/partial or convention-mismatched trajectories fail instead of being
   silently paired or reported as survivors.
@@ -493,8 +496,9 @@ Implemented evaluator slice (not M7 exit evidence by itself):
   scientific run success. Persistent full-run traces and complete
   lifecycle/failure-policy evidence remain open; generic payload objects are not
   deep-copied by the in-memory snapshot.
-- These kernels are not aligned ATE, RPE, metric-scale evidence, run-level
-  failure accounting, or a complete evaluator. M7 remains in progress.
+- These kernels are not aligned ATE, RPE, metric-scale evidence, coverage or
+  completion evidence, frame-correctness proof, run-level failure accounting,
+  or a complete evaluator. M7 remains in progress.
 
 Prohibited work:
 

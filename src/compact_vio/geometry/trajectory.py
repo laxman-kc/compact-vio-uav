@@ -13,17 +13,17 @@ class TrajectoryContractError(ValueError):
 
 
 def _require_non_empty_text(value: object, *, field: str) -> None:
-    if not isinstance(value, str) or not value.strip():
+    if type(value) is not str or not value.strip():
         raise TrajectoryContractError(f"{field} must be a non-empty string")
 
 
 def _require_non_negative_integer(value: object, *, field: str) -> None:
-    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+    if type(value) is not int or value < 0:
         raise TrajectoryContractError(f"{field} must be a non-negative integer")
 
 
 def _require_finite_runtime_scalar(value: object, *, field: str) -> None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+    if type(value) not in (int, float):
         raise TrajectoryContractError(
             f"{field} must be a finite real number representable by this runtime"
         )
@@ -37,7 +37,7 @@ def _require_finite_runtime_scalar(value: object, *, field: str) -> None:
         raise TrajectoryContractError(
             f"{field} must be a finite real number representable by this runtime"
         )
-    if isinstance(value, int) and int(runtime_value) != value:
+    if type(value) is int and int(runtime_value) != value:
         raise TrajectoryContractError(
             f"{field} integer must be exactly representable by this runtime"
         )
@@ -98,7 +98,7 @@ class TrajectorySample:
     def __post_init__(self) -> None:
         _require_non_empty_text(self.sample_id, field="sample_id")
         _require_non_negative_integer(self.timestamp_ns, field="timestamp_ns")
-        if not isinstance(self.position, CartesianPosition3):
+        if type(self.position) is not CartesianPosition3:
             raise TrajectoryContractError("position must be a CartesianPosition3")
 
 
@@ -116,11 +116,11 @@ class Trajectory:
         _require_non_empty_text(self.trajectory_id, field="trajectory_id")
         _require_non_empty_text(self.sequence_id, field="sequence_id")
         _require_non_empty_text(self.segment_id, field="segment_id")
-        if not isinstance(self.convention, TrajectoryConvention):
+        if type(self.convention) is not TrajectoryConvention:
             raise TrajectoryContractError("convention must be a TrajectoryConvention")
-        if not isinstance(self.samples, tuple):
+        if type(self.samples) is not tuple:
             raise TrajectoryContractError("samples must be a tuple")
-        if not all(isinstance(sample, TrajectorySample) for sample in self.samples):
+        if not all(type(sample) is TrajectorySample for sample in self.samples):
             raise TrajectoryContractError("samples must contain only TrajectorySample values")
 
         sample_ids = [sample.sample_id for sample in self.samples]

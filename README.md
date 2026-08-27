@@ -12,12 +12,12 @@ and source licence remain decisions for the milestones that need them.
 The repository contains the reproducibility foundation, a deterministic causal
 replay boundary, a framework-neutral estimator envelope with an explicit
 interface-declaration and initialization/reset contract, and typed camera/IMU
-payload records. It also contains immutable translation-trajectory records and
-one raw exact-pair translation-RMSE primitive, explicit output-coverage
-accounting, exact replay/output binding, and a causal execution recorder. The
-recorder constructs a fresh replay/session pair, releases one event at a time,
-retains only fully validated output batches, and records the first failed event
-separately.
+payload records. It also contains immutable translation-trajectory records,
+raw exact-pair signed translation-residual and translation-RMSE primitives,
+explicit output-coverage accounting, exact replay/output binding, and a causal
+execution recorder. The recorder constructs a fresh replay/session pair,
+releases one event at a time, retains only fully validated output batches, and
+records the first failed event separately.
 The repository also contains a strict persisted calibration-profile contract
 and a separate assessment contract, with a visibly synthetic rejected fixture.
 These boundaries require explicit frames, transform direction, units, time
@@ -104,9 +104,10 @@ require it.
 The installed package runtime is standard-library-only and currently provides a
 causal replay primitive, framework-neutral estimator-envelope and declared
 interface validation, typed sensor records, strict calibration profile/review
-contracts with synthetic negative validation, exact translation-trajectory and
-raw RMSE validation, output-coverage accounting, replay/output binding, direct
-causal execution recording, bundle inventory/verification, two-copy content
+contracts with synthetic negative validation, exact translation-trajectory,
+raw signed-residual and RMSE validation, output-coverage accounting,
+replay/output binding, direct causal execution recording, bundle
+inventory/verification, two-copy content
 audit, repository policy check, and read-only durability preflight. The separate
 schema/record validator is development tooling and uses the repository's pinned
 `jsonschema` dependency.
@@ -174,6 +175,13 @@ transform direction, and unit already match exactly. Every call supplies a polic
 explicitly permits no interpolation, alignment, or scale correction. This is a
 raw translation-error kernel, not aligned ATE, RPE, a metric-scale proof, a
 coverage/failure score, or a real-data result.
+
+`compact_vio.evaluation.exact_pair_translation_residuals` applies the same
+exact-pair policy and returns each raw signed Cartesian residual as estimated
+translation minus reference translation. The series is an in-memory record
+only. It is not ATE, RPE, coverage or completion evidence, and matching declared
+metadata does not prove that source frames or transforms are scientifically
+correct.
 
 `compact_vio.evaluation.summarize_output_coverage` counts a retained, nonempty
 ledger of caller-declared expected output opportunities. Missing, invalid,
