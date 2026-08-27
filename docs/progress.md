@@ -490,6 +490,41 @@ result, and explicit remaining blockers.
   training, and created no checkpoint or retained experiment artifact. No Brev
   stop or termination action was taken.
 
+## 2026-08-27 — M7 replay/output coverage binding implemented
+
+- Implementation evidence commit:
+  `3c4d48a10ae2333ed05abe8e0000681efa93b51b` on branch `main`.
+- Added immutable retained event/output batches and exact output-envelope slots.
+  Every declared opportunity identifies its triggering replay event; valid and
+  invalid outcomes bind to a precise zero-based position in that event's raw
+  output tuple, while a missing outcome explicitly binds to no output ordinal.
+- The binding requires all expected opportunities in ledger order and every
+  observed output envelope exactly once. Unknown events, wrong sequence indexes,
+  out-of-range or reused ordinals, missing/extra/reordered slots, output-validity
+  mismatches, and unbound overproduction fail visibly.
+- Retained batch events are reconstructed through the canonical `CausalReplay`
+  validator, preserving unique event/index identity, one clock, availability
+  order, and strictly increasing measurement time within each stream. Output
+  clocks and availability relative to their triggering event are rechecked.
+- Binding is by event identity and tuple ordinal, never timestamp proximity or
+  output value. Zero and multiple outputs per event, equal-valued envelopes,
+  invalid input events, reset events, and unrelated zero-output events remain
+  observable without assuming an output rate or failure classification.
+- Caller-supplied batches do not prove they came from `EstimatorSession`; full
+  execution recording, adapter-internal reset proof, lifecycle completion, and
+  failure policy remain open. This slice does not complete M7.
+- Local verification: all 152 standard-library tests passed; repository policy
+  passed for 75 files; the pinned schema harness passed 9 schemas and 7
+  templates; Ruff lint/format, compileall, and `git diff --check` passed. Two
+  focused adversarial reviews reported no remaining P0/P1 findings.
+- A read-only Brev observation found `compact-vio-uav-gpu` `RUNNING`, `READY`,
+  and `HEALTHY`. Its clean checkout fast-forwarded to the exact implementation
+  commit, all 152 tests passed, repository policy passed for 75 files, and the
+  checkout remained clean.
+- The A10 smoke installed no dependency, downloaded no dataset, ran no model
+  training, and created no checkpoint or retained experiment artifact. No Brev
+  stop or termination action was taken.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
