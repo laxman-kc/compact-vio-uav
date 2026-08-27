@@ -344,6 +344,47 @@ result, and explicit remaining blockers.
   the complete versioned calibration-profile schema and synthetic negative
   fixtures. No Brev stop or termination action was taken.
 
+## 2026-08-27 — M4 calibration profile and review contract completed
+
+- Implementation evidence commit:
+  `9120c74c2c7da7ac214d87a9fa48cd90ba0b6bce` on branch `main`.
+- Added strict Draft 2020-12 contracts for immutable sensor calibration facts
+  and a separate review, revalidation, or invalidation record. The contracts
+  cover actual camera/IMU streams, frames, axes, units, intrinsics, distortion,
+  camera–IMU transform endpoints and direction, clock mappings and offset-sign
+  definitions, IMU noise/bias characterization, gravity, provenance, validity
+  conditions, procedure evidence, diagnostics, threshold scope, and decisions.
+- The profile maps without defaults into the existing runtime calibration
+  identity and stream bindings. Facts never approve themselves: a review binds
+  the exact profile identity, revision, raw-file SHA-256, complete configuration
+  fingerprint, threshold scope, recomputed criterion results, and required
+  checks.
+- Added visibly synthetic profile and assessment fixtures. Their names, values,
+  units, conventions, models, and evidence references are non-authoritative;
+  the assessment is rejected, `approved_for_replay` is false, and it does not
+  accept an ADR.
+- Added semantic negative fixtures for duplicate or dangling IDs, missing clock
+  or transform coverage, absent IMU characterization, wrong hashes/fingerprint,
+  incomplete threshold scope, false criterion results, and false approval. Both
+  explicit camera→IMU and IMU→camera transform directions are accepted; every
+  stream must declare a clock mapping even when its source and replay clock IDs
+  match.
+- Local verification: 90 standard-library unit tests passed; the pinned schema
+  harness passed 9 schemas and 7 templates; Ruff lint passed and all 45 Python
+  files were formatted; repository policy passed for 66 files; and
+  `git diff --check` passed. Independent review reported PASS after three
+  adversarial findings were corrected.
+- The clean A10 checkout fast-forwarded to the exact implementation commit; all
+  90 tests passed there and repository policy passed for 66 files. A fresh
+  read-only Brev observation found `compact-vio-uav-gpu` `RUNNING`, `READY`, and
+  `HEALTHY` before the smoke.
+- M4 is complete under its synthetic-contract exit evidence. This does not
+  approve a dataset, sensor, calibration, numerical threshold, estimator, or
+  model. M3 remains in progress; M6 must create and review an actual profile for
+  its selected representative sequence. No dependency or dataset was installed
+  on the A10, no model was trained, no retained experiment artifact was created,
+  and no Brev stop or termination action was taken.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
