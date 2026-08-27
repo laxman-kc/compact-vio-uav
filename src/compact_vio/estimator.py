@@ -1,7 +1,7 @@
 """Framework-neutral estimator boundary for causal replay events.
 
 This module defines only the common envelope shared by future classical,
-learned, and hybrid estimators.  It deliberately leaves the odometry state,
+learned, and hybrid estimators. It deliberately leaves the odometry state,
 sensor configuration, numerical backend, and model architecture unspecified.
 """
 
@@ -31,10 +31,77 @@ def _require_non_negative_integer(value: object, *, field: str) -> None:
 
 
 @dataclass(frozen=True, slots=True)
+class EstimatorInterfaceDeclaration:
+    """Names the decisions every selected estimator profile must declare.
+
+    The values are opaque, versioned identifiers. Requiring them here does not
+    choose a state vector, scale mechanism, timing rule, or runtime policy.
+    Those project values remain inputs to a later accepted profile.
+    """
+
+    interface_id: str
+    state_schema_id: str
+    state_variable_ids: tuple[str, ...]
+    metric_scale_mechanism_id: str
+    initialization_policy_id: str
+    initialization_state_at_session_start: bool | None
+    reset_policy_id: str
+    initialization_state_after_reset: bool | None
+    valid_output_requires_initialized: bool
+    recurrence_policy_id: str
+    recurrence_warmup_policy_id: str
+    output_timestamp_semantics_id: str
+    output_schedule_id: str
+    causality_policy_id: str
+    algorithmic_latency_definition_id: str
+    processing_latency_definition_id: str
+    staleness_policy_id: str
+    input_gap_policy_id: str
+
+    def __post_init__(self) -> None:
+        for field in (
+            "interface_id",
+            "state_schema_id",
+            "metric_scale_mechanism_id",
+            "initialization_policy_id",
+            "reset_policy_id",
+            "recurrence_policy_id",
+            "recurrence_warmup_policy_id",
+            "output_timestamp_semantics_id",
+            "output_schedule_id",
+            "causality_policy_id",
+            "algorithmic_latency_definition_id",
+            "processing_latency_definition_id",
+            "staleness_policy_id",
+            "input_gap_policy_id",
+        ):
+            _require_non_empty_text(getattr(self, field), field=field)
+
+        if not isinstance(self.state_variable_ids, tuple) or not self.state_variable_ids:
+            raise EstimatorContractError("state_variable_ids must be a non-empty tuple")
+        for state_variable_id in self.state_variable_ids:
+            _require_non_empty_text(
+                state_variable_id,
+                field="state_variable_ids",
+            )
+        if len(self.state_variable_ids) != len(set(self.state_variable_ids)):
+            raise EstimatorContractError("state_variable_ids must not contain duplicates")
+        for field in (
+            "initialization_state_at_session_start",
+            "initialization_state_after_reset",
+        ):
+            value = getattr(self, field)
+            if value is not None and not isinstance(value, bool):
+                raise EstimatorContractError(f"{field} must be boolean or None")
+        if not isinstance(self.valid_output_requires_initialized, bool):
+            raise EstimatorContractError("valid_output_requires_initialized must be boolean")
+
+
+@dataclass(frozen=True, slots=True)
 class OutputConvention:
     """Required declarations that give an opaque estimator payload meaning.
 
-    Concrete values are intentionally not selected here.  A future accepted
+    Concrete values are intentionally not selected here. A future accepted
     estimator profile must provide them without relying on library defaults.
     """
 
@@ -73,6 +140,8 @@ class EstimatorOutput(Generic[OutputT]):
     health_code: str
     valid: bool
     payload: OutputT | None
+    interface_id: str | None = None
+    initialized: bool | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.convention, OutputConvention):
@@ -90,6 +159,14 @@ class EstimatorOutput(Generic[OutputT]):
             raise EstimatorContractError("valid output must carry a payload")
         if not self.valid and self.payload is not None:
             raise EstimatorContractError("invalid output must not carry a payload")
+        if self.interface_id is not None:
+            _require_non_empty_text(self.interface_id, field="interface_id")
+        if self.initialized is not None and not isinstance(self.initialized, bool):
+            raise EstimatorContractError("initialized must be boolean or None")
+        if (self.interface_id is None) != (self.initialized is None):
+            raise EstimatorContractError(
+                "interface_id and initialized must both be absent or both be present"
+            )
 
 
 class Estimator(Protocol[InputT, OutputT]):
@@ -113,7 +190,11 @@ class Estimator(Protocol[InputT, OutputT]):
 class EstimatorSession(Generic[InputT, OutputT]):
     """Validate one estimator adapter at the causal replay boundary.
 
-    This wrapper checks observable envelope rules.  It cannot prove which
+    Passing an interface enables the declared M3 contract. Omitting it keeps
+    the earlier envelope available only as an explicitly undeclared legacy
+    mode; legacy output is not evidence of M3 interface compliance.
+
+    This wrapper checks observable envelope rules. It cannot prove which
     opaque samples an estimator used internally; sample-lineage evidence is a
     later evaluator responsibility.
     """
@@ -124,14 +205,38 @@ class EstimatorSession(Generic[InputT, OutputT]):
         *,
         clock_id: str,
         convention: OutputConvention,
+        interface: EstimatorInterfaceDeclaration | None = None,
     ) -> None:
         _require_non_empty_text(clock_id, field="clock_id")
         if not isinstance(convention, OutputConvention):
             raise EstimatorContractError("convention must be an OutputConvention")
+        if interface is not None and not isinstance(
+            interface,
+            EstimatorInterfaceDeclaration,
+        ):
+            raise EstimatorContractError(
+                "interface must be an EstimatorInterfaceDeclaration or None"
+            )
         self._estimator = estimator
         self._clock_id = clock_id
         self._convention = convention
+        self._interface = interface
         self._reset_generation = 0
+        self._initialized = (
+            None if interface is None else interface.initialization_state_at_session_start
+        )
+
+    @property
+    def interface(self) -> EstimatorInterfaceDeclaration | None:
+        """The declared interface, or None in compatibility-only mode."""
+
+        return self._interface
+
+    @property
+    def initialized(self) -> bool | None:
+        """Unambiguous wrapper-observable state, or None if undeclared/ambiguous."""
+
+        return self._initialized
 
     @property
     def reset_generation(self) -> int:
@@ -154,6 +259,8 @@ class EstimatorSession(Generic[InputT, OutputT]):
 
         if event.kind is EventKind.RESET:
             self._reset_generation += 1
+            if self._interface is not None:
+                self._initialized = self._interface.initialization_state_after_reset
 
         outputs = self._estimator.ingest(event)
         if not isinstance(outputs, tuple):
@@ -161,6 +268,12 @@ class EstimatorSession(Generic[InputT, OutputT]):
 
         for output in outputs:
             self._validate_output(event, output)
+
+        if self._interface is not None and outputs:
+            initialization_states = {output.initialized for output in outputs}
+            self._initialized = (
+                initialization_states.pop() if len(initialization_states) == 1 else None
+            )
         return outputs
 
     def _validate_output(
@@ -185,10 +298,29 @@ class EstimatorSession(Generic[InputT, OutputT]):
                 "output reset_generation differs from the session generation"
             )
 
+        if self._interface is None:
+            if output.interface_id is not None or output.initialized is not None:
+                raise EstimatorContractError(
+                    "legacy session output must not claim a declared interface"
+                )
+            return
+
+        if output.interface_id != self._interface.interface_id:
+            raise EstimatorContractError("output interface_id differs from the session interface")
+        if not isinstance(output.initialized, bool):
+            raise EstimatorContractError("declared output initialized must be boolean")
+        if (
+            self._interface.valid_output_requires_initialized
+            and output.valid
+            and not output.initialized
+        ):
+            raise EstimatorContractError("valid declared output requires initialized=true")
+
 
 __all__ = [
     "Estimator",
     "EstimatorContractError",
+    "EstimatorInterfaceDeclaration",
     "EstimatorOutput",
     "EstimatorSession",
     "OutputConvention",

@@ -10,12 +10,14 @@ and source licence remain decisions for the milestones that need them.
 ## Current status
 
 The repository contains the reproducibility foundation, a deterministic causal
-replay boundary, a first framework-neutral estimator-contract envelope, and
-typed camera/IMU payload records. It also contains a strict persisted
+replay boundary, a framework-neutral estimator envelope with an explicit
+interface-declaration and initialization/reset contract, and typed camera/IMU
+payload records. It also contains a strict persisted
 calibration-profile contract and a separate assessment contract, with a
 visibly synthetic rejected fixture. These boundaries require explicit frames,
-transform direction, units, time semantics, validity, reset, health,
-provenance, and calibration references without selecting project-wide values.
+transform direction, units, time semantics, validity, reset, initialization,
+health, state/policy identifiers, provenance, and calibration references
+without selecting project-wide values.
 It does not yet contain an estimator algorithm, an accepted real sensor or
 dataset calibration profile, a trained model, an approved dataset split, a
 deployable runtime, or a flight-ready system.
@@ -94,10 +96,11 @@ require it.
 ## Foundation checks
 
 The installed package runtime is standard-library-only and currently provides a
-causal replay primitive, framework-neutral estimator-contract validation,
-typed sensor records, strict calibration profile/review contracts with
-synthetic negative validation, bundle inventory/verification, two-copy content
-audit, repository policy check, and read-only durability preflight. The
+causal replay primitive, framework-neutral estimator-envelope and declared
+interface validation, typed sensor records, strict calibration profile/review
+contracts with synthetic negative validation, bundle inventory/verification,
+two-copy content audit, repository policy check, and read-only durability
+preflight. The
 separate schema/record validator is development tooling and uses the
 repository's pinned `jsonschema` dependency.
 The inventory records every regular file by canonical relative path, byte size,
@@ -144,6 +147,19 @@ duplicate identities, malformed ordering, backward time advances, and
 availability before measurement. Reset and invalid events remain visible rather
 than being silently dropped. This is a synthetic contract primitive, not a
 dataset adapter or estimator.
+
+`compact_vio.estimator.EstimatorInterfaceDeclaration` requires a selected
+estimator profile to name its state schema and variables, metric-scale,
+initialization/reset/recurrence, output-time/schedule, causality, latency,
+staleness, and input-gap policies. These are opaque identifiers: the repository
+has not selected their concrete values. Declared sessions additionally require
+each output to report the same interface identity and an explicit initialization
+state. Startup state, post-reset state, and whether validity requires
+initialization are mandatory profile values, so the wrapper does not choose a
+cold- or warm-start policy. It applies the declared post-reset state before the
+adapter sees reset; this observable check does not prove the adapter reset its
+internal state. The older undeclared session mode remains compatibility-only
+and is not M3 evidence.
 
 ## State ownership
 

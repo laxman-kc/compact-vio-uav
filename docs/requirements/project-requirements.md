@@ -103,9 +103,12 @@ The following must be decided through ADRs before dependent implementation:
 - Project purpose and lane: **public-source, research-only, and non-commercial**;
   exact source licence and any future binary/data release package: **TBD**.
 - Estimator scope: **causal metric-scale local VIO with no loop closure in the
-  primary comparison**; exact state/frame/time/reset interface: **TBD**.
+  primary comparison**; declaration and runtime-validation shape:
+  **implemented**; exact state/frame/time/reset values: **TBD**.
 - Monocular versus stereo and complete camera/IMU timing/calibration envelope: **TBD**.
-- Estimated state, output rate, initialization mode, and latency ceiling: **TBD**.
+- Estimated state, output rate, initialization mode, latency definitions, and
+  latency ceiling: **TBD**; the interface requires explicit identifiers but
+  supplies no project defaults.
 - Proposed training framework for learned/hybrid candidates: **PyTorch**;
   framework selection and exact version, model architecture, objective,
   optimizer, hyperparameters, and schedule: **TBD through ADR-0004**.

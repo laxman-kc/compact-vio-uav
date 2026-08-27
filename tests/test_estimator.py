@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import unittest
 from collections.abc import Callable
+from dataclasses import FrozenInstanceError, replace
 
 from compact_vio.estimator import (
     EstimatorContractError,
+    EstimatorInterfaceDeclaration,
     EstimatorOutput,
     EstimatorSession,
     OutputConvention,
@@ -20,6 +22,27 @@ CONVENTION = OutputConvention(
     rotation_representation="declared-by-test-profile",
     rotation_unit="declared-by-test-profile",
     health_schema_id="test-health-v1",
+)
+
+INTERFACE = EstimatorInterfaceDeclaration(
+    interface_id="test-interface-v1",
+    state_schema_id="test-state-schema-v1",
+    state_variable_ids=("test-state-a", "test-state-b"),
+    metric_scale_mechanism_id="test-scale-policy-v1",
+    initialization_policy_id="test-initialization-policy-v1",
+    initialization_state_at_session_start=False,
+    reset_policy_id="test-reset-policy-v1",
+    initialization_state_after_reset=False,
+    valid_output_requires_initialized=True,
+    recurrence_policy_id="test-recurrence-policy-v1",
+    recurrence_warmup_policy_id="test-warmup-policy-v1",
+    output_timestamp_semantics_id="test-output-time-policy-v1",
+    output_schedule_id="test-output-schedule-v1",
+    causality_policy_id="test-causality-policy-v1",
+    algorithmic_latency_definition_id="test-algorithmic-latency-v1",
+    processing_latency_definition_id="test-processing-latency-v1",
+    staleness_policy_id="test-staleness-policy-v1",
+    input_gap_policy_id="test-input-gap-policy-v1",
 )
 
 
@@ -53,6 +76,8 @@ def _output(
     payload: object | None = "opaque-state",
     clock_id: str = "sensor-clock",
     convention: OutputConvention = CONVENTION,
+    interface_id: str | None = None,
+    initialized: bool | None = None,
 ) -> EstimatorOutput[object]:
     return EstimatorOutput(
         convention=convention,
@@ -63,6 +88,8 @@ def _output(
         health_code=health_code,
         valid=valid,
         payload=payload,
+        interface_id=interface_id,
+        initialized=initialized,
     )
 
 
@@ -81,6 +108,102 @@ class _FunctionEstimator:
     ) -> tuple[EstimatorOutput[object], ...]:
         self.seen.append(event)
         return self.function(event)
+
+
+class EstimatorInterfaceDeclarationTests(unittest.TestCase):
+    def _values(self) -> dict[str, object]:
+        return {
+            "interface_id": "test-interface-v1",
+            "state_schema_id": "test-state-schema-v1",
+            "state_variable_ids": ("test-state-a", "test-state-b"),
+            "metric_scale_mechanism_id": "test-scale-policy-v1",
+            "initialization_policy_id": "test-initialization-policy-v1",
+            "initialization_state_at_session_start": False,
+            "reset_policy_id": "test-reset-policy-v1",
+            "initialization_state_after_reset": False,
+            "valid_output_requires_initialized": True,
+            "recurrence_policy_id": "test-recurrence-policy-v1",
+            "recurrence_warmup_policy_id": "test-warmup-policy-v1",
+            "output_timestamp_semantics_id": "test-output-time-policy-v1",
+            "output_schedule_id": "test-output-schedule-v1",
+            "causality_policy_id": "test-causality-policy-v1",
+            "algorithmic_latency_definition_id": "test-algorithmic-latency-v1",
+            "processing_latency_definition_id": "test-processing-latency-v1",
+            "staleness_policy_id": "test-staleness-policy-v1",
+            "input_gap_policy_id": "test-input-gap-policy-v1",
+        }
+
+    def _declaration(self, **updates: object) -> EstimatorInterfaceDeclaration:
+        values = self._values()
+        values.update(updates)
+        return EstimatorInterfaceDeclaration(**values)  # type: ignore[arg-type]
+
+    def test_every_policy_identifier_is_explicit_and_nonblank(self) -> None:
+        for field, value in self._values().items():
+            if not isinstance(value, str):
+                continue
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(EstimatorContractError, field):
+                    self._declaration(**{field: " "})
+
+    def test_state_variable_identifiers_are_a_unique_nonempty_tuple(self) -> None:
+        invalid_values = (
+            [],
+            (),
+            ("test-state", "test-state"),
+            ("test-state", " "),
+        )
+        for value in invalid_values:
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(
+                    EstimatorContractError,
+                    "state_variable_ids",
+                ):
+                    self._declaration(state_variable_ids=value)
+
+    def test_initialization_semantics_are_explicit_profile_values(self) -> None:
+        declaration = self._declaration(
+            initialization_state_at_session_start=None,
+            initialization_state_after_reset=True,
+            valid_output_requires_initialized=False,
+        )
+        self.assertIsNone(declaration.initialization_state_at_session_start)
+        self.assertTrue(declaration.initialization_state_after_reset)
+        self.assertFalse(declaration.valid_output_requires_initialized)
+
+        for field in (
+            "initialization_state_at_session_start",
+            "initialization_state_after_reset",
+            "valid_output_requires_initialized",
+        ):
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(EstimatorContractError, field):
+                    self._declaration(**{field: 0})
+
+    def test_declaration_is_immutable_and_does_not_select_numerical_values(self) -> None:
+        declaration = self._declaration(
+            state_variable_ids=("opaque-a",),
+            metric_scale_mechanism_id="opaque-scale-decision",
+            output_schedule_id="opaque-schedule-decision",
+        )
+
+        self.assertEqual(declaration.state_variable_ids, ("opaque-a",))
+        self.assertFalse(hasattr(declaration, "__dict__"))
+        with self.assertRaises(FrozenInstanceError):
+            declaration.interface_id = "changed"  # type: ignore[misc]
+
+    def test_latency_definitions_are_independently_required_but_may_share_an_id(
+        self,
+    ) -> None:
+        declaration = self._declaration(
+            algorithmic_latency_definition_id="same-explicit-definition",
+            processing_latency_definition_id="same-explicit-definition",
+        )
+
+        self.assertEqual(
+            declaration.algorithmic_latency_definition_id,
+            declaration.processing_latency_definition_id,
+        )
 
 
 class EstimatorOutputTests(unittest.TestCase):
@@ -129,6 +252,12 @@ class EstimatorOutputTests(unittest.TestCase):
         with self.assertRaisesRegex(EstimatorContractError, "valid must be boolean"):
             _output(valid=1)  # type: ignore[arg-type]
 
+    def test_interface_identity_and_initialization_are_an_atomic_pair(self) -> None:
+        with self.assertRaisesRegex(EstimatorContractError, "both be absent"):
+            _output(interface_id=INTERFACE.interface_id, initialized=None)
+        with self.assertRaisesRegex(EstimatorContractError, "both be absent"):
+            _output(interface_id=None, initialized=True)
+
 
 class EstimatorSessionTests(unittest.TestCase):
     def _session(self, estimator: _FunctionEstimator) -> EstimatorSession[int, object]:
@@ -136,6 +265,17 @@ class EstimatorSessionTests(unittest.TestCase):
             estimator,
             clock_id="sensor-clock",
             convention=CONVENTION,
+        )
+
+    def _declared_session(
+        self,
+        estimator: _FunctionEstimator,
+    ) -> EstimatorSession[int, object]:
+        return EstimatorSession(
+            estimator,
+            clock_id="sensor-clock",
+            convention=CONVENTION,
+            interface=INTERFACE,
         )
 
     def test_replay_event_flows_directly_to_estimator_without_conversion(self) -> None:
@@ -273,6 +413,220 @@ class EstimatorSessionTests(unittest.TestCase):
         wrong_item.function = lambda _: ("not-output",)  # type: ignore[assignment,return-value]
         with self.assertRaisesRegex(EstimatorContractError, "EstimatorOutput"):
             self._session(wrong_item).ingest(_event())
+
+    def test_declared_session_tracks_explicit_initialization_transitions(self) -> None:
+        def adapter(event: ReplayEvent[int]) -> tuple[EstimatorOutput[object], ...]:
+            initialized = event.sequence_index > 1
+            return (
+                _output(
+                    estimate_time_ns=event.measurement_time_ns,
+                    available_time_ns=event.available_time_ns,
+                    valid=initialized,
+                    payload="opaque-state" if initialized else None,
+                    health_code=("test-nominal" if initialized else "test-initializing"),
+                    interface_id=INTERFACE.interface_id,
+                    initialized=initialized,
+                ),
+            )
+
+        session = self._declared_session(_FunctionEstimator(adapter))
+        self.assertIs(session.interface, INTERFACE)
+        self.assertFalse(session.initialized)
+
+        session.ingest(_event(sequence_index=1))
+        self.assertFalse(session.initialized)
+        session.ingest(_event(sequence_index=2))
+        self.assertTrue(session.initialized)
+
+    def test_declared_session_requires_matching_interface_and_boolean_state(self) -> None:
+        for output in (
+            _output(),
+            _output(interface_id="other-interface", initialized=True),
+        ):
+            with self.subTest(interface_id=output.interface_id):
+                session = self._declared_session(
+                    _FunctionEstimator(lambda _, result=output: (result,))
+                )
+                with self.assertRaisesRegex(
+                    EstimatorContractError,
+                    "interface_id differs",
+                ):
+                    session.ingest(_event())
+
+        with self.assertRaisesRegex(EstimatorContractError, "initialized"):
+            _output(
+                interface_id=INTERFACE.interface_id,
+                initialized=0,  # type: ignore[arg-type]
+            )
+
+    def test_valid_output_requires_initialized_but_invalid_output_may_remain_initialized(
+        self,
+    ) -> None:
+        invalid_state = self._declared_session(
+            _FunctionEstimator(
+                lambda _: (
+                    _output(
+                        interface_id=INTERFACE.interface_id,
+                        initialized=False,
+                    ),
+                )
+            )
+        )
+        with self.assertRaisesRegex(EstimatorContractError, "initialized=true"):
+            invalid_state.ingest(_event())
+
+        stale_but_initialized = self._declared_session(
+            _FunctionEstimator(
+                lambda _: (
+                    _output(
+                        valid=False,
+                        payload=None,
+                        health_code="test-stale",
+                        interface_id=INTERFACE.interface_id,
+                        initialized=True,
+                    ),
+                )
+            )
+        )
+        stale_but_initialized.ingest(_event())
+        self.assertTrue(stale_but_initialized.initialized)
+
+    def test_declared_reset_applies_profile_state_before_adapter_runs(self) -> None:
+        session: EstimatorSession[int, object]
+
+        def adapter(event: ReplayEvent[int]) -> tuple[EstimatorOutput[object], ...]:
+            if event.kind is EventKind.RESET:
+                self.assertFalse(session.initialized)
+                return (
+                    _output(
+                        estimate_time_ns=event.measurement_time_ns,
+                        available_time_ns=event.available_time_ns,
+                        reset_generation=session.reset_generation,
+                        health_code="test-reset",
+                        valid=False,
+                        payload=None,
+                        interface_id=INTERFACE.interface_id,
+                        initialized=False,
+                    ),
+                )
+            return (
+                _output(
+                    estimate_time_ns=event.measurement_time_ns,
+                    available_time_ns=event.available_time_ns,
+                    interface_id=INTERFACE.interface_id,
+                    initialized=True,
+                ),
+            )
+
+        session = self._declared_session(_FunctionEstimator(adapter))
+        session.ingest(_event(sequence_index=1))
+        self.assertTrue(session.initialized)
+
+        session.ingest(_event(sequence_index=2, kind=EventKind.RESET))
+        self.assertEqual(session.reset_generation, 1)
+        self.assertFalse(session.initialized)
+
+    def test_profile_controls_start_reset_and_valid_initialization_semantics(
+        self,
+    ) -> None:
+        profile = replace(
+            INTERFACE,
+            interface_id="test-warm-interface-v1",
+            initialization_state_at_session_start=True,
+            initialization_state_after_reset=True,
+            valid_output_requires_initialized=False,
+        )
+        session: EstimatorSession[int, object]
+
+        def adapter(event: ReplayEvent[int]) -> tuple[EstimatorOutput[object], ...]:
+            self.assertTrue(session.initialized)
+            return (
+                _output(
+                    estimate_time_ns=event.measurement_time_ns,
+                    available_time_ns=event.available_time_ns,
+                    reset_generation=session.reset_generation,
+                    interface_id=profile.interface_id,
+                    initialized=False,
+                ),
+            )
+
+        session = EstimatorSession(
+            _FunctionEstimator(adapter),
+            clock_id="sensor-clock",
+            convention=CONVENTION,
+            interface=profile,
+        )
+        self.assertTrue(session.initialized)
+
+        session.ingest(_event(sequence_index=1, kind=EventKind.RESET))
+        self.assertFalse(session.initialized)
+
+    def test_declared_state_changes_only_after_every_output_validates(self) -> None:
+        first = _output(
+            interface_id=INTERFACE.interface_id,
+            initialized=True,
+        )
+        malformed_second = _output(
+            interface_id="other-interface",
+            initialized=True,
+            payload="second-opaque-state",
+        )
+        session = self._declared_session(_FunctionEstimator(lambda _: (first, malformed_second)))
+
+        with self.assertRaisesRegex(EstimatorContractError, "interface_id differs"):
+            session.ingest(_event())
+        self.assertFalse(session.initialized)
+
+    def test_zero_outputs_do_not_change_declared_initialization(self) -> None:
+        estimator = _FunctionEstimator(
+            lambda _: (
+                _output(
+                    interface_id=INTERFACE.interface_id,
+                    initialized=True,
+                ),
+            )
+        )
+        session = self._declared_session(estimator)
+        session.ingest(_event(sequence_index=1))
+        self.assertTrue(session.initialized)
+
+        estimator.function = lambda _: ()
+        session.ingest(_event(sequence_index=2))
+        self.assertTrue(session.initialized)
+
+    def test_mixed_output_states_make_the_wrapper_summary_ambiguous(self) -> None:
+        uninitialized = _output(
+            valid=False,
+            payload=None,
+            interface_id=INTERFACE.interface_id,
+            initialized=False,
+        )
+        initialized = _output(
+            payload="later-opaque-state",
+            interface_id=INTERFACE.interface_id,
+            initialized=True,
+        )
+        session = self._declared_session(_FunctionEstimator(lambda _: (uninitialized, initialized)))
+
+        session.ingest(_event())
+        self.assertIsNone(session.initialized)
+
+    def test_legacy_session_cannot_claim_declared_interface_compliance(self) -> None:
+        session = self._session(
+            _FunctionEstimator(
+                lambda _: (
+                    _output(
+                        interface_id=INTERFACE.interface_id,
+                        initialized=True,
+                    ),
+                )
+            )
+        )
+
+        self.assertIsNone(session.interface)
+        self.assertIsNone(session.initialized)
+        with self.assertRaisesRegex(EstimatorContractError, "legacy session"):
+            session.ingest(_event())
 
 
 if __name__ == "__main__":

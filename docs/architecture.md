@@ -1,7 +1,7 @@
 # System architecture
 
 Status: Local-VIO and training flow defined; detailed estimator, sensor, and deployment choices unresolved
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-27
 
 ## Purpose
 
@@ -147,8 +147,9 @@ source/build provenance. Checkpoints and large histories stay out of Git.
 ## Current implementation boundary
 
 Implemented now: repository/evidence tooling, the generic causal event-release
-primitive, the first framework-neutral estimator-contract envelope, typed
-camera/IMU payload records, and strict persisted calibration-profile plus
+primitive, a framework-neutral estimator envelope with a required declaration
+shape and initialization/reset validation, typed camera/IMU payload records,
+and strict persisted calibration-profile plus
 separate assessment contracts. The committed fixture is synthetic and rejected;
 there is no accepted real sensor or dataset profile. Planned next: the
 geometry/evaluation core, one rights-approved dataset adapter with its actual
@@ -162,7 +163,7 @@ candidate-only dataset registry exists, but it is not data-use approval.
 | Layer | Current implementation | Planned or conditional boundary |
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Numerical array/vision library for estimator work is unresolved. |
-| Common VIO substrate | Generic causal replay, first estimator-contract envelope, typed camera/IMU records, and strict persisted calibration profile/assessment contracts | Geometry, evaluator, actual dataset profiles, and adapters are planned; exact state, sensor configuration, concrete conventions, thresholds, and numerical backend remain unresolved. |
+| Common VIO substrate | Generic causal replay, estimator envelope with an explicit interface-declaration shape and initialization/reset validation, typed camera/IMU records, and strict persisted calibration profile/assessment contracts | Geometry, evaluator, actual dataset profiles, and adapters are planned; exact state and policy identifiers, sensor configuration, concrete conventions, thresholds, and numerical backend remain unresolved. |
 | Classical lane | Not implemented | Later rights-reviewed baseline uses its native build/runtime with no PyTorch or MLflow dependency. |
 | Learned/hybrid lane | Not implemented; no training framework is installed as a project dependency | A learned training/inference adapter is conditional on ADR-0004; PyTorch is proposed, while exact framework/version, topology, losses, optimizer, and schedule remain unresolved. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
@@ -188,7 +189,7 @@ compact-vio-uav/
 ├── configs/                               [current: calibration schemas/rejected synthetic fixtures; other configs planned]
 ├── src/compact_vio/
 │   ├── replay.py                          [current]
-│   ├── estimator.py                       [current: framework-neutral estimator contract]
+│   ├── estimator.py                       [current: estimator envelope/interface declaration]
 │   ├── artifacts/                         [current]
 │   ├── copy_audit.py                      [current]
 │   ├── preflight.py                       [current]
@@ -217,9 +218,10 @@ All candidates must share:
 
 - A canonical sensor record with image exposure time, individual IMU timestamps, calibration, frames, units, validity, reset markers, provenance, and optional ground truth.
 - A replay contract that exposes no future samples and reproduces streaming state, warm-up, reset, dropout, and stale-data behavior.
-- A framework-neutral estimator boundary. Native classical adapters consume the
-  project contract directly; learned adapters perform tensor conversion inside
-  their own boundary.
+- A framework-neutral estimator boundary. Every selected profile must provide
+  the declaration identifiers required by the shared contract; native
+  classical adapters consume the project contract directly, while learned
+  adapters perform tensor conversion inside their own boundary.
 - A frozen evaluator that reports trajectory error, metric scale, initialization, coverage, failures, and end-to-end timing.
 - An experiment manifest conforming to `experiments/schemas/run-manifest.schema.json`.
 - Dataset and artifact governance independent of the chosen estimator.
@@ -230,6 +232,17 @@ The first implemented replay primitive distinguishes
 declared clock per replay; same-time ordering is explicit; and reset or invalid
 events are delivered rather than filtered. Dataset adapters will later map
 source timestamps and payloads into this contract.
+
+The estimator declaration currently freezes only which decisions a profile
+must name: state schema/variables, metric-scale mechanism, initialization,
+reset, recurrence and warm-up, output timestamp/schedule, causality,
+algorithmic/processing latency, staleness, and input-gap policies. It supplies
+no default values for those decisions. A declared runtime session checks exact
+interface identity and explicit initialization state. Its startup state,
+post-reset state, and valid/initialized relationship are required profile
+values rather than global defaults. The wrapper applies the declared reset
+state before delivering reset but cannot prove adapter-internal state was reset.
+The concrete profile and estimator remain M3 work.
 
 ## Deployment boundary
 

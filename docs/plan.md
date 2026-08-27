@@ -277,6 +277,20 @@ Required decisions/evidence:
   are available and when the estimate becomes available.
 - Separate scientific-winner criteria from deployable-winner criteria.
 
+Implemented interface-control slice (not M3 exit evidence by itself):
+
+- A standard-library declaration record now requires explicit identifiers for
+  state schema/variables, scale, initialization/reset/recurrence, output time
+  and schedule, causality, latency, staleness, and input-gap policies without
+  choosing their values.
+- Declared estimator sessions check exact interface identity, explicit
+  initialization state, the profile-declared valid/initialized relationship,
+  and the profile-declared post-reset state before adapter delivery. These are
+  wrapper-observable checks, not proof of adapter-internal reset behavior. The
+  prior undeclared envelope is compatibility-only.
+- The primary question, concrete declaration values, sample-level lineage,
+  evaluator thresholds, and ADR-0004 remain unresolved; M3 stays in progress.
+
 Prohibited work:
 
 - No final architecture selection from paper-reported metrics on other devices.
@@ -713,7 +727,8 @@ Exit evidence:
 
 Execute these as separate small slices; do not combine them into one long phase:
 
-1. Freeze the remaining local-VIO state/frame/time/reset interface.
+1. Select and freeze the concrete values for the declared local-VIO
+   state/frame/time/reset interface and the M3 research question.
 2. Add trajectory geometry and one metric at a time, followed by its negative
    control.
 3. Rights-check and ingest one representative sequence only, including its
