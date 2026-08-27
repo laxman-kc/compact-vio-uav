@@ -11,12 +11,14 @@ and source licence remain decisions for the milestones that need them.
 
 The repository contains the reproducibility foundation, a deterministic causal
 replay boundary, a first framework-neutral estimator-contract envelope, and
-typed camera/IMU payload plus calibration-identity records. These boundaries
-require explicit frames, transform direction, units, time semantics, validity,
-reset, health, provenance, and calibration references without selecting
-project-wide values. It does not yet contain an estimator algorithm, complete
-calibration profile, trained model, approved dataset split, deployable runtime,
-or flight-ready system.
+typed camera/IMU payload records. It also contains a strict persisted
+calibration-profile contract and a separate assessment contract, with a
+visibly synthetic rejected fixture. These boundaries require explicit frames,
+transform direction, units, time semantics, validity, reset, health,
+provenance, and calibration references without selecting project-wide values.
+It does not yet contain an estimator algorithm, an accepted real sensor or
+dataset calibration profile, a trained model, an approved dataset split, a
+deployable runtime, or a flight-ready system.
 PyTorch is the proposed framework for future learned-component work, pending
 ADR-0004; MLflow is an optional, currently absent observer. Neither is a current
 package dependency.
@@ -86,21 +88,25 @@ require it.
 - [Run-manifest JSON Schema](experiments/schemas/run-manifest.schema.json)
 - [Bundle-inventory JSON Schema](experiments/schemas/artifact-manifest.schema.json)
 - [Post-export artifact-storage evidence schema](experiments/schemas/artifact-storage-evidence.schema.json)
+- [Sensor calibration-profile schema](configs/schemas/calibration-profile.schema.json)
+- [Calibration review/revalidation schema](configs/schemas/calibration-assessment.schema.json)
 
 ## Foundation checks
 
 The installed package runtime is standard-library-only and currently provides a
 causal replay primitive, framework-neutral estimator-contract validation,
-typed sensor and calibration-identity records with synthetic validation, bundle
-inventory/verification, two-copy content audit, repository policy check, and
-read-only durability preflight. The separate schema/record validator is
-development tooling and uses the repository's pinned `jsonschema` dependency.
+typed sensor records, strict calibration profile/review contracts with
+synthetic negative validation, bundle inventory/verification, two-copy content
+audit, repository policy check, and read-only durability preflight. The
+separate schema/record validator is development tooling and uses the
+repository's pinned `jsonschema` dependency.
 The inventory records every regular file by canonical relative path, byte size,
 and SHA-256, and rejects symbolic links and unsupported filesystem entries.
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 PYTHONPATH=src python3 -m compact_vio.repository_policy .
+uv run --no-project --with 'jsonschema[format-nongpl]==4.26.0' python scripts/validate_schemas.py
 PYTHONPATH=src python3 -m compact_vio.preflight
 PYTHONPATH=src python3 -m compact_vio.artifacts create /path/to/frozen-run-bundle
 PYTHONPATH=src python3 -m compact_vio.artifacts verify /path/to/restored-run-bundle

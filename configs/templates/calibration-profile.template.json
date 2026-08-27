@@ -1,0 +1,736 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "sensor_calibration_profile",
+  "record_id": "synthetic-calibration-profile",
+  "sensor_profile_id": "synthetic-sensor-profile",
+  "calibration_id": "synthetic-calibration",
+  "revision_id": "synthetic-revision-001",
+  "created_at": "2000-01-01T00:00:00Z",
+  "provenance_id": "synthetic-provenance",
+  "profile_role_id": "synthetic-fixture-only",
+  "supersedes": null,
+  "provenance": {
+    "source_kind_id": "synthetic-fixture",
+    "source_id": "synthetic-source",
+    "source_version": "synthetic-version",
+    "source_ref": {
+      "ref": "configs/templates/synthetic-source.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic fixture reference; no physical source exists."
+    },
+    "input_manifest_ref": {
+      "ref": "configs/templates/synthetic-input-manifest.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic fixture reference; no dataset was acquired."
+    },
+    "implementation_ref": {
+      "ref": "configs/templates/synthetic-tool.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic fixture reference; no calibration tool was selected."
+    },
+    "configuration_ref": {
+      "ref": "configs/templates/synthetic-tool-config.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic fixture reference; no calibration settings were selected."
+    },
+    "created_by": "schema fixture generator"
+  },
+  "replay_clock_id": "synthetic-replay-clock",
+  "camera_layout_id": "synthetic-layout-unspecified-count",
+  "operating_mode_id": "synthetic-operating-mode",
+  "configuration_fingerprint_sha256": "55d62ffc7d3c18aba499cddb95b97727902866038b50219fbfd1b88364c8e0de",
+  "validity_conditions_id": "synthetic-validity-conditions",
+  "cameras": [
+    {
+      "stream_id": "synthetic-camera-stream",
+      "sensor_id": "synthetic-camera-sensor",
+      "hardware_revision_id": "synthetic-camera-hardware",
+      "frame_id": "synthetic-camera-frame",
+      "frame_definition_ref": {
+        "ref": "configs/templates/synthetic-camera-frame.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic frame definition with no physical convention."
+      },
+      "source_clock_id": "synthetic-camera-clock",
+      "clock_definition_ref": {
+        "ref": "configs/templates/synthetic-camera-clock.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic clock definition with no physical epoch."
+      },
+      "encoding_id": "synthetic-camera-encoding",
+      "encoding_definition_ref": {
+        "ref": "configs/templates/synthetic-encoding.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic encoding definition."
+      },
+      "color_model_id": "synthetic-color-model",
+      "width_px": 17,
+      "height_px": 19,
+      "nominal_rate": {
+        "parameter_id": "synthetic-camera-rate",
+        "value": 23,
+        "unit_id": "synthetic-rate-unit",
+        "unit_definition_ref": {
+          "ref": "configs/templates/synthetic-rate-unit.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic unit; not a project default."
+        }
+      },
+      "shutter_model_id": "synthetic-shutter-model",
+      "shutter_model_ref": {
+        "ref": "configs/templates/synthetic-shutter.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic shutter definition."
+      },
+      "exposure_mode_id": "synthetic-exposure-mode",
+      "timestamp_semantics_id": "synthetic-camera-timestamp-semantics",
+      "timestamp_semantics_ref": {
+        "ref": "configs/templates/synthetic-camera-timestamp.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic timestamp convention."
+      },
+      "axis_convention_id": "synthetic-camera-axes",
+      "axis_convention_ref": {
+        "ref": "configs/templates/synthetic-camera-axes.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic axes; no physical convention is selected."
+      },
+      "lens_configuration_id": "synthetic-lens-configuration",
+      "focus_configuration_id": "synthetic-focus-configuration",
+      "field_of_view": {
+        "model_id": "synthetic-field-of-view-model",
+        "model_definition_ref": {
+          "ref": "configs/templates/synthetic-fov-model.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic model definition."
+        },
+        "parameters": [
+          {
+            "parameter_id": "synthetic-fov-parameter",
+            "value": 29,
+            "unit_id": "synthetic-angle-unit",
+            "unit_definition_ref": {
+              "ref": "configs/templates/synthetic-angle-unit.txt",
+              "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "description": "Synthetic unit; not a project default."
+            }
+          }
+        ]
+      },
+      "intrinsics": {
+        "model_id": "synthetic-intrinsics-model",
+        "model_definition_ref": {
+          "ref": "configs/templates/synthetic-intrinsics-model.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic model definition."
+        },
+        "parameters": [
+          {
+            "parameter_id": "synthetic-intrinsics-parameter",
+            "value": [31, 37, 41],
+            "unit_id": "synthetic-intrinsics-unit",
+            "unit_definition_ref": {
+              "ref": "configs/templates/synthetic-intrinsics-unit.txt",
+              "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "description": "Synthetic unit; not a project default."
+            }
+          }
+        ]
+      },
+      "distortion": {
+        "model_id": "synthetic-distortion-model",
+        "model_definition_ref": {
+          "ref": "configs/templates/synthetic-distortion-model.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic model definition."
+        },
+        "parameters": []
+      },
+      "validity_condition_ids": [
+        "synthetic-hardware-condition",
+        "synthetic-mount-condition",
+        "synthetic-focus-condition",
+        "synthetic-resolution-condition",
+        "synthetic-exposure-condition",
+        "synthetic-firmware-condition",
+        "synthetic-timestamp-condition",
+        "synthetic-environment-condition"
+      ]
+    }
+  ],
+  "imu_streams": [
+    {
+      "stream_id": "synthetic-imu-stream",
+      "sensor_id": "synthetic-imu-sensor",
+      "hardware_revision_id": "synthetic-imu-hardware",
+      "frame_id": "synthetic-imu-frame",
+      "frame_definition_ref": {
+        "ref": "configs/templates/synthetic-imu-frame.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic frame definition with no physical convention."
+      },
+      "source_clock_id": "synthetic-imu-clock",
+      "clock_definition_ref": {
+        "ref": "configs/templates/synthetic-imu-clock.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic clock definition with no physical epoch."
+      },
+      "timestamp_semantics_id": "synthetic-imu-timestamp-semantics",
+      "timestamp_semantics_ref": {
+        "ref": "configs/templates/synthetic-imu-timestamp.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic timestamp convention."
+      },
+      "pairing_semantics_id": "synthetic-paired-sample-shape",
+      "nominal_rate": {
+        "parameter_id": "synthetic-imu-rate",
+        "value": 43,
+        "unit_id": "synthetic-rate-unit",
+        "unit_definition_ref": {
+          "ref": "configs/templates/synthetic-rate-unit.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic unit; not a project default."
+        }
+      },
+      "temperature_expectations": {
+        "model_id": "synthetic-temperature-model",
+        "model_definition_ref": {
+          "ref": "configs/templates/synthetic-temperature-model.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic model definition."
+        },
+        "parameters": []
+      },
+      "gyroscope": {
+        "quantity_id": "synthetic-angular-rate",
+        "axis_convention_id": "synthetic-imu-axes",
+        "axis_convention_ref": {
+          "ref": "configs/templates/synthetic-imu-axes.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic axes; no physical convention is selected."
+        },
+        "measurement_range": {
+          "model_id": "synthetic-gyro-range-model",
+          "model_definition_ref": {
+            "ref": "configs/templates/synthetic-gyro-range-model.txt",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "description": "Synthetic model definition."
+          },
+          "parameters": [
+            {
+              "parameter_id": "synthetic-gyro-range-value",
+              "value": 101,
+              "unit_id": "synthetic-gyro-range-unit",
+              "unit_definition_ref": {
+                "ref": "configs/templates/synthetic-gyro-range-unit.txt",
+                "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "description": "Synthetic unit; not a project default."
+              }
+            }
+          ]
+        },
+        "noise_density": {
+          "model_id": "synthetic-gyro-noise-model",
+          "model_definition_ref": {
+            "ref": "configs/templates/synthetic-gyro-noise-model.txt",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "description": "Synthetic model definition."
+          },
+          "parameters": [
+            {
+              "parameter_id": "synthetic-gyro-noise-value",
+              "value": 103,
+              "unit_id": "synthetic-gyro-noise-unit",
+              "unit_definition_ref": {
+                "ref": "configs/templates/synthetic-gyro-noise-unit.txt",
+                "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "description": "Synthetic unit; not a project default."
+              }
+            }
+          ]
+        },
+        "bias_random_walk": {
+          "model_id": "synthetic-gyro-bias-model",
+          "model_definition_ref": {
+            "ref": "configs/templates/synthetic-gyro-bias-model.txt",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "description": "Synthetic model definition."
+          },
+          "parameters": [
+            {
+              "parameter_id": "synthetic-gyro-bias-value",
+              "value": 107,
+              "unit_id": "synthetic-gyro-bias-unit",
+              "unit_definition_ref": {
+                "ref": "configs/templates/synthetic-gyro-bias-unit.txt",
+                "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "description": "Synthetic unit; not a project default."
+              }
+            }
+          ]
+        }
+      },
+      "accelerometer": {
+        "quantity_id": "synthetic-specific-force",
+        "axis_convention_id": "synthetic-imu-axes",
+        "axis_convention_ref": {
+          "ref": "configs/templates/synthetic-imu-axes.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic axes; no physical convention is selected."
+        },
+        "measurement_range": {
+          "model_id": "synthetic-accel-range-model",
+          "model_definition_ref": {
+            "ref": "configs/templates/synthetic-accel-range-model.txt",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "description": "Synthetic model definition."
+          },
+          "parameters": [
+            {
+              "parameter_id": "synthetic-accel-range-value",
+              "value": 109,
+              "unit_id": "synthetic-accel-range-unit",
+              "unit_definition_ref": {
+                "ref": "configs/templates/synthetic-accel-range-unit.txt",
+                "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "description": "Synthetic unit; not a project default."
+              }
+            }
+          ]
+        },
+        "noise_density": {
+          "model_id": "synthetic-accel-noise-model",
+          "model_definition_ref": {
+            "ref": "configs/templates/synthetic-accel-noise-model.txt",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "description": "Synthetic model definition."
+          },
+          "parameters": [
+            {
+              "parameter_id": "synthetic-accel-noise-value",
+              "value": 113,
+              "unit_id": "synthetic-accel-noise-unit",
+              "unit_definition_ref": {
+                "ref": "configs/templates/synthetic-accel-noise-unit.txt",
+                "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "description": "Synthetic unit; not a project default."
+              }
+            }
+          ]
+        },
+        "bias_random_walk": {
+          "model_id": "synthetic-accel-bias-model",
+          "model_definition_ref": {
+            "ref": "configs/templates/synthetic-accel-bias-model.txt",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "description": "Synthetic model definition."
+          },
+          "parameters": [
+            {
+              "parameter_id": "synthetic-accel-bias-value",
+              "value": 127,
+              "unit_id": "synthetic-accel-bias-unit",
+              "unit_definition_ref": {
+                "ref": "configs/templates/synthetic-accel-bias-unit.txt",
+                "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                "description": "Synthetic unit; not a project default."
+              }
+            }
+          ]
+        }
+      },
+      "characterization_method_ref": {
+        "ref": "configs/templates/synthetic-imu-method.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic characterization method."
+      },
+      "diagnostic_report_ref": {
+        "ref": "configs/templates/synthetic-imu-diagnostic.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic diagnostic; no physical evidence exists."
+      },
+      "validity_condition_ids": [
+        "synthetic-hardware-condition",
+        "synthetic-mount-condition",
+        "synthetic-sampling-condition",
+        "synthetic-firmware-condition",
+        "synthetic-timestamp-condition",
+        "synthetic-environment-condition"
+      ]
+    }
+  ],
+  "spatial_calibrations": [
+    {
+      "spatial_calibration_id": "synthetic-camera-to-imu-transform",
+      "camera_stream_id": "synthetic-camera-stream",
+      "imu_stream_id": "synthetic-imu-stream",
+      "from_frame_id": "synthetic-camera-frame",
+      "to_frame_id": "synthetic-imu-frame",
+      "transform_equation_id": "synthetic-transform-equation",
+      "transform_equation_ref": {
+        "ref": "configs/templates/synthetic-transform-equation.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic transform direction and semantics."
+      },
+      "translation": {
+        "values": [47, 53, 59],
+        "unit_id": "synthetic-translation-unit",
+        "unit_definition_ref": {
+          "ref": "configs/templates/synthetic-translation-unit.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic unit; not a project default."
+        }
+      },
+      "rotation": {
+        "representation_id": "synthetic-rotation-representation",
+        "representation_definition_ref": {
+          "ref": "configs/templates/synthetic-rotation-representation.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic representation; no quaternion or matrix is selected."
+        },
+        "component_order": ["synthetic-r1", "synthetic-r2", "synthetic-r3"],
+        "values": [61, 67, 71],
+        "unit_id": "synthetic-rotation-unit",
+        "unit_definition_ref": {
+          "ref": "configs/templates/synthetic-rotation-unit.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic unit; not a project default."
+        }
+      },
+      "method_ref": {
+        "ref": "configs/templates/synthetic-spatial-method.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic method reference."
+      },
+      "diagnostic_ref": {
+        "ref": "configs/templates/synthetic-spatial-diagnostic.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic diagnostic; no physical evidence exists."
+      }
+    }
+  ],
+  "temporal_calibrations": [
+    {
+      "temporal_calibration_id": "synthetic-camera-clock-mapping",
+      "stream_id": "synthetic-camera-stream",
+      "source_clock_id": "synthetic-camera-clock",
+      "target_replay_clock_id": "synthetic-replay-clock",
+      "mapping_equation_id": "synthetic-camera-time-equation",
+      "mapping_equation_ref": {
+        "ref": "configs/templates/synthetic-camera-time-equation.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic clock-mapping equation."
+      },
+      "offset": {
+        "parameter_id": "synthetic-camera-time-offset",
+        "value": 73,
+        "unit_id": "synthetic-time-unit",
+        "unit_definition_ref": {
+          "ref": "configs/templates/synthetic-time-unit.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic unit; not a project default."
+        }
+      },
+      "positive_offset_definition_id": "synthetic-camera-offset-sign",
+      "positive_offset_definition_ref": {
+        "ref": "configs/templates/synthetic-camera-offset-sign.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic positive-offset definition."
+      },
+      "jitter": {
+        "model_id": "synthetic-camera-jitter-model",
+        "model_definition_ref": {
+          "ref": "configs/templates/synthetic-jitter-model.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic model definition."
+        },
+        "parameters": []
+      },
+      "uncertainty": {
+        "model_id": "synthetic-camera-timing-uncertainty",
+        "model_definition_ref": {
+          "ref": "configs/templates/synthetic-uncertainty-model.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic model definition."
+        },
+        "parameters": []
+      },
+      "shared_clock_configuration_id": "synthetic-not-shared-clock",
+      "trigger_configuration_id": "synthetic-trigger-configuration",
+      "method_ref": {
+        "ref": "configs/templates/synthetic-temporal-method.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic method reference."
+      },
+      "diagnostic_ref": {
+        "ref": "configs/templates/synthetic-temporal-diagnostic.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic diagnostic; no physical evidence exists."
+      }
+    },
+    {
+      "temporal_calibration_id": "synthetic-imu-clock-mapping",
+      "stream_id": "synthetic-imu-stream",
+      "source_clock_id": "synthetic-imu-clock",
+      "target_replay_clock_id": "synthetic-replay-clock",
+      "mapping_equation_id": "synthetic-imu-time-equation",
+      "mapping_equation_ref": {
+        "ref": "configs/templates/synthetic-imu-time-equation.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic clock-mapping equation."
+      },
+      "offset": {
+        "parameter_id": "synthetic-imu-time-offset",
+        "value": 79,
+        "unit_id": "synthetic-time-unit",
+        "unit_definition_ref": {
+          "ref": "configs/templates/synthetic-time-unit.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic unit; not a project default."
+        }
+      },
+      "positive_offset_definition_id": "synthetic-imu-offset-sign",
+      "positive_offset_definition_ref": {
+        "ref": "configs/templates/synthetic-imu-offset-sign.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic positive-offset definition."
+      },
+      "jitter": {
+        "model_id": "synthetic-imu-jitter-model",
+        "model_definition_ref": {
+          "ref": "configs/templates/synthetic-jitter-model.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic model definition."
+        },
+        "parameters": []
+      },
+      "uncertainty": {
+        "model_id": "synthetic-imu-timing-uncertainty",
+        "model_definition_ref": {
+          "ref": "configs/templates/synthetic-uncertainty-model.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic model definition."
+        },
+        "parameters": []
+      },
+      "shared_clock_configuration_id": "synthetic-not-shared-clock",
+      "trigger_configuration_id": "synthetic-trigger-configuration",
+      "method_ref": {
+        "ref": "configs/templates/synthetic-temporal-method.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic method reference."
+      },
+      "diagnostic_ref": {
+        "ref": "configs/templates/synthetic-temporal-diagnostic.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic diagnostic; no physical evidence exists."
+      }
+    }
+  ],
+  "gravity": {
+    "quantity_id": "synthetic-gravity-vector",
+    "frame_id": "synthetic-imu-frame",
+    "axis_convention_id": "synthetic-imu-axes",
+    "axis_convention_ref": {
+      "ref": "configs/templates/synthetic-imu-axes.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic axes; no physical convention is selected."
+    },
+    "values": [83, 89, 97],
+    "unit_id": "synthetic-gravity-unit",
+    "unit_definition_ref": {
+      "ref": "configs/templates/synthetic-gravity-unit.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic unit; not a project default."
+    }
+  },
+  "validity_conditions": [
+    {
+      "condition_id": "synthetic-hardware-condition",
+      "category": "sensor_hardware",
+      "applies_to_ids": ["synthetic-camera-stream", "synthetic-imu-stream"],
+      "applicable": true,
+      "state_id": "synthetic-hardware-state",
+      "change_requires": "revalidation",
+      "evidence_ref": {
+        "ref": "configs/templates/synthetic-hardware-state.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic condition; not a physical declaration."
+      }
+    },
+    {
+      "condition_id": "synthetic-mount-condition",
+      "category": "mount",
+      "applies_to_ids": ["synthetic-camera-stream", "synthetic-imu-stream"],
+      "applicable": true,
+      "state_id": "synthetic-mount-state",
+      "change_requires": "invalidation",
+      "evidence_ref": {
+        "ref": "configs/templates/synthetic-mount-state.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic condition; not a physical declaration."
+      }
+    },
+    {
+      "condition_id": "synthetic-focus-condition",
+      "category": "focus",
+      "applies_to_ids": ["synthetic-camera-stream"],
+      "applicable": true,
+      "state_id": "synthetic-focus-state",
+      "change_requires": "revalidation",
+      "evidence_ref": {
+        "ref": "configs/templates/synthetic-focus-state.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic condition; not a physical declaration."
+      }
+    },
+    {
+      "condition_id": "synthetic-resolution-condition",
+      "category": "resolution",
+      "applies_to_ids": ["synthetic-camera-stream"],
+      "applicable": true,
+      "state_id": "synthetic-resolution-state",
+      "change_requires": "revalidation",
+      "evidence_ref": {
+        "ref": "configs/templates/synthetic-resolution-state.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic condition; not a physical declaration."
+      }
+    },
+    {
+      "condition_id": "synthetic-exposure-condition",
+      "category": "exposure_mode",
+      "applies_to_ids": ["synthetic-camera-stream"],
+      "applicable": true,
+      "state_id": "synthetic-exposure-state",
+      "change_requires": "revalidation",
+      "evidence_ref": {
+        "ref": "configs/templates/synthetic-exposure-state.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic condition; not a physical declaration."
+      }
+    },
+    {
+      "condition_id": "synthetic-sampling-condition",
+      "category": "sampling",
+      "applies_to_ids": ["synthetic-imu-stream"],
+      "applicable": true,
+      "state_id": "synthetic-sampling-state",
+      "change_requires": "revalidation",
+      "evidence_ref": {
+        "ref": "configs/templates/synthetic-sampling-state.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic condition; not a physical declaration."
+      }
+    },
+    {
+      "condition_id": "synthetic-firmware-condition",
+      "category": "firmware",
+      "applies_to_ids": ["synthetic-camera-stream", "synthetic-imu-stream"],
+      "applicable": true,
+      "state_id": "synthetic-firmware-state",
+      "change_requires": "revalidation",
+      "evidence_ref": {
+        "ref": "configs/templates/synthetic-firmware-state.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic condition; not a physical declaration."
+      }
+    },
+    {
+      "condition_id": "synthetic-timestamp-condition",
+      "category": "driver_timestamp",
+      "applies_to_ids": ["synthetic-camera-stream", "synthetic-imu-stream"],
+      "applicable": true,
+      "state_id": "synthetic-timestamp-state",
+      "change_requires": "invalidation",
+      "evidence_ref": {
+        "ref": "configs/templates/synthetic-timestamp-state.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic condition; not a physical declaration."
+      }
+    },
+    {
+      "condition_id": "synthetic-environment-condition",
+      "category": "operating_environment",
+      "applies_to_ids": ["synthetic-camera-stream", "synthetic-imu-stream"],
+      "applicable": true,
+      "state_id": "synthetic-environment-state",
+      "change_requires": "revalidation",
+      "evidence_ref": {
+        "ref": "configs/templates/synthetic-environment-state.txt",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic condition; not a physical declaration."
+      }
+    }
+  ],
+  "calibration_procedure": {
+    "method_id": "synthetic-calibration-method",
+    "method_definition_ref": {
+      "ref": "configs/templates/synthetic-calibration-method.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic method; no calibration implementation is selected."
+    },
+    "calibration_target_id": null,
+    "data_manifest_ref": {
+      "ref": "configs/templates/synthetic-calibration-data.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic data reference; no dataset was acquired."
+    },
+    "configuration_ref": {
+      "ref": "configs/templates/synthetic-calibration-config.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic configuration reference."
+    },
+    "software_ref": {
+      "ref": "configs/templates/synthetic-calibration-software.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic software reference."
+    },
+    "motion_excitation_ref": {
+      "ref": "configs/templates/synthetic-motion-excitation.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic diagnostic; no physical evidence exists."
+    },
+    "blur_visibility_ref": {
+      "ref": "configs/templates/synthetic-blur-visibility.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic diagnostic; no physical evidence exists."
+    },
+    "timestamp_continuity_ref": {
+      "ref": "configs/templates/synthetic-timestamp-continuity.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic diagnostic; no physical evidence exists."
+    }
+  },
+  "diagnostics": {
+    "camera_residuals": {
+      "ref": "configs/templates/synthetic-camera-residuals.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic diagnostic; no physical evidence exists."
+    },
+    "imu_bias_behavior": {
+      "ref": "configs/templates/synthetic-imu-bias.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic diagnostic; no physical evidence exists."
+    },
+    "temporal_calibration": {
+      "ref": "configs/templates/synthetic-temporal-diagnostic.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic diagnostic; no physical evidence exists."
+    },
+    "spatial_calibration": {
+      "ref": "configs/templates/synthetic-spatial-diagnostic.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic diagnostic; no physical evidence exists."
+    },
+    "physical_plausibility": {
+      "ref": "configs/templates/synthetic-physical-plausibility.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic diagnostic; no physical evidence exists."
+    }
+  },
+  "limitations": [
+    "Synthetic schema fixture only; it is not an accepted calibration profile.",
+    "Every value and reference is deliberately non-authoritative."
+  ]
+}

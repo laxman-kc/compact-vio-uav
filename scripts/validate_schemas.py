@@ -1,4 +1,4 @@
-"""Validate project JSON Schemas, draft templates, and cross-record contracts."""
+"""Validate project JSON Schemas, templates, and cross-record contracts."""
 
 from __future__ import annotations
 
@@ -24,7 +24,13 @@ except ImportError as exc:  # pragma: no cover - exercised by CI with dependency
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_DIRECTORIES = (ROOT / "experiments/schemas", ROOT / "governance/schemas")
+CONFIG_SCHEMA_DIRECTORY = ROOT / "configs/schemas"
+CONFIG_TEMPLATE_DIRECTORY = ROOT / "configs/templates"
+SCHEMA_DIRECTORIES = (
+    CONFIG_SCHEMA_DIRECTORY,
+    ROOT / "experiments/schemas",
+    ROOT / "governance/schemas",
+)
 TEMPLATE_DIRECTORY = ROOT / "governance/records/templates"
 DEFAULT_RECORDS_ROOT = TEMPLATE_DIRECTORY.parent
 ZERO_HASH = "0" * 64
@@ -35,6 +41,10 @@ RECORD_TYPE_SCHEMA_FILES = {
     "artifact_storage_plan": "artifact-storage-plan.schema.json",
     "worker_authorization": "worker-authorization.schema.json",
     "artifact_storage_evidence": "artifact-storage-evidence.schema.json",
+}
+CONFIG_RECORD_TYPE_SCHEMA_FILES = {
+    "sensor_calibration_profile": "calibration-profile.schema.json",
+    "calibration_profile_assessment": "calibration-assessment.schema.json",
 }
 
 
@@ -156,6 +166,8 @@ def _matching_template(schema_path: Path) -> Path | None:
         return None
     stem = schema_path.name.removesuffix(suffix)
     candidates = [
+        CONFIG_TEMPLATE_DIRECTORY / f"{stem}.template.json",
+        CONFIG_TEMPLATE_DIRECTORY / f"{stem}.draft.json",
         TEMPLATE_DIRECTORY / f"{stem}.template.json",
         TEMPLATE_DIRECTORY / f"{stem}.draft.json",
     ]
@@ -175,7 +187,10 @@ def _load_schema_registry() -> dict[str, dict[str, Any]]:
         schema = _load(schema_path)
         Draft202012Validator.check_schema(schema)
         schemas[schema_path.name] = schema
-    missing = sorted(set(RECORD_TYPE_SCHEMA_FILES.values()) - set(schemas))
+    expected_schema_files = set(RECORD_TYPE_SCHEMA_FILES.values()) | set(
+        CONFIG_RECORD_TYPE_SCHEMA_FILES.values()
+    )
+    missing = sorted(expected_schema_files - set(schemas))
     if missing:
         raise AssertionError(f"record-type schema mapping names absent schemas: {missing}")
     return schemas
@@ -1007,6 +1022,537 @@ def _duplicate_values(values: list[str]) -> list[str]:
             duplicates.add(value)
         seen.add(value)
     return sorted(duplicates)
+
+
+REQUIRED_CALIBRATION_VALIDITY_CATEGORIES = {
+    "sensor_hardware",
+    "mount",
+    "focus",
+    "resolution",
+    "exposure_mode",
+    "sampling",
+    "firmware",
+    "driver_timestamp",
+    "operating_environment",
+}
+CALIBRATION_CONFIGURATION_FIELDS = (
+    "replay_clock_id",
+    "camera_layout_id",
+    "operating_mode_id",
+    "cameras",
+    "imu_streams",
+    "spatial_calibrations",
+    "temporal_calibrations",
+    "gravity",
+    "validity_conditions",
+)
+
+
+def calibration_configuration_fingerprint(profile: dict[str, Any]) -> str:
+    """Hash the complete declared validity envelope using canonical project JSON."""
+
+    configuration = {field: profile[field] for field in CALIBRATION_CONFIGURATION_FIELDS}
+    return hashlib.sha256(_canonical_json_bytes(configuration)).hexdigest()
+
+
+def _profile_parameter_sets(value: object, *, path: str = "profile") -> list[tuple[str, dict]]:
+    found: list[tuple[str, dict]] = []
+    if isinstance(value, dict):
+        if {"model_id", "model_definition_ref", "parameters"}.issubset(value):
+            found.append((path, value))
+        for key, child in value.items():
+            found.extend(_profile_parameter_sets(child, path=f"{path}.{key}"))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            found.extend(_profile_parameter_sets(child, path=f"{path}[{index}]"))
+    return found
+
+
+def calibration_profile_semantic_errors(profile: dict[str, Any]) -> list[str]:
+    """Validate profile relationships without selecting physical conventions."""
+
+    errors: list[str] = []
+    cameras = profile["cameras"]
+    imus = profile["imu_streams"]
+    camera_by_stream = {camera["stream_id"]: camera for camera in cameras}
+    imu_by_stream = {imu["stream_id"]: imu for imu in imus}
+    stream_ids = [camera["stream_id"] for camera in cameras] + [imu["stream_id"] for imu in imus]
+    duplicate_streams = _duplicate_values(stream_ids)
+    if duplicate_streams:
+        errors.append(f"duplicate calibration stream_id values: {duplicate_streams}")
+
+    condition_ids = [condition["condition_id"] for condition in profile["validity_conditions"]]
+    duplicate_conditions = _duplicate_values(condition_ids)
+    if duplicate_conditions:
+        errors.append(f"duplicate validity condition IDs: {duplicate_conditions}")
+    condition_id_set = set(condition_ids)
+    categories = {condition["category"] for condition in profile["validity_conditions"]}
+    missing_categories = sorted(REQUIRED_CALIBRATION_VALIDITY_CATEGORIES - categories)
+    if missing_categories:
+        errors.append(f"missing required validity categories: {missing_categories}")
+
+    valid_condition_targets = set(stream_ids)
+    valid_condition_targets.update(camera["sensor_id"] for camera in cameras)
+    valid_condition_targets.update(imu["sensor_id"] for imu in imus)
+    valid_condition_targets.update(
+        {
+            profile["record_id"],
+            profile["sensor_profile_id"],
+            profile["calibration_id"],
+            profile["revision_id"],
+            profile["camera_layout_id"],
+            profile["operating_mode_id"],
+        }
+    )
+    for condition in profile["validity_conditions"]:
+        unknown_targets = sorted(set(condition["applies_to_ids"]) - valid_condition_targets)
+        if unknown_targets:
+            errors.append(
+                f"validity condition {condition['condition_id']} has unknown applies_to_ids: "
+                f"{unknown_targets}"
+            )
+    for sensor in [*cameras, *imus]:
+        unresolved = sorted(set(sensor["validity_condition_ids"]) - condition_id_set)
+        if unresolved:
+            errors.append(
+                f"stream {sensor['stream_id']} has unresolved validity conditions: {unresolved}"
+            )
+
+    spatial_ids = [item["spatial_calibration_id"] for item in profile["spatial_calibrations"]]
+    duplicate_spatial_ids = _duplicate_values(spatial_ids)
+    if duplicate_spatial_ids:
+        errors.append(f"duplicate spatial calibration IDs: {duplicate_spatial_ids}")
+    spatial_pairs: list[str] = []
+    covered_cameras: set[str] = set()
+    for spatial in profile["spatial_calibrations"]:
+        camera = camera_by_stream.get(spatial["camera_stream_id"])
+        imu = imu_by_stream.get(spatial["imu_stream_id"])
+        if camera is None:
+            errors.append(
+                f"spatial calibration {spatial['spatial_calibration_id']} references an "
+                "unknown camera stream"
+            )
+        if imu is None:
+            errors.append(
+                f"spatial calibration {spatial['spatial_calibration_id']} references an "
+                "unknown IMU stream"
+            )
+        if camera is not None and imu is not None:
+            endpoints = {spatial["from_frame_id"], spatial["to_frame_id"]}
+            expected_endpoints = {camera["frame_id"], imu["frame_id"]}
+            if endpoints != expected_endpoints:
+                errors.append(
+                    f"spatial calibration {spatial['spatial_calibration_id']} endpoints do "
+                    "not match its camera and IMU frames"
+                )
+        if camera is not None and imu is not None:
+            covered_cameras.add(camera["stream_id"])
+            spatial_pairs.append(f"{camera['stream_id']}->{imu['stream_id']}")
+        if len(spatial["rotation"]["component_order"]) != len(spatial["rotation"]["values"]):
+            errors.append(
+                f"spatial calibration {spatial['spatial_calibration_id']} rotation component "
+                "order and values differ in length"
+            )
+    duplicate_spatial_pairs = _duplicate_values(spatial_pairs)
+    if duplicate_spatial_pairs:
+        errors.append(f"duplicate camera-to-IMU spatial calibrations: {duplicate_spatial_pairs}")
+    missing_spatial = sorted(set(camera_by_stream) - covered_cameras)
+    if missing_spatial:
+        errors.append(f"camera streams lack direct camera-to-IMU calibration: {missing_spatial}")
+
+    temporal_ids = [item["temporal_calibration_id"] for item in profile["temporal_calibrations"]]
+    duplicate_temporal_ids = _duplicate_values(temporal_ids)
+    if duplicate_temporal_ids:
+        errors.append(f"duplicate temporal calibration IDs: {duplicate_temporal_ids}")
+    temporal_streams = [item["stream_id"] for item in profile["temporal_calibrations"]]
+    duplicate_temporal_streams = _duplicate_values(temporal_streams)
+    if duplicate_temporal_streams:
+        errors.append(
+            f"streams have multiple direct temporal calibrations: {duplicate_temporal_streams}"
+        )
+    sensor_by_stream = {**camera_by_stream, **imu_by_stream}
+    for temporal in profile["temporal_calibrations"]:
+        sensor = sensor_by_stream.get(temporal["stream_id"])
+        if sensor is None:
+            errors.append(
+                f"temporal calibration {temporal['temporal_calibration_id']} references an "
+                "unknown stream"
+            )
+            continue
+        if temporal["source_clock_id"] != sensor["source_clock_id"]:
+            errors.append(
+                f"temporal calibration {temporal['temporal_calibration_id']} source clock "
+                "does not match its stream"
+            )
+        if temporal["target_replay_clock_id"] != profile["replay_clock_id"]:
+            errors.append(
+                f"temporal calibration {temporal['temporal_calibration_id']} does not target "
+                "the declared replay clock"
+            )
+    expected_temporal_streams = set(sensor_by_stream)
+    actual_temporal_streams = set(temporal_streams)
+    missing_temporal = sorted(expected_temporal_streams - actual_temporal_streams)
+    unexpected_temporal = sorted(actual_temporal_streams - expected_temporal_streams)
+    if missing_temporal:
+        errors.append(f"streams lack direct temporal calibration: {missing_temporal}")
+    if unexpected_temporal:
+        errors.append(f"unexpected temporal calibration streams: {unexpected_temporal}")
+
+    imu_roles_by_sensor: dict[str, set[str]] = {}
+    for imu in imus:
+        roles = imu_roles_by_sensor.setdefault(imu["sensor_id"], set())
+        if imu["gyroscope"] is not None:
+            roles.add("gyroscope")
+        if imu["accelerometer"] is not None:
+            roles.add("accelerometer")
+    for sensor_id, roles in imu_roles_by_sensor.items():
+        missing_roles = sorted({"gyroscope", "accelerometer"} - roles)
+        if missing_roles:
+            errors.append(
+                f"IMU sensor {sensor_id} lacks required characterizations: {missing_roles}"
+            )
+
+    for parameter_path, parameter_set in _profile_parameter_sets(profile):
+        parameter_ids = [item["parameter_id"] for item in parameter_set["parameters"]]
+        duplicates = _duplicate_values(parameter_ids)
+        if duplicates:
+            errors.append(f"{parameter_path} has duplicate parameter IDs: {duplicates}")
+    for camera in cameras:
+        if not camera["intrinsics"]["parameters"]:
+            errors.append(f"camera stream {camera['stream_id']} has no intrinsic parameters")
+
+    expected_fingerprint = calibration_configuration_fingerprint(profile)
+    if profile["configuration_fingerprint_sha256"] != expected_fingerprint:
+        errors.append("configuration fingerprint does not match validity conditions")
+    supersedes = profile["supersedes"]
+    if (
+        supersedes is not None
+        and supersedes["record_id"] == profile["record_id"]
+        and supersedes["revision_id"] == profile["revision_id"]
+    ):
+        errors.append("profile cannot supersede itself")
+    return errors
+
+
+def calibration_assessment_semantic_errors(
+    assessment: dict[str, Any],
+    *,
+    profile: dict[str, Any],
+    profile_bytes: bytes,
+) -> list[str]:
+    """Validate one assessment against the exact immutable profile bytes."""
+
+    errors: list[str] = []
+    link = assessment["profile_link"]
+    linked_fields = {
+        "record_id": "record_id",
+        "sensor_profile_id": "sensor_profile_id",
+        "calibration_id": "calibration_id",
+        "revision_id": "revision_id",
+        "configuration_fingerprint_sha256": "configuration_fingerprint_sha256",
+    }
+    for link_field, profile_field in linked_fields.items():
+        if link[link_field] != profile[profile_field]:
+            errors.append(f"assessment profile link {link_field} does not match profile")
+    if link["sha256"] != hashlib.sha256(profile_bytes).hexdigest():
+        errors.append("assessment profile SHA-256 does not match raw profile bytes")
+    if _date_time(assessment["assessed_at"]) < _date_time(profile["created_at"]):
+        errors.append("calibration assessment predates profile creation")
+    prior = assessment["prior_assessment"]
+    if prior is not None and prior["assessment_id"] == assessment["assessment_id"]:
+        errors.append("calibration assessment cannot reference itself as prior assessment")
+
+    scope = assessment["threshold_scope"]
+    scope_fields = {
+        "profile_record_id": "record_id",
+        "sensor_profile_id": "sensor_profile_id",
+        "calibration_id": "calibration_id",
+        "revision_id": "revision_id",
+    }
+    for scope_field, profile_field in scope_fields.items():
+        if scope[scope_field] != profile[profile_field]:
+            errors.append(f"threshold scope {scope_field} does not match profile")
+    if scope["camera_layout_id"] != profile["camera_layout_id"]:
+        errors.append("threshold scope camera_layout_id does not match profile")
+    if scope["operating_mode_id"] != profile["operating_mode_id"]:
+        errors.append("threshold scope operating_mode_id does not match profile")
+    if scope["calibration_target_id"] != profile["calibration_procedure"]["calibration_target_id"]:
+        errors.append("threshold scope calibration_target_id does not match profile")
+    expected_camera_streams = {camera["stream_id"] for camera in profile["cameras"]}
+    expected_imu_streams = {imu["stream_id"] for imu in profile["imu_streams"]}
+    expected_conditions = {
+        condition["condition_id"] for condition in profile["validity_conditions"]
+    }
+    if set(scope["camera_stream_ids"]) != expected_camera_streams:
+        errors.append("threshold scope camera streams do not exactly match profile")
+    if set(scope["imu_stream_ids"]) != expected_imu_streams:
+        errors.append("threshold scope IMU streams do not exactly match profile")
+    if set(scope["validity_condition_ids"]) != expected_conditions:
+        errors.append("threshold scope validity conditions do not exactly match profile")
+
+    criterion_ids = [criterion["criterion_id"] for criterion in assessment["criteria"]]
+    duplicates = _duplicate_values(criterion_ids)
+    if duplicates:
+        errors.append(f"duplicate calibration criterion IDs: {duplicates}")
+    valid_scope_ids = expected_camera_streams | expected_imu_streams | expected_conditions
+    for criterion in assessment["criteria"]:
+        unknown = sorted(set(criterion["applies_to_ids"]) - valid_scope_ids)
+        if unknown:
+            errors.append(
+                f"criterion {criterion['criterion_id']} has unknown applies_to_ids: {unknown}"
+            )
+        threshold = criterion["threshold"]
+        observed = criterion["observed_value"]
+        if (
+            threshold["unit_id"] != observed["unit_id"]
+            or threshold["unit_definition_ref"] != observed["unit_definition_ref"]
+        ):
+            errors.append(f"criterion {criterion['criterion_id']} compares incompatible units")
+            continue
+        left = observed["value"]
+        right = threshold["value"]
+        operator = criterion["comparison_operator"]
+        computed_pass = {
+            "less_than": left < right,
+            "less_than_or_equal": left <= right,
+            "equal": left == right,
+            "greater_than_or_equal": left >= right,
+            "greater_than": left > right,
+        }[operator]
+        if criterion["passed"] is not computed_pass:
+            errors.append(
+                f"criterion {criterion['criterion_id']} passed flag does not match its "
+                "declared comparison"
+            )
+
+    invalidation = assessment["invalidation"]
+    if invalidation is not None:
+        unknown_triggers = sorted(set(invalidation["trigger_condition_ids"]) - expected_conditions)
+        if unknown_triggers:
+            errors.append(f"invalidation has unknown trigger conditions: {unknown_triggers}")
+    if assessment["decision"] == "approved":
+        if any(not criterion["passed"] for criterion in assessment["criteria"]):
+            errors.append("approved assessment contains a failed criterion")
+        if any(not check["passed"] for check in assessment["required_checks"].values()):
+            errors.append("approved assessment contains a failed required check")
+        if any(value is None for value in profile["diagnostics"].values()):
+            errors.append("approved assessment references a profile with unavailable diagnostics")
+    return errors
+
+
+def _assert_calibration_contracts(
+    schemas: dict[str, dict[str, Any]],
+    *,
+    format_checker: FormatChecker,
+) -> None:
+    profile_path = CONFIG_TEMPLATE_DIRECTORY / "calibration-profile.template.json"
+    assessment_path = CONFIG_TEMPLATE_DIRECTORY / "calibration-assessment.template.json"
+    profile, profile_bytes = _load_with_bytes(profile_path)
+    assessment = _load(assessment_path)
+    profile_validator = Draft202012Validator(
+        schemas["calibration-profile.schema.json"], format_checker=format_checker
+    )
+    assessment_validator = Draft202012Validator(
+        schemas["calibration-assessment.schema.json"], format_checker=format_checker
+    )
+    profile_validator.validate(profile)
+    assessment_validator.validate(assessment)
+    profile_errors = calibration_profile_semantic_errors(profile)
+    if profile_errors:
+        raise AssertionError(f"valid calibration-profile fixture failed: {profile_errors}")
+    assessment_errors = calibration_assessment_semantic_errors(
+        assessment,
+        profile=profile,
+        profile_bytes=profile_bytes,
+    )
+    if assessment_errors:
+        raise AssertionError(
+            f"valid rejected calibration-assessment fixture failed: {assessment_errors}"
+        )
+
+    missing_intrinsics = copy.deepcopy(profile)
+    del missing_intrinsics["cameras"][0]["intrinsics"]
+    _assert_invalid(profile_validator, missing_intrinsics, "camera intrinsics omitted")
+
+    missing_noise = copy.deepcopy(profile)
+    del missing_noise["imu_streams"][0]["gyroscope"]["noise_density"]
+    _assert_invalid(profile_validator, missing_noise, "IMU noise density omitted")
+
+    empty_noise = copy.deepcopy(profile)
+    empty_noise["imu_streams"][0]["gyroscope"]["noise_density"]["parameters"] = []
+    _assert_invalid(profile_validator, empty_noise, "empty IMU noise characterization")
+
+    missing_offset_sign = copy.deepcopy(profile)
+    del missing_offset_sign["temporal_calibrations"][0]["positive_offset_definition_id"]
+    _assert_invalid(profile_validator, missing_offset_sign, "temporal offset sign omitted")
+
+    bad_vector = copy.deepcopy(profile)
+    bad_vector["gravity"]["values"] = [1, 2]
+    _assert_invalid(profile_validator, bad_vector, "gravity vector cardinality")
+
+    zero_width = copy.deepcopy(profile)
+    zero_width["cameras"][0]["width_px"] = 0
+    _assert_invalid(profile_validator, zero_width, "nonpositive camera width")
+
+    unknown_property = copy.deepcopy(profile)
+    unknown_property["cameras"][0]["invented_default"] = True
+    _assert_invalid(profile_validator, unknown_property, "unknown camera property")
+
+    duplicate_stream = copy.deepcopy(profile)
+    duplicate_stream["imu_streams"][0]["stream_id"] = duplicate_stream["cameras"][0]["stream_id"]
+    _assert_error_contains(
+        calibration_profile_semantic_errors(duplicate_stream),
+        "duplicate calibration stream_id",
+        label="duplicate calibration stream",
+    )
+
+    unresolved_condition = copy.deepcopy(profile)
+    unresolved_condition["cameras"][0]["validity_condition_ids"][0] = "unknown-condition"
+    _assert_error_contains(
+        calibration_profile_semantic_errors(unresolved_condition),
+        "unresolved validity conditions",
+        label="unresolved calibration validity condition",
+    )
+
+    wrong_transform_frame = copy.deepcopy(profile)
+    wrong_transform_frame["spatial_calibrations"][0]["from_frame_id"] = "wrong-frame"
+    _assert_error_contains(
+        calibration_profile_semantic_errors(wrong_transform_frame),
+        "endpoints do not match its camera and IMU frames",
+        label="wrong spatial transform endpoint",
+    )
+
+    reversed_transform = copy.deepcopy(profile)
+    spatial = reversed_transform["spatial_calibrations"][0]
+    spatial["from_frame_id"], spatial["to_frame_id"] = (
+        spatial["to_frame_id"],
+        spatial["from_frame_id"],
+    )
+    reversed_transform["configuration_fingerprint_sha256"] = calibration_configuration_fingerprint(
+        reversed_transform
+    )
+    if calibration_profile_semantic_errors(reversed_transform):
+        raise AssertionError("explicit reverse spatial-transform direction was rejected")
+
+    wrong_temporal_clock = copy.deepcopy(profile)
+    wrong_temporal_clock["temporal_calibrations"][0]["source_clock_id"] = "wrong-clock"
+    _assert_error_contains(
+        calibration_profile_semantic_errors(wrong_temporal_clock),
+        "source clock does not match its stream",
+        label="wrong temporal source clock",
+    )
+
+    missing_temporal = copy.deepcopy(profile)
+    missing_temporal["temporal_calibrations"].pop()
+    _assert_error_contains(
+        calibration_profile_semantic_errors(missing_temporal),
+        "streams lack direct temporal calibration",
+        label="missing stream temporal coverage",
+    )
+
+    shared_clock_without_mapping = copy.deepcopy(profile)
+    for sensor in [
+        *shared_clock_without_mapping["cameras"],
+        *shared_clock_without_mapping["imu_streams"],
+    ]:
+        sensor["source_clock_id"] = shared_clock_without_mapping["replay_clock_id"]
+    shared_clock_without_mapping["temporal_calibrations"] = []
+    _assert_error_contains(
+        calibration_profile_semantic_errors(shared_clock_without_mapping),
+        "streams lack direct temporal calibration",
+        label="shared clock without explicit offset/sign mapping",
+    )
+
+    missing_category = copy.deepcopy(profile)
+    missing_category["validity_conditions"] = [
+        condition
+        for condition in missing_category["validity_conditions"]
+        if condition["category"] != "operating_environment"
+    ]
+    _assert_error_contains(
+        calibration_profile_semantic_errors(missing_category),
+        "missing required validity categories",
+        label="missing calibration validity category",
+    )
+
+    duplicate_parameter = copy.deepcopy(profile)
+    parameter = duplicate_parameter["cameras"][0]["intrinsics"]["parameters"][0]
+    duplicate_parameter["cameras"][0]["intrinsics"]["parameters"].append(copy.deepcopy(parameter))
+    _assert_error_contains(
+        calibration_profile_semantic_errors(duplicate_parameter),
+        "duplicate parameter IDs",
+        label="duplicate calibration parameter ID",
+    )
+
+    bad_fingerprint = copy.deepcopy(profile)
+    bad_fingerprint["configuration_fingerprint_sha256"] = ZERO_HASH
+    _assert_error_contains(
+        calibration_profile_semantic_errors(bad_fingerprint),
+        "configuration fingerprint does not match",
+        label="invalid calibration validity fingerprint",
+    )
+
+    bad_profile_hash = copy.deepcopy(assessment)
+    bad_profile_hash["profile_link"]["sha256"] = ZERO_HASH
+    _assert_error_contains(
+        calibration_assessment_semantic_errors(
+            bad_profile_hash,
+            profile=profile,
+            profile_bytes=profile_bytes,
+        ),
+        "SHA-256 does not match",
+        label="assessment with wrong profile hash",
+    )
+
+    incomplete_scope = copy.deepcopy(assessment)
+    incomplete_scope["threshold_scope"]["validity_condition_ids"].pop()
+    _assert_error_contains(
+        calibration_assessment_semantic_errors(
+            incomplete_scope,
+            profile=profile,
+            profile_bytes=profile_bytes,
+        ),
+        "validity conditions do not exactly match",
+        label="assessment with incomplete threshold scope",
+    )
+
+    false_approval = copy.deepcopy(assessment)
+    false_approval["decision"] = "approved"
+    false_approval["approved_for_replay"] = True
+    _assert_invalid(
+        assessment_validator,
+        false_approval,
+        "approved assessment containing failed checks",
+    )
+
+    dishonest_criterion = copy.deepcopy(assessment)
+    dishonest_criterion["decision"] = "approved"
+    dishonest_criterion["approved_for_replay"] = True
+    dishonest_criterion["criteria"][0]["passed"] = True
+    for check in dishonest_criterion["required_checks"].values():
+        check["passed"] = True
+    assessment_validator.validate(dishonest_criterion)
+    _assert_error_contains(
+        calibration_assessment_semantic_errors(
+            dishonest_criterion,
+            profile=profile,
+            profile_bytes=profile_bytes,
+        ),
+        "passed flag does not match its declared comparison",
+        label="approved assessment with dishonest criterion result",
+    )
+
+    alternate_conventions = copy.deepcopy(profile)
+    alternate_conventions["cameras"][0]["axis_convention_id"] = "other-synthetic-axes"
+    alternate_conventions["cameras"][0]["intrinsics"]["model_id"] = (
+        "other-synthetic-intrinsics-model"
+    )
+    alternate_conventions["cameras"][0]["nominal_rate"]["unit_id"] = "other-synthetic-rate-unit"
+    alternate_conventions["configuration_fingerprint_sha256"] = (
+        calibration_configuration_fingerprint(alternate_conventions)
+    )
+    if calibration_profile_semantic_errors(alternate_conventions):
+        raise AssertionError("arbitrary calibration conventions were treated as defaults")
 
 
 def run_manifest_semantic_errors(run: dict[str, Any]) -> list[str]:
@@ -2341,6 +2887,8 @@ def _validate_templates(
             format_checker=format_checker,
         )
         expected_schema = RECORD_TYPE_SCHEMA_FILES.get(template.get("record_type"))
+        if expected_schema is None:
+            expected_schema = CONFIG_RECORD_TYPE_SCHEMA_FILES.get(template.get("record_type"))
         if expected_schema != schema_path.name:
             raise RecordValidationError(
                 f"template {template_path} record_type maps to {expected_schema!r}, "
@@ -2348,7 +2896,11 @@ def _validate_templates(
             )
         matched.add(template_path.resolve(strict=True))
 
-    template_paths = {path.resolve(strict=True) for path in TEMPLATE_DIRECTORY.rglob("*.json")}
+    template_paths = {
+        path.resolve(strict=True)
+        for directory in (TEMPLATE_DIRECTORY, CONFIG_TEMPLATE_DIRECTORY)
+        for path in directory.rglob("*.json")
+    }
     orphaned = sorted(template_paths - matched)
     if orphaned:
         raise RecordValidationError(f"templates without one matching schema: {orphaned}")
@@ -2768,6 +3320,7 @@ def _run_validation(arguments: argparse.Namespace) -> int:
     format_checker = FormatChecker()
     schemas = _load_schema_registry()
     template_count = _validate_templates(schemas, format_checker=format_checker)
+    _assert_calibration_contracts(schemas, format_checker=format_checker)
     _assert_canonical_reference_contract()
     _assert_project_rights_discovery_contract(
         schemas=schemas,
@@ -4146,7 +4699,7 @@ def _run_validation(arguments: argparse.Namespace) -> int:
 
     print(
         "Validation: PASS "
-        f"({len(schemas)} schemas, {template_count} draft templates, "
+        f"({len(schemas)} schemas, {template_count} templates, "
         f"{record_count} real governance records, "
         f"project_rights_record_set_valid="
         f"{str(project_rights_record_set_valid).lower()}, "

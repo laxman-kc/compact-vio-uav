@@ -148,20 +148,21 @@ source/build provenance. Checkpoints and large histories stay out of Git.
 
 Implemented now: repository/evidence tooling, the generic causal event-release
 primitive, the first framework-neutral estimator-contract envelope, typed
-camera/IMU payload records, and a versioned opaque calibration-identity
-envelope. Planned next: the complete typed calibration-profile schema,
-geometry/evaluation core, one approved dataset adapter, and one classical
-baseline. No estimator algorithm, numerical backend, model, training loop,
-dataset files, approved split, dataset adapter, checkpoint, ONNX graph, TensorRT
-engine, ROS 2 node, or PX4 bridge exists yet. A candidate-only dataset registry
-exists, but it is not data-use approval.
+camera/IMU payload records, and strict persisted calibration-profile plus
+separate assessment contracts. The committed fixture is synthetic and rejected;
+there is no accepted real sensor or dataset profile. Planned next: the
+geometry/evaluation core, one rights-approved dataset adapter with its actual
+profile, and one classical baseline. No estimator algorithm, numerical backend,
+model, training loop, dataset files, approved split, dataset adapter,
+checkpoint, ONNX graph, TensorRT engine, ROS 2 node, or PX4 bridge exists yet. A
+candidate-only dataset registry exists, but it is not data-use approval.
 
 ## Technology stack by status
 
 | Layer | Current implementation | Planned or conditional boundary |
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Numerical array/vision library for estimator work is unresolved. |
-| Common VIO substrate | Generic causal replay, first estimator-contract envelope, and typed camera/IMU plus calibration-identity records | Complete calibration profile, geometry, evaluator, and adapters are planned; exact state, sensor configuration, concrete conventions, thresholds, and numerical backend remain unresolved. |
+| Common VIO substrate | Generic causal replay, first estimator-contract envelope, typed camera/IMU records, and strict persisted calibration profile/assessment contracts | Geometry, evaluator, actual dataset profiles, and adapters are planned; exact state, sensor configuration, concrete conventions, thresholds, and numerical backend remain unresolved. |
 | Classical lane | Not implemented | Later rights-reviewed baseline uses its native build/runtime with no PyTorch or MLflow dependency. |
 | Learned/hybrid lane | Not implemented; no training framework is installed as a project dependency | A learned training/inference adapter is conditional on ADR-0004; PyTorch is proposed, while exact framework/version, topology, losses, optimizer, and schedule remain unresolved. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
@@ -184,15 +185,15 @@ compact-vio-uav/
 ├── experiments/
 │   ├── schemas/                           [current: run/artifact/evidence schemas]
 │   └── configs/                           [planned: frozen experiment configs]
-├── configs/                               [planned: data, estimator, and environment configs]
+├── configs/                               [current: calibration schemas/rejected synthetic fixtures; other configs planned]
 ├── src/compact_vio/
 │   ├── replay.py                          [current]
-│   ├── estimator.py                       [current: framework-neutral estimator contract; sensor/calibration profiles still planned]
+│   ├── estimator.py                       [current: framework-neutral estimator contract]
 │   ├── artifacts/                         [current]
 │   ├── copy_audit.py                      [current]
 │   ├── preflight.py                       [current]
 │   ├── repository_policy.py               [current]
-│   ├── contracts/                         [current: sensor payload/calibration-identity records; complete profile planned]
+│   ├── contracts/                         [current: sensor payload/calibration-identity runtime records]
 │   ├── data/                              [planned: approved dataset adapters]
 │   ├── geometry/                          [planned: transforms/trajectory operations]
 │   ├── evaluation/                        [planned: metrics/failure/resource scorecard]

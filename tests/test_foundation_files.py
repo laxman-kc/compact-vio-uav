@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import unittest
@@ -59,6 +60,74 @@ class FoundationFileTests(unittest.TestCase):
         document = (ROOT / "docs/requirements.md").read_text(encoding="utf-8")
         definitions = re.findall(r"^\| R-[A-Z]+-\d{3} \|", document, re.MULTILINE)
         self.assertEqual(definitions, [])
+
+    def test_calibration_templates_are_strict_synthetic_and_not_approved(self) -> None:
+        profile_schema_path = ROOT / "configs/schemas/calibration-profile.schema.json"
+        assessment_schema_path = ROOT / "configs/schemas/calibration-assessment.schema.json"
+        profile_path = ROOT / "configs/templates/calibration-profile.template.json"
+        assessment_path = ROOT / "configs/templates/calibration-assessment.template.json"
+        for path in (
+            profile_schema_path,
+            assessment_schema_path,
+            profile_path,
+            assessment_path,
+        ):
+            self.assertTrue(path.is_file(), path)
+
+        profile_schema = json.loads(profile_schema_path.read_text(encoding="utf-8"))
+        assessment_schema = json.loads(assessment_schema_path.read_text(encoding="utf-8"))
+        profile_bytes = profile_path.read_bytes()
+        profile = json.loads(profile_bytes)
+        assessment = json.loads(assessment_path.read_text(encoding="utf-8"))
+        for schema in (profile_schema, assessment_schema):
+            self.assertIs(schema["additionalProperties"], False)
+            self.assertNotIn('"default"', json.dumps(schema))
+
+        self.assertEqual(profile["record_type"], "sensor_calibration_profile")
+        self.assertEqual(profile["profile_role_id"], "synthetic-fixture-only")
+        self.assertTrue(
+            all(item["stream_id"].startswith("synthetic-") for item in profile["cameras"])
+        )
+        self.assertTrue(
+            all(item["stream_id"].startswith("synthetic-") for item in profile["imu_streams"])
+        )
+        self.assertNotIn("approved_for_replay", profile)
+        configuration_fields = (
+            "replay_clock_id",
+            "camera_layout_id",
+            "operating_mode_id",
+            "cameras",
+            "imu_streams",
+            "spatial_calibrations",
+            "temporal_calibrations",
+            "gravity",
+            "validity_conditions",
+        )
+        expected_fingerprint = hashlib.sha256(
+            (
+                json.dumps(
+                    {field: profile[field] for field in configuration_fields},
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n"
+            ).encode("utf-8")
+        ).hexdigest()
+        self.assertEqual(profile["configuration_fingerprint_sha256"], expected_fingerprint)
+
+        self.assertEqual(assessment["record_type"], "calibration_profile_assessment")
+        self.assertEqual(assessment["decision"], "rejected")
+        self.assertIs(assessment["approved_for_replay"], False)
+        self.assertIs(assessment["accepts_adr"], False)
+        self.assertEqual(
+            assessment["profile_link"]["sha256"],
+            hashlib.sha256(profile_bytes).hexdigest(),
+        )
+        self.assertEqual(
+            assessment["profile_link"]["configuration_fingerprint_sha256"],
+            expected_fingerprint,
+        )
 
     def test_m2_governance_templates_are_strict_non_authoritative_drafts(self) -> None:
         pairs = {

@@ -1,0 +1,598 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/laxman-kc/compact-vio-uav/configs/schemas/calibration-assessment.schema.json",
+  "title": "compact-vio-uav calibration profile assessment",
+  "description": "Independent review, revalidation, or invalidation evidence for one immutable sensor calibration profile revision. No value in this schema is a project default, and schema validity alone does not approve replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "assessment_id",
+    "assessed_at",
+    "assessed_by",
+    "assessment_kind",
+    "authority",
+    "accepts_adr",
+    "prior_assessment",
+    "profile_link",
+    "threshold_scope",
+    "criteria",
+    "required_checks",
+    "decision",
+    "decision_rationale",
+    "approved_for_replay",
+    "invalidation",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "record_type": { "const": "calibration_profile_assessment" },
+    "assessment_id": { "$ref": "#/$defs/id" },
+    "assessed_at": { "type": "string", "format": "date-time" },
+    "assessed_by": { "type": "string", "minLength": 1 },
+    "assessment_kind": {
+      "enum": ["initial", "revalidation", "invalidation"]
+    },
+    "authority": { "const": "calibration_review_evidence" },
+    "accepts_adr": { "const": false },
+    "prior_assessment": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/assessment_link" }
+      ]
+    },
+    "profile_link": { "$ref": "#/$defs/profile_link" },
+    "threshold_scope": { "$ref": "#/$defs/threshold_scope" },
+    "criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/criterion" }
+    },
+    "required_checks": { "$ref": "#/$defs/required_checks" },
+    "decision": {
+      "enum": ["approved", "rejected", "invalidated"]
+    },
+    "decision_rationale": { "type": "string", "minLength": 1 },
+    "approved_for_replay": { "type": "boolean" },
+    "invalidation": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/invalidation" }
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "assessment_kind": { "const": "initial" } },
+        "required": ["assessment_kind"]
+      },
+      "then": {
+        "properties": { "prior_assessment": { "type": "null" } }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "assessment_kind": { "enum": ["revalidation", "invalidation"] }
+        },
+        "required": ["assessment_kind"]
+      },
+      "then": {
+        "properties": {
+          "prior_assessment": { "$ref": "#/$defs/assessment_link" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "assessment_kind": { "const": "invalidation" } },
+        "required": ["assessment_kind"]
+      },
+      "then": {
+        "properties": { "decision": { "const": "invalidated" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "decision": { "const": "approved" } },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": {
+          "assessment_kind": { "enum": ["initial", "revalidation"] },
+          "approved_for_replay": { "const": true },
+          "invalidation": { "type": "null" },
+          "criteria": {
+            "items": {
+              "allOf": [
+                { "$ref": "#/$defs/criterion" },
+                {
+                  "properties": { "passed": { "const": true } },
+                  "required": ["passed"]
+                }
+              ]
+            }
+          },
+          "required_checks": {
+            "allOf": [
+              { "$ref": "#/$defs/required_checks" },
+              {
+                "properties": {
+                  "motion_excitation": { "$ref": "#/$defs/passed_check" },
+                  "blur_visibility": { "$ref": "#/$defs/passed_check" },
+                  "timestamp_continuity": { "$ref": "#/$defs/passed_check" },
+                  "camera_residuals": { "$ref": "#/$defs/passed_check" },
+                  "imu_bias_behavior": { "$ref": "#/$defs/passed_check" },
+                  "temporal_calibration": { "$ref": "#/$defs/passed_check" },
+                  "spatial_calibration": { "$ref": "#/$defs/passed_check" },
+                  "physical_plausibility": { "$ref": "#/$defs/passed_check" }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "decision": { "const": "rejected" } },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": {
+          "assessment_kind": { "enum": ["initial", "revalidation"] },
+          "approved_for_replay": { "const": false },
+          "invalidation": { "type": "null" }
+        },
+        "anyOf": [
+          {
+            "properties": {
+              "criteria": {
+                "contains": {
+                  "properties": { "passed": { "const": false } },
+                  "required": ["passed"]
+                }
+              }
+            },
+            "required": ["criteria"]
+          },
+          {
+            "properties": {
+              "required_checks": { "$ref": "#/$defs/required_checks_with_failure" }
+            },
+            "required": ["required_checks"]
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": { "decision": { "const": "invalidated" } },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": {
+          "assessment_kind": { "const": "invalidation" },
+          "approved_for_replay": { "const": false },
+          "invalidation": { "$ref": "#/$defs/invalidation" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "credential_free_reference": {
+      "type": "string",
+      "format": "uri-reference",
+      "minLength": 1,
+      "pattern": "^(?!.*[?#@])(?!.*%(?:23|25|3[fF]|40)).+$"
+    },
+    "evidence_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "sha256", "description"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/credential_free_reference" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    },
+    "profile_link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_type",
+        "record_id",
+        "sensor_profile_id",
+        "calibration_id",
+        "revision_id",
+        "ref",
+        "sha256",
+        "configuration_fingerprint_sha256"
+      ],
+      "properties": {
+        "record_type": { "const": "sensor_calibration_profile" },
+        "record_id": { "$ref": "#/$defs/id" },
+        "sensor_profile_id": { "$ref": "#/$defs/id" },
+        "calibration_id": { "$ref": "#/$defs/id" },
+        "revision_id": { "$ref": "#/$defs/id" },
+        "ref": { "$ref": "#/$defs/credential_free_reference" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "configuration_fingerprint_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "assessment_link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assessment_id",
+        "profile_record_id",
+        "profile_revision_id",
+        "ref",
+        "sha256"
+      ],
+      "properties": {
+        "assessment_id": { "$ref": "#/$defs/id" },
+        "profile_record_id": { "$ref": "#/$defs/id" },
+        "profile_revision_id": { "$ref": "#/$defs/id" },
+        "ref": { "$ref": "#/$defs/credential_free_reference" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "threshold_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope_id",
+        "profile_record_id",
+        "sensor_profile_id",
+        "calibration_id",
+        "revision_id",
+        "camera_layout_id",
+        "operating_mode_id",
+        "calibration_target_id",
+        "camera_stream_ids",
+        "imu_stream_ids",
+        "validity_condition_ids",
+        "threshold_set_id",
+        "threshold_set_revision_id",
+        "threshold_definition_ref"
+      ],
+      "properties": {
+        "scope_id": { "$ref": "#/$defs/id" },
+        "profile_record_id": { "$ref": "#/$defs/id" },
+        "sensor_profile_id": { "$ref": "#/$defs/id" },
+        "calibration_id": { "$ref": "#/$defs/id" },
+        "revision_id": { "$ref": "#/$defs/id" },
+        "camera_layout_id": { "$ref": "#/$defs/id" },
+        "operating_mode_id": { "$ref": "#/$defs/id" },
+        "calibration_target_id": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/id" }
+          ]
+        },
+        "camera_stream_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "imu_stream_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "validity_condition_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "threshold_set_id": { "$ref": "#/$defs/id" },
+        "threshold_set_revision_id": { "$ref": "#/$defs/id" },
+        "threshold_definition_ref": { "$ref": "#/$defs/evidence_reference" }
+      }
+    },
+    "named_scalar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameter_id", "value", "unit_id", "unit_definition_ref"],
+      "properties": {
+        "parameter_id": { "$ref": "#/$defs/id" },
+        "value": { "type": "number" },
+        "unit_id": { "$ref": "#/$defs/id" },
+        "unit_definition_ref": { "$ref": "#/$defs/evidence_reference" }
+      }
+    },
+    "criterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "criterion_id",
+        "check_id",
+        "applies_to_ids",
+        "metric_id",
+        "metric_definition_ref",
+        "comparison_operator",
+        "threshold",
+        "observed_value",
+        "passed",
+        "evidence_ref",
+        "rationale"
+      ],
+      "properties": {
+        "criterion_id": { "$ref": "#/$defs/id" },
+        "check_id": { "$ref": "#/$defs/check_id" },
+        "applies_to_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "metric_id": { "$ref": "#/$defs/id" },
+        "metric_definition_ref": { "$ref": "#/$defs/evidence_reference" },
+        "comparison_operator": {
+          "enum": [
+            "less_than",
+            "less_than_or_equal",
+            "equal",
+            "greater_than_or_equal",
+            "greater_than"
+          ]
+        },
+        "threshold": { "$ref": "#/$defs/named_scalar" },
+        "observed_value": { "$ref": "#/$defs/named_scalar" },
+        "passed": { "type": "boolean" },
+        "evidence_ref": { "$ref": "#/$defs/evidence_reference" },
+        "rationale": { "type": "string", "minLength": 1 }
+      }
+    },
+    "check_id": {
+      "enum": [
+        "motion_excitation",
+        "blur_visibility",
+        "timestamp_continuity",
+        "camera_residuals",
+        "imu_bias_behavior",
+        "temporal_calibration",
+        "spatial_calibration",
+        "physical_plausibility"
+      ]
+    },
+    "required_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check_id", "passed", "evidence_ref", "reviewer_note"],
+      "properties": {
+        "check_id": { "$ref": "#/$defs/check_id" },
+        "passed": { "type": "boolean" },
+        "evidence_ref": { "$ref": "#/$defs/evidence_reference" },
+        "reviewer_note": { "type": "string", "minLength": 1 }
+      }
+    },
+    "motion_excitation_check": {
+      "allOf": [
+        { "$ref": "#/$defs/required_check" },
+        {
+          "properties": { "check_id": { "const": "motion_excitation" } },
+          "required": ["check_id"]
+        }
+      ]
+    },
+    "blur_visibility_check": {
+      "allOf": [
+        { "$ref": "#/$defs/required_check" },
+        {
+          "properties": { "check_id": { "const": "blur_visibility" } },
+          "required": ["check_id"]
+        }
+      ]
+    },
+    "timestamp_continuity_check": {
+      "allOf": [
+        { "$ref": "#/$defs/required_check" },
+        {
+          "properties": { "check_id": { "const": "timestamp_continuity" } },
+          "required": ["check_id"]
+        }
+      ]
+    },
+    "camera_residuals_check": {
+      "allOf": [
+        { "$ref": "#/$defs/required_check" },
+        {
+          "properties": { "check_id": { "const": "camera_residuals" } },
+          "required": ["check_id"]
+        }
+      ]
+    },
+    "imu_bias_behavior_check": {
+      "allOf": [
+        { "$ref": "#/$defs/required_check" },
+        {
+          "properties": { "check_id": { "const": "imu_bias_behavior" } },
+          "required": ["check_id"]
+        }
+      ]
+    },
+    "temporal_calibration_check": {
+      "allOf": [
+        { "$ref": "#/$defs/required_check" },
+        {
+          "properties": { "check_id": { "const": "temporal_calibration" } },
+          "required": ["check_id"]
+        }
+      ]
+    },
+    "spatial_calibration_check": {
+      "allOf": [
+        { "$ref": "#/$defs/required_check" },
+        {
+          "properties": { "check_id": { "const": "spatial_calibration" } },
+          "required": ["check_id"]
+        }
+      ]
+    },
+    "physical_plausibility_check": {
+      "allOf": [
+        { "$ref": "#/$defs/required_check" },
+        {
+          "properties": { "check_id": { "const": "physical_plausibility" } },
+          "required": ["check_id"]
+        }
+      ]
+    },
+    "required_checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "motion_excitation",
+        "blur_visibility",
+        "timestamp_continuity",
+        "camera_residuals",
+        "imu_bias_behavior",
+        "temporal_calibration",
+        "spatial_calibration",
+        "physical_plausibility"
+      ],
+      "properties": {
+        "motion_excitation": { "$ref": "#/$defs/motion_excitation_check" },
+        "blur_visibility": { "$ref": "#/$defs/blur_visibility_check" },
+        "timestamp_continuity": { "$ref": "#/$defs/timestamp_continuity_check" },
+        "camera_residuals": { "$ref": "#/$defs/camera_residuals_check" },
+        "imu_bias_behavior": { "$ref": "#/$defs/imu_bias_behavior_check" },
+        "temporal_calibration": { "$ref": "#/$defs/temporal_calibration_check" },
+        "spatial_calibration": { "$ref": "#/$defs/spatial_calibration_check" },
+        "physical_plausibility": { "$ref": "#/$defs/physical_plausibility_check" }
+      }
+    },
+    "passed_check": {
+      "allOf": [
+        { "$ref": "#/$defs/required_check" },
+        {
+          "properties": { "passed": { "const": true } },
+          "required": ["passed"]
+        }
+      ]
+    },
+    "required_checks_with_failure": {
+      "allOf": [
+        { "$ref": "#/$defs/required_checks" },
+        {
+          "anyOf": [
+            {
+              "properties": {
+                "motion_excitation": {
+                  "properties": { "passed": { "const": false } },
+                  "required": ["passed"]
+                }
+              }
+            },
+            {
+              "properties": {
+                "blur_visibility": {
+                  "properties": { "passed": { "const": false } },
+                  "required": ["passed"]
+                }
+              }
+            },
+            {
+              "properties": {
+                "timestamp_continuity": {
+                  "properties": { "passed": { "const": false } },
+                  "required": ["passed"]
+                }
+              }
+            },
+            {
+              "properties": {
+                "camera_residuals": {
+                  "properties": { "passed": { "const": false } },
+                  "required": ["passed"]
+                }
+              }
+            },
+            {
+              "properties": {
+                "imu_bias_behavior": {
+                  "properties": { "passed": { "const": false } },
+                  "required": ["passed"]
+                }
+              }
+            },
+            {
+              "properties": {
+                "temporal_calibration": {
+                  "properties": { "passed": { "const": false } },
+                  "required": ["passed"]
+                }
+              }
+            },
+            {
+              "properties": {
+                "spatial_calibration": {
+                  "properties": { "passed": { "const": false } },
+                  "required": ["passed"]
+                }
+              }
+            },
+            {
+              "properties": {
+                "physical_plausibility": {
+                  "properties": { "passed": { "const": false } },
+                  "required": ["passed"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "invalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "invalidated_at",
+        "invalidated_by",
+        "trigger_condition_ids",
+        "reason",
+        "evidence_ref",
+        "replacement_profile"
+      ],
+      "properties": {
+        "invalidated_at": { "type": "string", "format": "date-time" },
+        "invalidated_by": { "type": "string", "minLength": 1 },
+        "trigger_condition_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "reason": { "type": "string", "minLength": 1 },
+        "evidence_ref": { "$ref": "#/$defs/evidence_reference" },
+        "replacement_profile": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/profile_link" }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "calibration_profile_assessment",
+  "assessment_id": "synthetic-calibration-assessment-rejected",
+  "assessed_at": "2026-08-27T00:00:00Z",
+  "assessed_by": "synthetic-reviewer-not-an-approval-authority",
+  "assessment_kind": "initial",
+  "authority": "calibration_review_evidence",
+  "accepts_adr": false,
+  "prior_assessment": null,
+  "profile_link": {
+    "record_type": "sensor_calibration_profile",
+    "record_id": "synthetic-calibration-profile",
+    "sensor_profile_id": "synthetic-sensor-profile",
+    "calibration_id": "synthetic-calibration",
+    "revision_id": "synthetic-revision-001",
+    "ref": "configs/templates/calibration-profile.template.json",
+    "sha256": "75d94449703cb645d6fa0dc3b588d9109adc42f60a52fac20a6e90f0bc3a572b",
+    "configuration_fingerprint_sha256": "55d62ffc7d3c18aba499cddb95b97727902866038b50219fbfd1b88364c8e0de"
+  },
+  "threshold_scope": {
+    "scope_id": "synthetic-threshold-scope",
+    "profile_record_id": "synthetic-calibration-profile",
+    "sensor_profile_id": "synthetic-sensor-profile",
+    "calibration_id": "synthetic-calibration",
+    "revision_id": "synthetic-revision-001",
+    "camera_layout_id": "synthetic-layout-unspecified-count",
+    "operating_mode_id": "synthetic-operating-mode",
+    "calibration_target_id": null,
+    "camera_stream_ids": [
+      "synthetic-camera-stream"
+    ],
+    "imu_stream_ids": [
+      "synthetic-imu-stream"
+    ],
+    "validity_condition_ids": [
+      "synthetic-hardware-condition",
+      "synthetic-mount-condition",
+      "synthetic-focus-condition",
+      "synthetic-resolution-condition",
+      "synthetic-exposure-condition",
+      "synthetic-sampling-condition",
+      "synthetic-firmware-condition",
+      "synthetic-timestamp-condition",
+      "synthetic-environment-condition"
+    ],
+    "threshold_set_id": "synthetic-threshold-set-not-approved",
+    "threshold_set_revision_id": "synthetic-threshold-revision-001",
+    "threshold_definition_ref": {
+      "ref": "synthetic/evidence/threshold-definition.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "description": "Synthetic threshold definition reference; it is not a project threshold."
+    }
+  },
+  "criteria": [
+    {
+      "criterion_id": "synthetic-camera-residual-criterion",
+      "check_id": "camera_residuals",
+      "applies_to_ids": [
+        "synthetic-camera-stream"
+      ],
+      "metric_id": "synthetic-camera-residual-metric",
+      "metric_definition_ref": {
+        "ref": "synthetic/evidence/camera-residual-metric.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic metric definition for schema validation only."
+      },
+      "comparison_operator": "less_than_or_equal",
+      "threshold": {
+        "parameter_id": "synthetic-camera-residual-threshold",
+        "value": 0.001234567,
+        "unit_id": "synthetic-residual-unit",
+        "unit_definition_ref": {
+          "ref": "synthetic/evidence/residual-unit.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic unit definition; it is not a physical or project default."
+        }
+      },
+      "observed_value": {
+        "parameter_id": "synthetic-camera-residual-observation",
+        "value": 9.87654321,
+        "unit_id": "synthetic-residual-unit",
+        "unit_definition_ref": {
+          "ref": "synthetic/evidence/residual-unit.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "description": "Synthetic unit definition; it is not a physical or project default."
+        }
+      },
+      "passed": false,
+      "evidence_ref": {
+        "ref": "synthetic/evidence/camera-residual-observation.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic failed observation used only to exercise the rejected decision path."
+      },
+      "rationale": "The deliberately synthetic observation fails the deliberately synthetic threshold."
+    }
+  ],
+  "required_checks": {
+    "motion_excitation": {
+      "check_id": "motion_excitation",
+      "passed": false,
+      "evidence_ref": {
+        "ref": "synthetic/evidence/motion-excitation-check.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic failed motion-excitation check."
+      },
+      "reviewer_note": "Deliberately failed; no physical calibration data exists."
+    },
+    "blur_visibility": {
+      "check_id": "blur_visibility",
+      "passed": false,
+      "evidence_ref": {
+        "ref": "synthetic/evidence/blur-visibility-check.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic failed blur and visibility check."
+      },
+      "reviewer_note": "Deliberately failed; no physical calibration data exists."
+    },
+    "timestamp_continuity": {
+      "check_id": "timestamp_continuity",
+      "passed": false,
+      "evidence_ref": {
+        "ref": "synthetic/evidence/timestamp-continuity-check.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic failed timestamp-continuity check."
+      },
+      "reviewer_note": "Deliberately failed; no sensor timestamps exist."
+    },
+    "camera_residuals": {
+      "check_id": "camera_residuals",
+      "passed": false,
+      "evidence_ref": {
+        "ref": "synthetic/evidence/camera-residual-check.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic failed camera residual check."
+      },
+      "reviewer_note": "Deliberately failed so this template cannot represent replay approval."
+    },
+    "imu_bias_behavior": {
+      "check_id": "imu_bias_behavior",
+      "passed": true,
+      "evidence_ref": {
+        "ref": "synthetic/evidence/imu-bias-check.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic IMU bias check fixture."
+      },
+      "reviewer_note": "Synthetic fixture result only; it is not evidence for a physical sensor."
+    },
+    "temporal_calibration": {
+      "check_id": "temporal_calibration",
+      "passed": true,
+      "evidence_ref": {
+        "ref": "synthetic/evidence/temporal-calibration-check.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic temporal calibration check fixture."
+      },
+      "reviewer_note": "Synthetic fixture result only; no timing claim is made."
+    },
+    "spatial_calibration": {
+      "check_id": "spatial_calibration",
+      "passed": true,
+      "evidence_ref": {
+        "ref": "synthetic/evidence/spatial-calibration-check.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic spatial calibration check fixture."
+      },
+      "reviewer_note": "Synthetic fixture result only; no transform claim is made."
+    },
+    "physical_plausibility": {
+      "check_id": "physical_plausibility",
+      "passed": true,
+      "evidence_ref": {
+        "ref": "synthetic/evidence/physical-plausibility-check.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "description": "Synthetic physical plausibility check fixture."
+      },
+      "reviewer_note": "Synthetic fixture result only; it is not a physical validation."
+    }
+  },
+  "decision": "rejected",
+  "decision_rationale": "This visibly synthetic fixture is rejected and must never authorize replay.",
+  "approved_for_replay": false,
+  "invalidation": null,
+  "limitations": [
+    "All identities, values, thresholds, evidence references, and hashes are synthetic test data.",
+    "This rejected template is not a calibration review, physical validation, or replay approval."
+  ]
+}

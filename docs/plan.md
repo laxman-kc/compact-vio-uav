@@ -126,9 +126,9 @@ or training duration is selected by this roadmap.
 | M1 | Planning traceability and static durability preflight | Complete | M0 |
 | M2 | Artifact durability for important GPU work | Blocked | Required before long or irreplaceable paid runs |
 | M3 | Scientific question and estimator contract | In progress | M1; local-VIO direction fixed, details remain |
-| M4 | Replay sensor, time, frame, and calibration contract | In progress | Synthetic timing contract unblocked; calibration profile remains |
+| M4 | Replay sensor, time, frame, and calibration contract | Complete | Causal replay, typed sensor records, and calibration profile/assessment fixtures |
 | M5 | Reproducible execution environments | In progress | Local path active; one live A10 is bounded to implementation smoke only |
-| M6 | Dataset approval and representative ingestion | Blocked | M3/M4 details and per-dataset rights review |
+| M6 | Dataset approval and representative ingestion | Blocked | Remaining M3 details, the M4 contract, and per-dataset rights review |
 | M7 | Common causal replay and evaluator | In progress | Synthetic replay unblocked; real-data exit depends on M6 |
 | M8 | Classical baseline reproduction | Blocked | M5–M7 and license review |
 | M9 | Conditional novel-candidate experiments | Conditional; blocked | M7, M8, and accepted estimator/contribution scope |
@@ -296,7 +296,7 @@ authorize changing ADR-0004's primary claim after results are seen.
 
 ## M4 — Replay sensor, time, frame, and calibration contract
 
-Status: In progress.
+Status: Complete.
 
 Dependencies: M1, the fixed local-VIO direction, and `R-DATA-*`, `R-EST-*`, and
 `R-CAL-*`. Synthetic timing/causality work may proceed while M3 interface details
@@ -305,7 +305,7 @@ are completed.
 Physical-sensor selection in [ADR-0003](adr/0003-sensor-contract.md) remains
 deferred until the deployment and integration milestones require it.
 
-Required decisions/evidence:
+Completed contract evidence:
 
 - Implement a deterministic event replay boundary that distinguishes sensor
   measurement time from estimator availability time, uses one declared clock,
@@ -318,6 +318,9 @@ Required decisions/evidence:
   temporal calibration, IMU stochastic parameters, and available diagnostics.
 - Define the validation rules that each approved profile must satisfy before its
   records enter the common evaluator.
+- Keep immutable profile facts separate from review, revalidation, and
+  invalidation decisions; bind them by exact identity, revision, raw-file hash,
+  validity fingerprint, and threshold scope.
 
 Prohibited work:
 
@@ -333,6 +336,10 @@ Exit evidence:
   fixtures.
 - Timestamp/frame/calibration negative tests pass without acquiring a candidate
   dataset.
+
+This milestone does not approve a dataset or physical sensor. M6 must create
+and review an actual profile for the selected representative sequence before
+its records enter the evaluator.
 
 ## M5 — Reproducible execution environments
 
@@ -707,21 +714,21 @@ Exit evidence:
 Execute these as separate small slices; do not combine them into one long phase:
 
 1. Freeze the remaining local-VIO state/frame/time/reset interface.
-2. Add canonical typed camera/IMU/calibration records with synthetic tests.
-3. Add trajectory geometry and one metric at a time, followed by its negative
+2. Add trajectory geometry and one metric at a time, followed by its negative
    control.
-4. Rights-check and ingest one representative sequence only.
-5. Reproduce one stable classical baseline through the common replay.
-6. If an optional GPU worker is freshly approved and available, run one bounded
+3. Rights-check and ingest one representative sequence only, including its
+   actual calibration profile and review evidence.
+4. Reproduce one stable classical baseline through the common replay.
+5. If an optional GPU worker is freshly approved and available, run one bounded
    environment/data smoke.
-7. After ADR-0004 acceptance, implement the direct learned-control API with
+6. After ADR-0004 acceptance, implement the direct learned-control API with
    focused tests.
-8. Run its tiny CPU train/checkpoint/inference smoke.
-9. Run and review one bounded direct-control training configuration.
-10. Implement the anchored-hybrid correction API with focused tests.
-11. Run its tiny CPU train/checkpoint/inference smoke.
-12. Run and review one bounded anchored-hybrid training configuration.
-13. Perform common evaluation and select; export only if the selected candidate
+7. Run its tiny CPU train/checkpoint/inference smoke.
+8. Run and review one bounded direct-control training configuration.
+9. Implement the anchored-hybrid correction API with focused tests.
+10. Run its tiny CPU train/checkpoint/inference smoke.
+11. Run and review one bounded anchored-hybrid training configuration.
+12. Perform common evaluation and select; export only if the selected candidate
    has a neural component and deployment scope is later approved.
 
 The exact source licence, mono/stereo decision, model architecture,

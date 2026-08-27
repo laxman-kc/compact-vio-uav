@@ -1,0 +1,615 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/laxman-kc/compact-vio-uav/configs/schemas/calibration-profile.schema.json",
+  "title": "compact-vio-uav sensor calibration profile",
+  "description": "Immutable measured calibration facts and validity declarations. Schema validity does not approve the profile for replay or physical use.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "record_id",
+    "sensor_profile_id",
+    "calibration_id",
+    "revision_id",
+    "created_at",
+    "provenance_id",
+    "profile_role_id",
+    "supersedes",
+    "provenance",
+    "replay_clock_id",
+    "camera_layout_id",
+    "operating_mode_id",
+    "configuration_fingerprint_sha256",
+    "validity_conditions_id",
+    "cameras",
+    "imu_streams",
+    "spatial_calibrations",
+    "temporal_calibrations",
+    "gravity",
+    "validity_conditions",
+    "calibration_procedure",
+    "diagnostics",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "record_type": { "const": "sensor_calibration_profile" },
+    "record_id": { "$ref": "#/$defs/id" },
+    "sensor_profile_id": { "$ref": "#/$defs/id" },
+    "calibration_id": { "$ref": "#/$defs/id" },
+    "revision_id": { "$ref": "#/$defs/id" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "provenance_id": { "$ref": "#/$defs/id" },
+    "profile_role_id": { "$ref": "#/$defs/id" },
+    "supersedes": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/profile_link" }
+      ]
+    },
+    "provenance": { "$ref": "#/$defs/provenance" },
+    "replay_clock_id": { "$ref": "#/$defs/id" },
+    "camera_layout_id": { "$ref": "#/$defs/id" },
+    "operating_mode_id": { "$ref": "#/$defs/id" },
+    "configuration_fingerprint_sha256": { "$ref": "#/$defs/sha256" },
+    "validity_conditions_id": { "$ref": "#/$defs/id" },
+    "cameras": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/camera" }
+    },
+    "imu_streams": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/imu" }
+    },
+    "spatial_calibrations": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/spatial_calibration" }
+    },
+    "temporal_calibrations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/temporal_calibration" }
+    },
+    "gravity": { "$ref": "#/$defs/vector3" },
+    "validity_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/validity_condition" }
+    },
+    "calibration_procedure": { "$ref": "#/$defs/procedure" },
+    "diagnostics": { "$ref": "#/$defs/diagnostics" },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "credential_free_reference": {
+      "type": "string",
+      "format": "uri-reference",
+      "minLength": 1,
+      "pattern": "^(?!.*[?#@])(?!.*%(?:23|25|3[fF]|40)).+$"
+    },
+    "evidence_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "sha256", "description"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/credential_free_reference" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    },
+    "profile_link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_id", "revision_id", "ref", "sha256"],
+      "properties": {
+        "record_id": { "$ref": "#/$defs/id" },
+        "revision_id": { "$ref": "#/$defs/id" },
+        "ref": { "$ref": "#/$defs/credential_free_reference" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_kind_id",
+        "source_id",
+        "source_version",
+        "source_ref",
+        "input_manifest_ref",
+        "implementation_ref",
+        "configuration_ref",
+        "created_by"
+      ],
+      "properties": {
+        "source_kind_id": { "$ref": "#/$defs/id" },
+        "source_id": { "$ref": "#/$defs/id" },
+        "source_version": { "$ref": "#/$defs/id" },
+        "source_ref": { "$ref": "#/$defs/evidence_reference" },
+        "input_manifest_ref": { "$ref": "#/$defs/evidence_reference" },
+        "implementation_ref": { "$ref": "#/$defs/evidence_reference" },
+        "configuration_ref": { "$ref": "#/$defs/evidence_reference" },
+        "created_by": { "type": "string", "minLength": 1 }
+      }
+    },
+    "named_quantity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameter_id", "value", "unit_id", "unit_definition_ref"],
+      "properties": {
+        "parameter_id": { "$ref": "#/$defs/id" },
+        "value": {
+          "oneOf": [
+            { "type": "number" },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "number" }
+            }
+          ]
+        },
+        "unit_id": { "$ref": "#/$defs/id" },
+        "unit_definition_ref": { "$ref": "#/$defs/evidence_reference" }
+      }
+    },
+    "parameter_set": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "model_definition_ref", "parameters"],
+      "properties": {
+        "model_id": { "$ref": "#/$defs/id" },
+        "model_definition_ref": { "$ref": "#/$defs/evidence_reference" },
+        "parameters": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/named_quantity" }
+        }
+      }
+    },
+    "nonempty_parameter_set": {
+      "allOf": [
+        { "$ref": "#/$defs/parameter_set" },
+        {
+          "properties": {
+            "parameters": { "minItems": 1 }
+          }
+        }
+      ]
+    },
+    "vector3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quantity_id",
+        "frame_id",
+        "axis_convention_id",
+        "axis_convention_ref",
+        "values",
+        "unit_id",
+        "unit_definition_ref"
+      ],
+      "properties": {
+        "quantity_id": { "$ref": "#/$defs/id" },
+        "frame_id": { "$ref": "#/$defs/id" },
+        "axis_convention_id": { "$ref": "#/$defs/id" },
+        "axis_convention_ref": { "$ref": "#/$defs/evidence_reference" },
+        "values": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "type": "number" }
+        },
+        "unit_id": { "$ref": "#/$defs/id" },
+        "unit_definition_ref": { "$ref": "#/$defs/evidence_reference" }
+      }
+    },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stream_id",
+        "sensor_id",
+        "hardware_revision_id",
+        "frame_id",
+        "frame_definition_ref",
+        "source_clock_id",
+        "clock_definition_ref",
+        "encoding_id",
+        "encoding_definition_ref",
+        "color_model_id",
+        "width_px",
+        "height_px",
+        "nominal_rate",
+        "shutter_model_id",
+        "shutter_model_ref",
+        "exposure_mode_id",
+        "timestamp_semantics_id",
+        "timestamp_semantics_ref",
+        "axis_convention_id",
+        "axis_convention_ref",
+        "lens_configuration_id",
+        "focus_configuration_id",
+        "field_of_view",
+        "intrinsics",
+        "distortion",
+        "validity_condition_ids"
+      ],
+      "properties": {
+        "stream_id": { "$ref": "#/$defs/id" },
+        "sensor_id": { "$ref": "#/$defs/id" },
+        "hardware_revision_id": { "$ref": "#/$defs/id" },
+        "frame_id": { "$ref": "#/$defs/id" },
+        "frame_definition_ref": { "$ref": "#/$defs/evidence_reference" },
+        "source_clock_id": { "$ref": "#/$defs/id" },
+        "clock_definition_ref": { "$ref": "#/$defs/evidence_reference" },
+        "encoding_id": { "$ref": "#/$defs/id" },
+        "encoding_definition_ref": { "$ref": "#/$defs/evidence_reference" },
+        "color_model_id": { "$ref": "#/$defs/id" },
+        "width_px": { "type": "integer", "minimum": 1 },
+        "height_px": { "type": "integer", "minimum": 1 },
+        "nominal_rate": { "$ref": "#/$defs/named_quantity" },
+        "shutter_model_id": { "$ref": "#/$defs/id" },
+        "shutter_model_ref": { "$ref": "#/$defs/evidence_reference" },
+        "exposure_mode_id": { "$ref": "#/$defs/id" },
+        "timestamp_semantics_id": { "$ref": "#/$defs/id" },
+        "timestamp_semantics_ref": { "$ref": "#/$defs/evidence_reference" },
+        "axis_convention_id": { "$ref": "#/$defs/id" },
+        "axis_convention_ref": { "$ref": "#/$defs/evidence_reference" },
+        "lens_configuration_id": { "$ref": "#/$defs/id" },
+        "focus_configuration_id": { "$ref": "#/$defs/id" },
+        "field_of_view": {
+          "description": "Null means the source does not provide a field-of-view characterization.",
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/parameter_set" }
+          ]
+        },
+        "intrinsics": { "$ref": "#/$defs/parameter_set" },
+        "distortion": { "$ref": "#/$defs/parameter_set" },
+        "validity_condition_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        }
+      }
+    },
+    "imu_channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quantity_id",
+        "axis_convention_id",
+        "axis_convention_ref",
+        "measurement_range",
+        "noise_density",
+        "bias_random_walk"
+      ],
+      "properties": {
+        "quantity_id": { "$ref": "#/$defs/id" },
+        "axis_convention_id": { "$ref": "#/$defs/id" },
+        "axis_convention_ref": { "$ref": "#/$defs/evidence_reference" },
+        "measurement_range": { "$ref": "#/$defs/nonempty_parameter_set" },
+        "noise_density": { "$ref": "#/$defs/nonempty_parameter_set" },
+        "bias_random_walk": { "$ref": "#/$defs/nonempty_parameter_set" }
+      }
+    },
+    "imu": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stream_id",
+        "sensor_id",
+        "hardware_revision_id",
+        "frame_id",
+        "frame_definition_ref",
+        "source_clock_id",
+        "clock_definition_ref",
+        "timestamp_semantics_id",
+        "timestamp_semantics_ref",
+        "pairing_semantics_id",
+        "nominal_rate",
+        "temperature_expectations",
+        "gyroscope",
+        "accelerometer",
+        "characterization_method_ref",
+        "diagnostic_report_ref",
+        "validity_condition_ids"
+      ],
+      "properties": {
+        "stream_id": { "$ref": "#/$defs/id" },
+        "sensor_id": { "$ref": "#/$defs/id" },
+        "hardware_revision_id": { "$ref": "#/$defs/id" },
+        "frame_id": { "$ref": "#/$defs/id" },
+        "frame_definition_ref": { "$ref": "#/$defs/evidence_reference" },
+        "source_clock_id": { "$ref": "#/$defs/id" },
+        "clock_definition_ref": { "$ref": "#/$defs/evidence_reference" },
+        "timestamp_semantics_id": { "$ref": "#/$defs/id" },
+        "timestamp_semantics_ref": { "$ref": "#/$defs/evidence_reference" },
+        "pairing_semantics_id": { "$ref": "#/$defs/id" },
+        "nominal_rate": { "$ref": "#/$defs/named_quantity" },
+        "temperature_expectations": {
+          "description": "Null means the source does not provide a temperature characterization.",
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/parameter_set" }
+          ]
+        },
+        "gyroscope": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/imu_channel" }
+          ]
+        },
+        "accelerometer": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/imu_channel" }
+          ]
+        },
+        "characterization_method_ref": { "$ref": "#/$defs/evidence_reference" },
+        "diagnostic_report_ref": { "$ref": "#/$defs/evidence_reference" },
+        "validity_condition_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        }
+      },
+      "not": {
+        "properties": {
+          "gyroscope": { "type": "null" },
+          "accelerometer": { "type": "null" }
+        },
+        "required": ["gyroscope", "accelerometer"]
+      }
+    },
+    "translation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["values", "unit_id", "unit_definition_ref"],
+      "properties": {
+        "values": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "type": "number" }
+        },
+        "unit_id": { "$ref": "#/$defs/id" },
+        "unit_definition_ref": { "$ref": "#/$defs/evidence_reference" }
+      }
+    },
+    "rotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "representation_id",
+        "representation_definition_ref",
+        "component_order",
+        "values",
+        "unit_id",
+        "unit_definition_ref"
+      ],
+      "properties": {
+        "representation_id": { "$ref": "#/$defs/id" },
+        "representation_definition_ref": { "$ref": "#/$defs/evidence_reference" },
+        "component_order": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "number" }
+        },
+        "unit_id": { "$ref": "#/$defs/id" },
+        "unit_definition_ref": { "$ref": "#/$defs/evidence_reference" }
+      }
+    },
+    "spatial_calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spatial_calibration_id",
+        "camera_stream_id",
+        "imu_stream_id",
+        "from_frame_id",
+        "to_frame_id",
+        "transform_equation_id",
+        "transform_equation_ref",
+        "translation",
+        "rotation",
+        "method_ref",
+        "diagnostic_ref"
+      ],
+      "properties": {
+        "spatial_calibration_id": { "$ref": "#/$defs/id" },
+        "camera_stream_id": { "$ref": "#/$defs/id" },
+        "imu_stream_id": { "$ref": "#/$defs/id" },
+        "from_frame_id": { "$ref": "#/$defs/id" },
+        "to_frame_id": { "$ref": "#/$defs/id" },
+        "transform_equation_id": { "$ref": "#/$defs/id" },
+        "transform_equation_ref": { "$ref": "#/$defs/evidence_reference" },
+        "translation": { "$ref": "#/$defs/translation" },
+        "rotation": { "$ref": "#/$defs/rotation" },
+        "method_ref": { "$ref": "#/$defs/evidence_reference" },
+        "diagnostic_ref": { "$ref": "#/$defs/evidence_reference" }
+      }
+    },
+    "temporal_calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "temporal_calibration_id",
+        "stream_id",
+        "source_clock_id",
+        "target_replay_clock_id",
+        "mapping_equation_id",
+        "mapping_equation_ref",
+        "offset",
+        "positive_offset_definition_id",
+        "positive_offset_definition_ref",
+        "jitter",
+        "uncertainty",
+        "shared_clock_configuration_id",
+        "trigger_configuration_id",
+        "method_ref",
+        "diagnostic_ref"
+      ],
+      "properties": {
+        "temporal_calibration_id": { "$ref": "#/$defs/id" },
+        "stream_id": { "$ref": "#/$defs/id" },
+        "source_clock_id": { "$ref": "#/$defs/id" },
+        "target_replay_clock_id": { "$ref": "#/$defs/id" },
+        "mapping_equation_id": { "$ref": "#/$defs/id" },
+        "mapping_equation_ref": { "$ref": "#/$defs/evidence_reference" },
+        "offset": { "$ref": "#/$defs/named_quantity" },
+        "positive_offset_definition_id": { "$ref": "#/$defs/id" },
+        "positive_offset_definition_ref": { "$ref": "#/$defs/evidence_reference" },
+        "jitter": {
+          "description": "Null means jitter was not characterized by the source.",
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/parameter_set" }
+          ]
+        },
+        "uncertainty": {
+          "description": "Null means timing uncertainty was not characterized by the source.",
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/parameter_set" }
+          ]
+        },
+        "shared_clock_configuration_id": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/id" }
+          ]
+        },
+        "trigger_configuration_id": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/id" }
+          ]
+        },
+        "method_ref": { "$ref": "#/$defs/evidence_reference" },
+        "diagnostic_ref": { "$ref": "#/$defs/evidence_reference" }
+      }
+    },
+    "validity_condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "condition_id",
+        "category",
+        "applies_to_ids",
+        "applicable",
+        "state_id",
+        "change_requires",
+        "evidence_ref"
+      ],
+      "properties": {
+        "condition_id": { "$ref": "#/$defs/id" },
+        "category": {
+          "enum": [
+            "sensor_hardware",
+            "mount",
+            "focus",
+            "resolution",
+            "exposure_mode",
+            "sampling",
+            "firmware",
+            "driver_timestamp",
+            "operating_environment",
+            "additional"
+          ]
+        },
+        "applies_to_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "applicable": { "type": "boolean" },
+        "state_id": { "$ref": "#/$defs/id" },
+        "change_requires": { "enum": ["invalidation", "revalidation"] },
+        "evidence_ref": { "$ref": "#/$defs/evidence_reference" }
+      }
+    },
+    "procedure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method_id",
+        "method_definition_ref",
+        "calibration_target_id",
+        "data_manifest_ref",
+        "configuration_ref",
+        "software_ref",
+        "motion_excitation_ref",
+        "blur_visibility_ref",
+        "timestamp_continuity_ref"
+      ],
+      "properties": {
+        "method_id": { "$ref": "#/$defs/id" },
+        "method_definition_ref": { "$ref": "#/$defs/evidence_reference" },
+        "calibration_target_id": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/id" }
+          ]
+        },
+        "data_manifest_ref": { "$ref": "#/$defs/evidence_reference" },
+        "configuration_ref": { "$ref": "#/$defs/evidence_reference" },
+        "software_ref": { "$ref": "#/$defs/evidence_reference" },
+        "motion_excitation_ref": { "$ref": "#/$defs/evidence_reference" },
+        "blur_visibility_ref": { "$ref": "#/$defs/evidence_reference" },
+        "timestamp_continuity_ref": { "$ref": "#/$defs/evidence_reference" }
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "camera_residuals",
+        "imu_bias_behavior",
+        "temporal_calibration",
+        "spatial_calibration",
+        "physical_plausibility"
+      ],
+      "properties": {
+        "camera_residuals": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/evidence_reference" }]
+        },
+        "imu_bias_behavior": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/evidence_reference" }]
+        },
+        "temporal_calibration": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/evidence_reference" }]
+        },
+        "spatial_calibration": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/evidence_reference" }]
+        },
+        "physical_plausibility": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/evidence_reference" }]
+        }
+      }
+    }
+  }
+}
