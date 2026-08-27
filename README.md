@@ -9,10 +9,12 @@ and source licence remain decisions for the milestones that need them.
 
 ## Current status
 
-The repository contains the reproducibility foundation and the first executable
-research primitive: a deterministic causal replay boundary for timestamped
-camera, IMU, and reset events. It does not yet contain an estimator, trained
-model, approved dataset split, deployable runtime, or flight-ready system.
+The repository contains the reproducibility foundation, a deterministic causal
+replay boundary, and a first framework-neutral estimator-contract envelope. The
+contract requires explicit frame, transform-direction, unit, timestamp,
+validity, reset, and health declarations without selecting project-wide values.
+It does not yet contain an estimator, trained model, approved dataset split,
+deployable runtime, or flight-ready system.
 PyTorch is the proposed framework for future learned-component work, pending
 ADR-0004; MLflow is an optional, currently absent observer. Neither is a current
 package dependency.
@@ -86,12 +88,12 @@ require it.
 ## Foundation checks
 
 The installed package runtime is standard-library-only and currently provides a
-causal replay primitive, bundle inventory/verification, two-copy content audit,
-repository policy check, and read-only durability preflight. The separate
-schema/record validator is development tooling and uses the repository's pinned
-`jsonschema` dependency. The inventory records every regular file by canonical
-relative path, byte size, and SHA-256, and rejects symbolic links and
-unsupported filesystem entries.
+causal replay primitive, framework-neutral estimator-contract validation,
+bundle inventory/verification, two-copy content audit, repository policy check,
+and read-only durability preflight. The separate schema/record validator is
+development tooling and uses the repository's pinned `jsonschema` dependency.
+The inventory records every regular file by canonical relative path, byte size,
+and SHA-256, and rejects symbolic links and unsupported filesystem entries.
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
