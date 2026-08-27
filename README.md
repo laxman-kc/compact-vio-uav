@@ -12,15 +12,16 @@ and source licence remain decisions for the milestones that need them.
 The repository contains the reproducibility foundation, a deterministic causal
 replay boundary, a framework-neutral estimator envelope with an explicit
 interface-declaration and initialization/reset contract, and typed camera/IMU
-payload records. It also contains a strict persisted
+payload records. It also contains immutable translation-trajectory records and
+one raw exact-pair translation-RMSE primitive, plus a strict persisted
 calibration-profile contract and a separate assessment contract, with a
 visibly synthetic rejected fixture. These boundaries require explicit frames,
 transform direction, units, time semantics, validity, reset, initialization,
 health, state/policy identifiers, provenance, and calibration references
 without selecting project-wide values.
-It does not yet contain an estimator algorithm, an accepted real sensor or
-dataset calibration profile, a trained model, an approved dataset split, a
-deployable runtime, or a flight-ready system.
+It does not yet contain an estimator algorithm, a complete evaluator, an
+accepted real sensor or dataset calibration profile, a trained model, an
+approved dataset split, a deployable runtime, or a flight-ready system.
 PyTorch is the proposed framework for future learned-component work, pending
 ADR-0004; MLflow is an optional, currently absent observer. Neither is a current
 package dependency.
@@ -98,9 +99,9 @@ require it.
 The installed package runtime is standard-library-only and currently provides a
 causal replay primitive, framework-neutral estimator-envelope and declared
 interface validation, typed sensor records, strict calibration profile/review
-contracts with synthetic negative validation, bundle inventory/verification,
-two-copy content audit, repository policy check, and read-only durability
-preflight. The
+contracts with synthetic negative validation, exact translation-trajectory and
+raw RMSE validation, bundle inventory/verification, two-copy content audit,
+repository policy check, and read-only durability preflight. The
 separate schema/record validator is development tooling and uses the
 repository's pinned `jsonschema` dependency.
 The inventory records every regular file by canonical relative path, byte size,
@@ -160,6 +161,13 @@ cold- or warm-start policy. It applies the declared post-reset state before the
 adapter sees reset; this observable check does not prove the adapter reset its
 internal state. The older undeclared session mode remains compatibility-only
 and is not M3 evidence.
+
+`compact_vio.evaluation.exact_pair_translation_rmse` compares only trajectories
+whose sequence, segment, sample IDs, timestamps, clock, time semantics, frames,
+transform direction, and unit already match exactly. Every call supplies a policy that
+explicitly permits no interpolation, alignment, or scale correction. This is a
+raw translation-error kernel, not aligned ATE, RPE, a metric-scale proof, a
+coverage/failure score, or a real-data result.
 
 ## State ownership
 

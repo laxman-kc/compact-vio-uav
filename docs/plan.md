@@ -456,6 +456,20 @@ Required work:
 - Add frame, unit, timestamp, scale, split-leakage, future-leakage, and partial-
   trajectory negative controls.
 
+Implemented evaluator slice (not M7 exit evidence by itself):
+
+- Immutable Cartesian translation trajectories now require explicit reference
+  and tracked frames, transform direction, unit, clock, timestamp semantics,
+  sequence/segment scope, ordered sample identity, and time.
+- One stable raw translation RMSE primitive requires exact pre-paired samples
+  and a no-default policy explicitly declaring exact association, no
+  interpolation, no alignment, and no scale correction.
+- Synthetic controls prove offsets, rotations, and scale errors are retained;
+  empty/partial or convention-mismatched trajectories fail instead of being
+  silently paired or reported as survivors.
+- This is not aligned ATE, RPE, metric-scale evidence, coverage/failure
+  accounting, or a complete evaluator. M7 remains in progress.
+
 Prohibited work:
 
 - No estimator-specific evaluator or hidden candidate-specific preprocessing.
@@ -729,8 +743,9 @@ Execute these as separate small slices; do not combine them into one long phase:
 
 1. Select and freeze the concrete values for the declared local-VIO
    state/frame/time/reset interface and the M3 research question.
-2. Add trajectory geometry and one metric at a time, followed by its negative
-   control.
+2. Extend trajectory geometry and evaluation one explicitly declared operation
+   or metric at a time, each followed by its negative control. Raw exact-pair
+   translation RMSE is the first completed kernel.
 3. Rights-check and ingest one representative sequence only, including its
    actual calibration profile and review evidence.
 4. Reproduce one stable classical baseline through the common replay.
