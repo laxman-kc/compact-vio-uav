@@ -127,7 +127,7 @@ or training duration is selected by this roadmap.
 | M2 | Artifact durability for important GPU work | Blocked | Required before long or irreplaceable paid runs |
 | M3 | Scientific question and estimator contract | In progress | M1; local-VIO direction fixed, details remain |
 | M4 | Replay sensor, time, frame, and calibration contract | In progress | Synthetic timing contract unblocked; calibration profile remains |
-| M5 | Reproducible execution environments | In progress | Local path active; no future GPU worker is provisioned |
+| M5 | Reproducible execution environments | In progress | Local path active; one live A10 is bounded to implementation smoke only |
 | M6 | Dataset approval and representative ingestion | Blocked | M3/M4 details and per-dataset rights review |
 | M7 | Common causal replay and evaluator | In progress | Synthetic replay unblocked; real-data exit depends on M6 |
 | M8 | Classical baseline reproduction | Blocked | M5–M7 and license review |

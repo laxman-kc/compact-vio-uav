@@ -10,11 +10,13 @@ and source licence remain decisions for the milestones that need them.
 ## Current status
 
 The repository contains the reproducibility foundation, a deterministic causal
-replay boundary, and a first framework-neutral estimator-contract envelope. The
-contract requires explicit frame, transform-direction, unit, timestamp,
-validity, reset, and health declarations without selecting project-wide values.
-It does not yet contain an estimator, trained model, approved dataset split,
-deployable runtime, or flight-ready system.
+replay boundary, a first framework-neutral estimator-contract envelope, and
+typed camera/IMU payload plus calibration-identity records. These boundaries
+require explicit frames, transform direction, units, time semantics, validity,
+reset, health, provenance, and calibration references without selecting
+project-wide values. It does not yet contain an estimator algorithm, complete
+calibration profile, trained model, approved dataset split, deployable runtime,
+or flight-ready system.
 PyTorch is the proposed framework for future learned-component work, pending
 ADR-0004; MLflow is an optional, currently absent observer. Neither is a current
 package dependency.
@@ -89,8 +91,9 @@ require it.
 
 The installed package runtime is standard-library-only and currently provides a
 causal replay primitive, framework-neutral estimator-contract validation,
-bundle inventory/verification, two-copy content audit, repository policy check,
-and read-only durability preflight. The separate schema/record validator is
+typed sensor and calibration-identity records with synthetic validation, bundle
+inventory/verification, two-copy content audit, repository policy check, and
+read-only durability preflight. The separate schema/record validator is
 development tooling and uses the repository's pinned `jsonschema` dependency.
 The inventory records every regular file by canonical relative path, byte size,
 and SHA-256, and rejects symbolic links and unsupported filesystem entries.
@@ -146,11 +149,12 @@ dataset adapter or estimator.
 | Credentials | Approved secret store or local credential mechanism | Never committed; minimum access only |
 
 The artifact destination, recovery copy, retention budget, and cost ceiling are
-unresolved. There is no live A10; local development and synthetic CPU tests are
-the active path. A future temporary worker may be used only after fresh owner
-confirmation for a bounded task that benefits from GPU compute and starts from a
-pushed Git revision. Important or extended GPU experiments that can create
-irreplaceable results must wait for the storage restore gate in the
+unresolved. A fresh read-only observation on 2026-08-27 found the new
+`compact-vio-uav-gpu` worker `RUNNING`, `READY`, and `HEALTHY`; it is approved
+only for the current bounded clean-checkout implementation smoke. Dataset
+acquisition and model training remain outside that approval. Important or
+extended GPU experiments that can create irreplaceable results must wait for
+the storage restore gate in the
 [artifact policy](governance/artifacts/policy.md). Every paid task still has a
 short run plan, time/cost bound, export destination, and teardown owner.
 

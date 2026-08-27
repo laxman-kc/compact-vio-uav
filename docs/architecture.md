@@ -147,20 +147,21 @@ source/build provenance. Checkpoints and large histories stay out of Git.
 ## Current implementation boundary
 
 Implemented now: repository/evidence tooling, the generic causal event-release
-primitive, and the first framework-neutral estimator-contract envelope. Planned
-next: typed camera/IMU/calibration records, geometry/evaluation core, one
-approved dataset adapter, and one classical baseline. No estimator algorithm,
-numerical backend, model, training loop, dataset files, approved split, dataset
-adapter, checkpoint, ONNX graph, TensorRT engine, ROS 2 node, or PX4 bridge
-exists yet. A candidate-only dataset registry exists, but it is not data-use
-approval.
+primitive, the first framework-neutral estimator-contract envelope, typed
+camera/IMU payload records, and a versioned opaque calibration-identity
+envelope. Planned next: the complete typed calibration-profile schema,
+geometry/evaluation core, one approved dataset adapter, and one classical
+baseline. No estimator algorithm, numerical backend, model, training loop,
+dataset files, approved split, dataset adapter, checkpoint, ONNX graph, TensorRT
+engine, ROS 2 node, or PX4 bridge exists yet. A candidate-only dataset registry
+exists, but it is not data-use approval.
 
 ## Technology stack by status
 
 | Layer | Current implementation | Planned or conditional boundary |
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Numerical array/vision library for estimator work is unresolved. |
-| Common VIO substrate | Generic causal replay and first framework-neutral estimator-contract envelope | Typed sensor/calibration records, geometry, evaluator, and adapters are planned; exact state, concrete frames, transform direction, reset policy, output timing/rate, thresholds, and numerical backend remain unresolved. |
+| Common VIO substrate | Generic causal replay, first estimator-contract envelope, and typed camera/IMU plus calibration-identity records | Complete calibration profile, geometry, evaluator, and adapters are planned; exact state, sensor configuration, concrete conventions, thresholds, and numerical backend remain unresolved. |
 | Classical lane | Not implemented | Later rights-reviewed baseline uses its native build/runtime with no PyTorch or MLflow dependency. |
 | Learned/hybrid lane | Not implemented; no training framework is installed as a project dependency | A learned training/inference adapter is conditional on ADR-0004; PyTorch is proposed, while exact framework/version, topology, losses, optimizer, and schedule remain unresolved. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
@@ -191,7 +192,7 @@ compact-vio-uav/
 │   ├── copy_audit.py                      [current]
 │   ├── preflight.py                       [current]
 │   ├── repository_policy.py               [current]
-│   ├── contracts/                         [planned: sensor/calibration/estimator records]
+│   ├── contracts/                         [current: sensor payload/calibration-identity records; complete profile planned]
 │   ├── data/                              [planned: approved dataset adapters]
 │   ├── geometry/                          [planned: transforms/trajectory operations]
 │   ├── evaluation/                        [planned: metrics/failure/resource scorecard]
