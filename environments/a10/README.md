@@ -1,13 +1,14 @@
 # A10 disposable worker environment
 
-Status: one live A10 exists for the bounded 2026-08-27 implementation smoke;
-future-task authorization is not implied.
+Status: an A10 was observed for the bounded 2026-08-27 implementation smoke;
+the dated observation proves neither present state nor future-task authority.
 
-Each worker receives its own dated inventory. The current worker is approved
-only for repository checkout and implementation smoke verification. Dataset
-preparation, baseline execution, learned/hybrid training, common evaluation, and
-export-feasibility tests require later task-specific confirmation. The project
-does not assume that a later worker is an A10 or shares this image.
+Each worker receives its own dated inventory. The 2026-08-27 worker was approved
+only for that repository checkout and implementation-smoke task. Dataset
+preparation, baseline execution, learned/hybrid training, common evaluation,
+export-feasibility tests, and any later use require fresh state verification and
+task-specific confirmation. The project does not assume that a later worker is
+an A10 or shares this image.
 
 Before the first paid experiment, capture and pin:
 

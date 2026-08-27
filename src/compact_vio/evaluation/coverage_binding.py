@@ -25,12 +25,12 @@ class CoverageBindingError(ValueError):
 
 
 def _require_non_empty_text(value: object, *, field: str) -> None:
-    if not isinstance(value, str) or not value.strip():
+    if type(value) is not str or not value.strip():
         raise CoverageBindingError(f"{field} must be a non-empty string")
 
 
 def _require_non_negative_integer(value: object, *, field: str) -> None:
-    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+    if type(value) is not int or value < 0:
         raise CoverageBindingError(f"{field} must be a non-negative integer")
 
 
@@ -47,12 +47,12 @@ class EventOutputBatch:
     outputs: tuple[EstimatorOutput[object], ...]
 
     def __post_init__(self) -> None:
-        if not isinstance(self.event, ReplayEvent):
+        if type(self.event) is not ReplayEvent:
             raise CoverageBindingError("event must be a ReplayEvent")
-        if not isinstance(self.outputs, tuple):
-            raise CoverageBindingError("outputs must be a tuple")
+        if type(self.outputs) is not tuple:
+            raise CoverageBindingError("outputs must be an exact tuple")
         for output in self.outputs:
-            if not isinstance(output, EstimatorOutput):
+            if type(output) is not EstimatorOutput:
                 raise CoverageBindingError("outputs must contain only EstimatorOutput values")
             if output.clock_id != self.event.clock_id:
                 raise CoverageBindingError("output clock_id must match its triggering event")
@@ -90,17 +90,17 @@ def _validate_and_count(
     batches: tuple[EventOutputBatch, ...],
     slots: tuple[OutputEnvelopeSlot, ...],
 ) -> int:
-    if not isinstance(summary, OutputCoverageSummary):
+    if type(summary) is not OutputCoverageSummary:
         raise CoverageBindingError("coverage_summary must be an OutputCoverageSummary")
     if summarize_output_coverage(summary.ledger) != summary:
         raise CoverageBindingError("coverage_summary must match its retained ledger")
-    if not isinstance(batches, tuple) or not batches:
+    if type(batches) is not tuple or not batches:
         raise CoverageBindingError("batches must be a non-empty tuple")
-    if not all(isinstance(batch, EventOutputBatch) for batch in batches):
+    if not all(type(batch) is EventOutputBatch for batch in batches):
         raise CoverageBindingError("batches must contain only EventOutputBatch values")
-    if not isinstance(slots, tuple):
+    if type(slots) is not tuple:
         raise CoverageBindingError("slots must be a tuple")
-    if not all(isinstance(slot, OutputEnvelopeSlot) for slot in slots):
+    if not all(type(slot) is OutputEnvelopeSlot for slot in slots):
         raise CoverageBindingError("slots must contain only OutputEnvelopeSlot values")
 
     expected_ids = summary.ledger.expected_opportunity_ids

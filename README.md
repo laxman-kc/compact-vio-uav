@@ -13,12 +13,16 @@ The repository contains the reproducibility foundation, a deterministic causal
 replay boundary, a framework-neutral estimator envelope with an explicit
 interface-declaration and initialization/reset contract, and typed camera/IMU
 payload records. It also contains immutable translation-trajectory records and
-one raw exact-pair translation-RMSE primitive, plus a strict persisted
-calibration-profile contract and a separate assessment contract, with a
-visibly synthetic rejected fixture. These boundaries require explicit frames,
-transform direction, units, time semantics, validity, reset, initialization,
-health, state/policy identifiers, provenance, and calibration references
-without selecting project-wide values.
+one raw exact-pair translation-RMSE primitive, explicit output-coverage
+accounting, exact replay/output binding, and a causal execution recorder. The
+recorder constructs a fresh replay/session pair, releases one event at a time,
+retains only fully validated output batches, and records the first failed event
+separately.
+The repository also contains a strict persisted calibration-profile contract
+and a separate assessment contract, with a visibly synthetic rejected fixture.
+These boundaries require explicit frames, transform direction, units, time
+semantics, validity, reset, initialization, health, state/policy identifiers,
+provenance, and calibration references without selecting project-wide values.
 It does not yet contain an estimator algorithm, a complete evaluator, an
 accepted real sensor or dataset calibration profile, a trained model, an
 approved dataset split, a deployable runtime, or a flight-ready system.
@@ -26,10 +30,11 @@ PyTorch is the proposed framework for future learned-component work, pending
 ADR-0004; MLflow is an optional, currently absent observer. Neither is a current
 package dependency.
 
-A newly created Brev A10 worker was observed `RUNNING`, `READY`, and `HEALTHY`
-on 2026-08-27 and is approved only for the current bounded implementation smoke.
-It is not approved for dataset acquisition or model training and is never
-treated as durable storage. A later task requires fresh owner confirmation.
+A Brev A10 worker was observed `RUNNING`, `READY`, and `HEALTHY` on 2026-08-27
+and was authorized for that bounded implementation smoke only. This dated
+observation establishes neither its present lifecycle state nor authorization
+for another task. Dataset acquisition, model training, and any later worker use
+require fresh owner confirmation; worker storage is never treated as durable.
 
 The project follows these invariants:
 
@@ -100,10 +105,11 @@ The installed package runtime is standard-library-only and currently provides a
 causal replay primitive, framework-neutral estimator-envelope and declared
 interface validation, typed sensor records, strict calibration profile/review
 contracts with synthetic negative validation, exact translation-trajectory and
-raw RMSE validation, bundle inventory/verification, two-copy content audit,
-repository policy check, and read-only durability preflight. The
-separate schema/record validator is development tooling and uses the
-repository's pinned `jsonschema` dependency.
+raw RMSE validation, output-coverage accounting, replay/output binding, direct
+causal execution recording, bundle inventory/verification, two-copy content
+audit, repository policy check, and read-only durability preflight. The separate
+schema/record validator is development tooling and uses the repository's pinned
+`jsonschema` dependency.
 The inventory records every regular file by canonical relative path, byte size,
 and SHA-256, and rejects symbolic links and unsupported filesystem entries.
 
@@ -181,8 +187,19 @@ replay events and the exact estimator-output tuple returned for each event.
 Produced outcomes name a zero-based tuple ordinal; missing outcomes explicitly
 name no ordinal. Every expected opportunity and every observed output envelope
 must be accounted for exactly once. The binding never matches by timestamp or
-assumes one output per event, and a retained batch alone does not prove that it
-came from an `EstimatorSession` execution.
+assumes one output per event.
+
+`compact_vio.execution.CausalEstimatorRecorder` constructs and privately retains
+one fresh, clock-matched `CausalReplay` and `EstimatorSession`. It releases one
+event at a time, retains a batch only after the complete returned tuple passes
+session and batch validation, and leaves later events unconsumed after a
+failure. Its structurally frozen in-memory snapshot retains the complete event
+plan, watermark, successful batches, first failed event and exception type,
+whether session delivery/reset transition occurred, replay counts, and reset
+generation.
+Generic payload objects are not deep-copied, and the snapshot is not persistent
+run evidence. The recorder does not infer expected output opportunities,
+missing-output reasons, estimator success, or scientific run acceptance.
 
 ## State ownership
 
@@ -194,12 +211,12 @@ came from an `EstimatorSession` execution.
 | Credentials | Approved secret store or local credential mechanism | Never committed; minimum access only |
 
 The artifact destination, recovery copy, retention budget, and cost ceiling are
-unresolved. A fresh read-only observation on 2026-08-27 found the new
-`compact-vio-uav-gpu` worker `RUNNING`, `READY`, and `HEALTHY`; it is approved
-only for the current bounded clean-checkout implementation smoke. Dataset
-acquisition and model training remain outside that approval. Important or
-extended GPU experiments that can create irreplaceable results must wait for
-the storage restore gate in the
+unresolved. A dated read-only observation on 2026-08-27 found
+`compact-vio-uav-gpu` `RUNNING`, `READY`, and `HEALTHY`, and the owner authorized
+that bounded clean-checkout implementation smoke only. The record proves
+neither current state nor authority for a later task. Dataset acquisition and
+model training require fresh approval. Important or extended GPU experiments
+that can create irreplaceable results must wait for the storage restore gate in the
 [artifact policy](governance/artifacts/policy.md). Every paid task still has a
 short run plan, time/cost bound, export destination, and teardown owner.
 

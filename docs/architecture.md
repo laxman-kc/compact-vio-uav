@@ -48,11 +48,12 @@ not give that lane a PyTorch dependency.
 The previous A10 worker described in the
 [2026-08-26 Brev observation](../environments/a10/inventory-2026-08-26.md) was
 terminated. A new worker was observed `RUNNING`, `READY`, and `HEALTHY` on
-2026-08-27; its [fresh inventory](../environments/a10/inventory-2026-08-27.md)
-is recorded separately. It is approved only for the current bounded
-implementation smoke, not for dataset acquisition or model training. Every later
-task requires fresh confirmation, and lifecycle capability and price must be
-re-observed rather than inherited from either worker.
+2026-08-27; its [dated inventory](../environments/a10/inventory-2026-08-27.md)
+is recorded separately, and the owner authorized that bounded implementation
+smoke only. The observation and authorization do not carry forward. Every later
+task requires fresh state, inventory, and owner confirmation; lifecycle
+capability and price must be re-observed rather than inherited from either
+worker.
 
 ### Durable artifact plane
 
@@ -148,9 +149,10 @@ source/build provenance. Checkpoints and large histories stay out of Git.
 
 Implemented now: repository/evidence tooling, the generic causal event-release
 primitive, a framework-neutral estimator envelope with a required declaration
-shape and initialization/reset validation, typed camera/IMU payload records,
-immutable translation-trajectory records, one raw exact-pair translation-RMSE
-kernel, and strict persisted calibration-profile plus separate assessment
+shape and initialization/reset validation, a direct causal execution recorder,
+typed camera/IMU payload records, immutable translation-trajectory records, one
+raw exact-pair translation-RMSE kernel, explicit output-coverage accounting and
+binding, and strict persisted calibration-profile plus separate assessment
 contracts. The committed fixture is synthetic and rejected; there is no
 accepted real sensor or dataset profile. Planned next: additional
 geometry/evaluator behavior, one rights-approved dataset adapter with its actual
@@ -165,11 +167,11 @@ data-use approval.
 | Layer | Current implementation | Planned or conditional boundary |
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Numerical array/vision library for estimator work is unresolved. |
-| Common VIO substrate | Generic causal replay, estimator envelope with an explicit interface-declaration shape and initialization/reset validation, typed camera/IMU records, translation trajectories, one raw exact-pair translation-RMSE kernel, and strict persisted calibration profile/assessment contracts | Additional geometry/evaluator behavior, actual dataset profiles, and adapters are planned; exact state and policy identifiers, final metric protocols, sensor configuration, concrete conventions, thresholds, and numerical backend remain unresolved. |
+| Common VIO substrate | Generic causal replay, estimator envelope with an explicit interface-declaration shape and initialization/reset validation, direct replay-to-session execution recording, typed camera/IMU records, translation trajectories, raw exact-pair translation RMSE, output-coverage accounting/binding, and strict persisted calibration profile/assessment contracts | Additional geometry/evaluator and lifecycle behavior, actual dataset profiles, and adapters are planned; exact state and policy identifiers, final metric protocols, sensor configuration, concrete conventions, thresholds, and numerical backend remain unresolved. |
 | Classical lane | Not implemented | Later rights-reviewed baseline uses its native build/runtime with no PyTorch or MLflow dependency. |
 | Learned/hybrid lane | Not implemented; no training framework is installed as a project dependency | A learned training/inference adapter is conditional on ADR-0004; PyTorch is proposed, while exact framework/version, topology, losses, optimizer, and schedule remain unresolved. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
-| GPU execution | One live A10 approved only for the current bounded implementation smoke | Every later task requires fresh owner confirmation and inventory. |
+| GPU execution | Dated A10 implementation-smoke evidence exists | Present state and every later task require fresh inventory and owner confirmation. |
 | Export/deployment | Not implemented | ONNX is conditional; TensorRT, Jetson/other edge hardware, ROS 2, and PX4 scope are unresolved. |
 
 ## Repository structure: current and planned
@@ -184,7 +186,7 @@ compact-vio-uav/
 ├── README.md                              [current]
 ├── docs/                                  [current: requirements/ADRs/plan/protocols]
 ├── governance/                            [current: policies/schemas/draft templates; zero authoritative records]
-├── environments/                          [current: historical and active-task A10 inventories]
+├── environments/                          [current: dated A10 inventories]
 ├── experiments/
 │   ├── schemas/                           [current: run/artifact/evidence schemas]
 │   └── configs/                           [planned: frozen experiment configs]
@@ -192,6 +194,7 @@ compact-vio-uav/
 ├── src/compact_vio/
 │   ├── replay.py                          [current]
 │   ├── estimator.py                       [current: estimator envelope/interface declaration]
+│   ├── execution.py                       [current: causal replay-to-estimator recorder]
 │   ├── artifacts/                         [current]
 │   ├── copy_audit.py                      [current]
 │   ├── preflight.py                       [current]
@@ -268,9 +271,21 @@ estimator-output tuple. Each expected opportunity binds to an explicit trigger
 event and either one zero-based output ordinal or no ordinal for a declared
 missing outcome. Event identity/order, clock, causal availability, output
 validity, exhaustive opportunity binding, and unbound extra outputs are checked
-without timestamp association or an assumed output rate. These caller-supplied
-batches recheck observable envelope consistency but do not prove that an
-`EstimatorSession` produced them; an execution recorder remains M7 work.
+without timestamp association or an assumed output rate.
+
+The causal execution recorder closes the caller-supplied batch gap for its own
+runtime path. It constructs and privately retains a fresh replay/session pair
+with the same clock, releases at most one event before each adapter call, and
+retains no partially validated output batch. An ordinary processing exception
+creates one terminal failure record for the consumed event and leaves later
+events unconsumed; process-control exceptions also terminalize the recorder
+before being re-raised. Structurally frozen in-memory snapshots retain the full
+event plan, causal watermark, delivery/reset progress, and execution counts,
+but generic payloads are not deep-copied and no persistent trace format exists
+yet. This proves only the recorder-observed envelope path: it does not prove
+adapter-internal sample use
+or reset behavior, define output opportunities, classify missing/failure causes,
+or establish scientific run success.
 
 ## Deployment boundary
 

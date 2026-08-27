@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import inspect
+import sys
 import unittest
 
 from compact_vio.replay import (
@@ -84,6 +86,63 @@ class CausalReplayTests(unittest.TestCase):
         self.assertEqual(replay.advance_to(10), ())
         self.assertEqual(replay.advance_to(100), ())
 
+    def test_release_next_to_drains_one_eligible_event_per_call(self) -> None:
+        first = _event(1)
+        second = _event(2)
+        replay = CausalReplay([first, second], clock_id="sensor-clock")
+
+        self.assertIs(replay.release_next_to(100), first)
+        self.assertEqual(replay.consumed_count, 1)
+        self.assertIs(replay.release_next_to(100), second)
+        self.assertTrue(replay.exhausted)
+        self.assertIsNone(replay.release_next_to(100))
+
+    def test_release_next_to_preserves_unavailable_events_and_interoperates_with_advance(
+        self,
+    ) -> None:
+        first = _event(1)
+        second = _event(2)
+        third = _event(3)
+        replay = CausalReplay([first, second, third], clock_id="sensor-clock")
+
+        self.assertIsNone(replay.release_next_to(9))
+        self.assertEqual(replay.consumed_count, 0)
+        self.assertIs(replay.release_next_to(10), first)
+        self.assertEqual(replay.advance_to(100), (second, third))
+
+        with self.assertRaisesRegex(ReplayContractError, "must not move backward"):
+            replay.release_next_to(99)
+
+    def test_interrupted_release_rolls_back_cursor_and_watermark(self) -> None:
+        event = _event(1)
+        replay = CausalReplay((event,), clock_id="sensor-clock")
+        source_lines, first_line = inspect.getsourcelines(CausalReplay.release_next_to)
+        cursor_line = first_line + next(
+            index for index, line in enumerate(source_lines) if "self._cursor += 1" in line
+        )
+
+        def interrupt_before_cursor(frame, trace_event, arg):
+            del arg
+            if (
+                frame.f_code is CausalReplay.release_next_to.__code__
+                and trace_event == "line"
+                and frame.f_lineno == cursor_line
+            ):
+                sys.settrace(None)
+                raise KeyboardInterrupt
+            return interrupt_before_cursor
+
+        sys.settrace(interrupt_before_cursor)
+        try:
+            with self.assertRaises(KeyboardInterrupt):
+                replay.release_next_to(10)
+        finally:
+            sys.settrace(None)
+
+        self.assertIsNone(replay.watermark_ns)
+        self.assertEqual(replay.consumed_count, 0)
+        self.assertIs(replay.release_next_to(10), event)
+
     def test_backward_watermark_is_rejected_without_moving_cursor(self) -> None:
         first = _event(1)
         second = _event(2)
@@ -135,6 +194,15 @@ class CausalReplayTests(unittest.TestCase):
                 [_event(1), _event(2, clock_id="other-clock")],
                 clock_id="sensor-clock",
             )
+
+    def test_replay_event_class_spoof_is_rejected(self) -> None:
+        class EventImpostor:
+            @property
+            def __class__(self) -> type[ReplayEvent[object]]:
+                return ReplayEvent
+
+        with self.assertRaisesRegex(ReplayContractError, "ReplayEvent"):
+            CausalReplay([EventImpostor()], clock_id="sensor-clock")
 
     def test_availability_before_measurement_is_rejected(self) -> None:
         with self.assertRaisesRegex(ReplayContractError, "must not precede"):

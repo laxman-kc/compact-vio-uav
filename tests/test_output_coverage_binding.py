@@ -138,7 +138,7 @@ class EventOutputBatchTests(unittest.TestCase):
         event = _event(1)
         with self.assertRaisesRegex(CoverageBindingError, "ReplayEvent"):
             EventOutputBatch(event="event", outputs=())  # type: ignore[arg-type]
-        with self.assertRaisesRegex(CoverageBindingError, "outputs must be a tuple"):
+        with self.assertRaisesRegex(CoverageBindingError, "outputs must be an exact tuple"):
             EventOutputBatch(event=event, outputs=[])
         with self.assertRaisesRegex(CoverageBindingError, "EstimatorOutput"):
             EventOutputBatch(event=event, outputs=("output",))  # type: ignore[arg-type]
@@ -148,6 +148,44 @@ class EventOutputBatchTests(unittest.TestCase):
             EventOutputBatch(
                 event=_event(2),
                 outputs=(_output(estimate_time_ns=10, available_time_ns=10),),
+            )
+
+        class LengthHidingTuple(tuple):
+            def __len__(self) -> int:
+                return 0
+
+        with self.assertRaisesRegex(CoverageBindingError, "exact tuple"):
+            EventOutputBatch(
+                event=event,
+                outputs=LengthHidingTuple((_output(),)),
+            )
+
+        class TupleImpostor:
+            @property
+            def __class__(self) -> type[tuple[object, ...]]:
+                return tuple
+
+            def __iter__(self):
+                yield _output()
+
+            def __len__(self) -> int:
+                return 0
+
+        with self.assertRaisesRegex(CoverageBindingError, "exact tuple"):
+            EventOutputBatch(
+                event=event,
+                outputs=TupleImpostor(),  # type: ignore[arg-type]
+            )
+
+        class OutputImpostor:
+            @property
+            def __class__(self) -> type[EstimatorOutput[object]]:
+                return EstimatorOutput
+
+        with self.assertRaisesRegex(CoverageBindingError, "EstimatorOutput"):
+            EventOutputBatch(
+                event=event,
+                outputs=(OutputImpostor(),),  # type: ignore[arg-type]
             )
 
     def test_batch_is_frozen_slotted_and_preserves_exact_tuple_identity(self) -> None:

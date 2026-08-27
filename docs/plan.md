@@ -2,7 +2,7 @@
 
 Status: Active roadmap; decision-dependent milestones blocked
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-27
 
 Requirements authority: [Project requirements](requirements/project-requirements.md)
 
@@ -29,10 +29,10 @@ a time/cost bound, and disposable outputs. M2 gates important or extended paid
 GPU work and irreplaceable retained artifacts; it is not a global
 implementation gate.
 
-A newly created A10 was observed ready on 2026-08-27 and is approved only for
-the current bounded implementation smoke. It is not approved for datasets or
-training. No access or approval carries forward; every later worker task
-requires fresh project-owner confirmation.
+An A10 was observed ready on 2026-08-27 and was authorized for that bounded
+implementation smoke only. The dated state and authorization do not carry
+forward; dataset work, training, and every later worker task require fresh
+inventory and project-owner confirmation.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -127,7 +127,7 @@ or training duration is selected by this roadmap.
 | M2 | Artifact durability for important GPU work | Blocked | Required before long or irreplaceable paid runs |
 | M3 | Scientific question and estimator contract | In progress | M1; local-VIO direction fixed, details remain |
 | M4 | Replay sensor, time, frame, and calibration contract | Complete | Causal replay, typed sensor records, and calibration profile/assessment fixtures |
-| M5 | Reproducible execution environments | In progress | Local path active; one live A10 is bounded to implementation smoke only |
+| M5 | Reproducible execution environments | In progress | Local path active; worker tasks require fresh inventory and authorization |
 | M6 | Dataset approval and representative ingestion | Blocked | Remaining M3 details, the M4 contract, and per-dataset rights review |
 | M7 | Common causal replay and evaluator | In progress | Synthetic replay unblocked; real-data exit depends on M6 |
 | M8 | Classical baseline reproduction | Blocked | M5–M7 and license review |
@@ -359,9 +359,10 @@ its records enter the evaluator.
 
 Status: In progress.
 
-Current execution state: local, GitHub, and one freshly inventoried A10 approved
-only for the current bounded implementation smoke. Learned-training and dataset
-work remain outside this authorization.
+Current durable execution state: local and GitHub. Dated A10
+implementation-smoke evidence exists, but current worker state and authority are
+not inferred from it. Learned-training, dataset work, and every later worker
+task require fresh inventory and authorization.
 
 Dependencies: M1 for the local CPU environment. Important or extended future
 paid GPU work additionally depends on M2; estimator-specific environments depend
@@ -480,8 +481,18 @@ Implemented evaluator slice (not M7 exit evidence by itself):
   reused or unbound envelopes, wrong event identity, output-validity mismatch,
   mixed clocks, and output availability before the triggering event.
 - Binding uses no timestamp proximity and does not assume one output per event.
-  Caller-supplied batches are not proof of an actual `EstimatorSession` run;
-  the causal execution recorder and complete lifecycle trace remain open.
+- A direct execution recorder now constructs and privately retains one fresh,
+  clock-matched replay/session pair. It releases one event at a time, retains no
+  partially validated batch, keeps the first failed event separately, and does
+  not consume the later replay suffix after failure. Structurally frozen
+  in-memory snapshots retain the full event plan, causal watermark, execution
+  counts, reset generation, and whether session delivery/reset transition
+  occurred for the failed event.
+- The recorder does not define expected opportunities, infer missing outputs or
+  failure causes, prove adapter-internal reset/sample use, or establish
+  scientific run success. Persistent full-run traces and complete
+  lifecycle/failure-policy evidence remain open; generic payload objects are not
+  deep-copied by the in-memory snapshot.
 - These kernels are not aligned ATE, RPE, metric-scale evidence, run-level
   failure accounting, or a complete evaluator. M7 remains in progress.
 

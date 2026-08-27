@@ -21,12 +21,12 @@ class EstimatorContractError(ValueError):
 
 
 def _require_non_empty_text(value: object, *, field: str) -> None:
-    if not isinstance(value, str) or not value.strip():
+    if type(value) is not str or not value.strip():
         raise EstimatorContractError(f"{field} must be a non-empty string")
 
 
 def _require_non_negative_integer(value: object, *, field: str) -> None:
-    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+    if type(value) is not int or value < 0:
         raise EstimatorContractError(f"{field} must be a non-negative integer")
 
 
@@ -77,7 +77,7 @@ class EstimatorInterfaceDeclaration:
         ):
             _require_non_empty_text(getattr(self, field), field=field)
 
-        if not isinstance(self.state_variable_ids, tuple) or not self.state_variable_ids:
+        if type(self.state_variable_ids) is not tuple or not self.state_variable_ids:
             raise EstimatorContractError("state_variable_ids must be a non-empty tuple")
         for state_variable_id in self.state_variable_ids:
             _require_non_empty_text(
@@ -91,9 +91,9 @@ class EstimatorInterfaceDeclaration:
             "initialization_state_after_reset",
         ):
             value = getattr(self, field)
-            if value is not None and not isinstance(value, bool):
+            if value is not None and type(value) is not bool:
                 raise EstimatorContractError(f"{field} must be boolean or None")
-        if not isinstance(self.valid_output_requires_initialized, bool):
+        if type(self.valid_output_requires_initialized) is not bool:
             raise EstimatorContractError("valid_output_requires_initialized must be boolean")
 
 
@@ -144,7 +144,7 @@ class EstimatorOutput(Generic[OutputT]):
     initialized: bool | None = None
 
     def __post_init__(self) -> None:
-        if not isinstance(self.convention, OutputConvention):
+        if type(self.convention) is not OutputConvention:
             raise EstimatorContractError("convention must be an OutputConvention")
         _require_non_empty_text(self.clock_id, field="clock_id")
         _require_non_negative_integer(self.estimate_time_ns, field="estimate_time_ns")
@@ -153,7 +153,7 @@ class EstimatorOutput(Generic[OutputT]):
         if self.available_time_ns < self.estimate_time_ns:
             raise EstimatorContractError("available_time_ns must not precede estimate_time_ns")
         _require_non_empty_text(self.health_code, field="health_code")
-        if not isinstance(self.valid, bool):
+        if type(self.valid) is not bool:
             raise EstimatorContractError("valid must be boolean")
         if self.valid and self.payload is None:
             raise EstimatorContractError("valid output must carry a payload")
@@ -161,7 +161,7 @@ class EstimatorOutput(Generic[OutputT]):
             raise EstimatorContractError("invalid output must not carry a payload")
         if self.interface_id is not None:
             _require_non_empty_text(self.interface_id, field="interface_id")
-        if self.initialized is not None and not isinstance(self.initialized, bool):
+        if self.initialized is not None and type(self.initialized) is not bool:
             raise EstimatorContractError("initialized must be boolean or None")
         if (self.interface_id is None) != (self.initialized is None):
             raise EstimatorContractError(
@@ -208,12 +208,9 @@ class EstimatorSession(Generic[InputT, OutputT]):
         interface: EstimatorInterfaceDeclaration | None = None,
     ) -> None:
         _require_non_empty_text(clock_id, field="clock_id")
-        if not isinstance(convention, OutputConvention):
+        if type(convention) is not OutputConvention:
             raise EstimatorContractError("convention must be an OutputConvention")
-        if interface is not None and not isinstance(
-            interface,
-            EstimatorInterfaceDeclaration,
-        ):
+        if interface is not None and type(interface) is not EstimatorInterfaceDeclaration:
             raise EstimatorContractError(
                 "interface must be an EstimatorInterfaceDeclaration or None"
             )
@@ -222,6 +219,7 @@ class EstimatorSession(Generic[InputT, OutputT]):
         self._convention = convention
         self._interface = interface
         self._reset_generation = 0
+        self._delivered_event_count = 0
         self._initialized = (
             None if interface is None else interface.initialization_state_at_session_start
         )
@@ -231,6 +229,18 @@ class EstimatorSession(Generic[InputT, OutputT]):
         """The declared interface, or None in compatibility-only mode."""
 
         return self._interface
+
+    @property
+    def clock_id(self) -> str:
+        """Clock required for every event and output in this session."""
+
+        return self._clock_id
+
+    @property
+    def delivered_event_count(self) -> int:
+        """Events delivered to the adapter, including attempts that later fail."""
+
+        return self._delivered_event_count
 
     @property
     def initialized(self) -> bool | None:
@@ -250,7 +260,7 @@ class EstimatorSession(Generic[InputT, OutputT]):
     ) -> tuple[EstimatorOutput[OutputT], ...]:
         """Deliver one replay event and validate every returned output."""
 
-        if not isinstance(event, ReplayEvent):
+        if type(event) is not ReplayEvent:
             raise EstimatorContractError("event must be a ReplayEvent")
         if event.clock_id != self._clock_id:
             raise EstimatorContractError(
@@ -262,9 +272,10 @@ class EstimatorSession(Generic[InputT, OutputT]):
             if self._interface is not None:
                 self._initialized = self._interface.initialization_state_after_reset
 
+        self._delivered_event_count += 1
         outputs = self._estimator.ingest(event)
-        if not isinstance(outputs, tuple):
-            raise EstimatorContractError("estimator ingest must return a tuple")
+        if type(outputs) is not tuple:
+            raise EstimatorContractError("estimator ingest must return an exact tuple")
 
         for output in outputs:
             self._validate_output(event, output)
@@ -281,7 +292,7 @@ class EstimatorSession(Generic[InputT, OutputT]):
         event: ReplayEvent[InputT],
         output: object,
     ) -> None:
-        if not isinstance(output, EstimatorOutput):
+        if type(output) is not EstimatorOutput:
             raise EstimatorContractError(
                 "estimator outputs must contain only EstimatorOutput values"
             )
@@ -307,7 +318,7 @@ class EstimatorSession(Generic[InputT, OutputT]):
 
         if output.interface_id != self._interface.interface_id:
             raise EstimatorContractError("output interface_id differs from the session interface")
-        if not isinstance(output.initialized, bool):
+        if type(output.initialized) is not bool:
             raise EstimatorContractError("declared output initialized must be boolean")
         if (
             self._interface.valid_output_requires_initialized

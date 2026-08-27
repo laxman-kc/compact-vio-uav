@@ -293,11 +293,35 @@ class EstimatorSessionTests(unittest.TestCase):
     def test_zero_and_multiple_outputs_do_not_fix_an_output_rate(self) -> None:
         no_output = self._session(_FunctionEstimator(lambda _: ()))
         self.assertEqual(no_output.ingest(_event()), ())
+        self.assertEqual(no_output.delivered_event_count, 1)
 
         first = _output()
         second = _output(payload="second-opaque-state")
         multiple = self._session(_FunctionEstimator(lambda _: (first, second)))
         self.assertEqual(multiple.ingest(_event()), (first, second))
+        self.assertEqual(multiple.delivered_event_count, 1)
+
+    def test_delivered_event_count_retains_failed_adapter_and_validation_attempts(self) -> None:
+        def raise_adapter(_: ReplayEvent[int]) -> tuple[EstimatorOutput[object], ...]:
+            raise RuntimeError("synthetic adapter failure")
+
+        adapter_failure = self._session(_FunctionEstimator(raise_adapter))
+        with self.assertRaises(RuntimeError):
+            adapter_failure.ingest(_event())
+        self.assertEqual(adapter_failure.delivered_event_count, 1)
+
+        invalid_estimator = _FunctionEstimator(lambda _: ())
+        invalid_estimator.function = lambda _: []  # type: ignore[assignment,return-value]
+        invalid_return = self._session(invalid_estimator)
+        with self.assertRaisesRegex(EstimatorContractError, "exact tuple"):
+            invalid_return.ingest(_event())
+        self.assertEqual(invalid_return.delivered_event_count, 1)
+
+        wrong_clock = self._session(_FunctionEstimator(lambda _: ()))
+        with self.assertRaisesRegex(EstimatorContractError, "event uses clock"):
+            wrong_clock.ingest(_event(clock_id="other-clock"))
+        self.assertEqual(wrong_clock.delivered_event_count, 0)
+        self.assertEqual(wrong_clock.clock_id, "sensor-clock")
 
     def test_invalid_event_is_delivered_unchanged(self) -> None:
         invalid = _event(valid=False)
@@ -406,8 +430,45 @@ class EstimatorSessionTests(unittest.TestCase):
     def test_session_rejects_wrong_return_container_and_item_type(self) -> None:
         list_return = _FunctionEstimator(lambda _: ())
         list_return.function = lambda _: []  # type: ignore[assignment,return-value]
-        with self.assertRaisesRegex(EstimatorContractError, "return a tuple"):
+        with self.assertRaisesRegex(EstimatorContractError, "exact tuple"):
             self._session(list_return).ingest(_event())
+
+        class LengthHidingTuple(tuple):
+            def __len__(self) -> int:
+                return 0
+
+        subclass_return = _FunctionEstimator(lambda _: ())
+        subclass_return.function = lambda _: LengthHidingTuple(  # type: ignore[assignment,return-value]
+            (_output(),)
+        )
+        with self.assertRaisesRegex(EstimatorContractError, "exact tuple"):
+            self._session(subclass_return).ingest(_event())
+
+        class TupleImpostor:
+            @property
+            def __class__(self) -> type[tuple[object, ...]]:
+                return tuple
+
+            def __iter__(self):
+                yield _output()
+
+            def __len__(self) -> int:
+                return 0
+
+        impostor_return = _FunctionEstimator(lambda _: ())
+        impostor_return.function = lambda _: TupleImpostor()  # type: ignore[assignment,return-value]
+        with self.assertRaisesRegex(EstimatorContractError, "exact tuple"):
+            self._session(impostor_return).ingest(_event())
+
+        class OutputImpostor:
+            @property
+            def __class__(self) -> type[EstimatorOutput[object]]:
+                return EstimatorOutput
+
+        output_impostor = _FunctionEstimator(lambda _: ())
+        output_impostor.function = lambda _: (OutputImpostor(),)  # type: ignore[assignment,return-value]
+        with self.assertRaisesRegex(EstimatorContractError, "EstimatorOutput"):
+            self._session(output_impostor).ingest(_event())
 
         wrong_item = _FunctionEstimator(lambda _: ())
         wrong_item.function = lambda _: ("not-output",)  # type: ignore[assignment,return-value]

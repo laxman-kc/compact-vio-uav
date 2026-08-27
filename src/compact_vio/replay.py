@@ -28,12 +28,12 @@ class EventKind(str, Enum):
 
 
 def _require_non_empty_text(value: object, *, field: str) -> None:
-    if not isinstance(value, str) or not value.strip():
+    if type(value) is not str or not value.strip():
         raise ReplayContractError(f"{field} must be a non-empty string")
 
 
 def _require_non_negative_integer(value: object, *, field: str) -> None:
-    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+    if type(value) is not int or value < 0:
         raise ReplayContractError(f"{field} must be a non-negative integer")
 
 
@@ -55,14 +55,14 @@ class ReplayEvent(Generic[PayloadT]):
         _require_non_empty_text(self.event_id, field="event_id")
         _require_non_negative_integer(self.sequence_index, field="sequence_index")
         _require_non_empty_text(self.stream_id, field="stream_id")
-        if not isinstance(self.kind, EventKind):
+        if type(self.kind) is not EventKind:
             raise ReplayContractError("kind must be an EventKind")
         _require_non_empty_text(self.clock_id, field="clock_id")
         _require_non_negative_integer(self.measurement_time_ns, field="measurement_time_ns")
         _require_non_negative_integer(self.available_time_ns, field="available_time_ns")
         if self.available_time_ns < self.measurement_time_ns:
             raise ReplayContractError("available_time_ns must not precede measurement_time_ns")
-        if not isinstance(self.valid, bool):
+        if type(self.valid) is not bool:
             raise ReplayContractError("valid must be boolean")
 
 
@@ -84,7 +84,7 @@ class CausalReplay(Generic[PayloadT]):
         previous_measurement_by_stream: dict[str, int] = {}
 
         for event in event_tuple:
-            if not isinstance(event, ReplayEvent):
+            if type(event) is not ReplayEvent:
                 raise ReplayContractError("events must contain only ReplayEvent values")
             if event.clock_id != clock_id:
                 raise ReplayContractError(
@@ -150,6 +150,35 @@ class CausalReplay(Generic[PayloadT]):
 
         return len(self._events) - self._cursor
 
+    def release_next_to(self, watermark_ns: int) -> ReplayEvent[PayloadT] | None:
+        """Emit at most one next event available through ``watermark_ns``.
+
+        Repeated calls at the same watermark drain eligible events one at a
+        time. This is the one-event replay primitive used by execution recording
+        so an estimator failure cannot consume a later event.
+        """
+
+        _require_non_negative_integer(watermark_ns, field="watermark_ns")
+        if self._watermark_ns is not None and watermark_ns < self._watermark_ns:
+            raise ReplayContractError("watermark_ns must not move backward")
+
+        previous_watermark_ns = self._watermark_ns
+        previous_cursor = self._cursor
+        try:
+            self._watermark_ns = watermark_ns
+            if (
+                self._cursor >= len(self._events)
+                or self._events[self._cursor].available_time_ns > watermark_ns
+            ):
+                return None
+            event = self._events[self._cursor]
+            self._cursor += 1
+            return event
+        except BaseException:
+            self._watermark_ns = previous_watermark_ns
+            self._cursor = previous_cursor
+            raise
+
     def advance_to(self, watermark_ns: int) -> tuple[ReplayEvent[PayloadT], ...]:
         """Emit unconsumed events available at or before ``watermark_ns``.
 
@@ -158,19 +187,12 @@ class CausalReplay(Generic[PayloadT]):
         explicitly rather than relying on replay to filter them.
         """
 
-        _require_non_negative_integer(watermark_ns, field="watermark_ns")
-        if self._watermark_ns is not None and watermark_ns < self._watermark_ns:
-            raise ReplayContractError("watermark_ns must not move backward")
-
-        start = self._cursor
-        while (
-            self._cursor < len(self._events)
-            and self._events[self._cursor].available_time_ns <= watermark_ns
-        ):
-            self._cursor += 1
-
-        self._watermark_ns = watermark_ns
-        return self._events[start : self._cursor]
+        released: list[ReplayEvent[PayloadT]] = []
+        while True:
+            event = self.release_next_to(watermark_ns)
+            if event is None:
+                return tuple(released)
+            released.append(event)
 
 
 __all__ = ["CausalReplay", "EventKind", "ReplayContractError", "ReplayEvent"]

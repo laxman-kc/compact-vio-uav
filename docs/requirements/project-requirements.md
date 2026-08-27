@@ -1,7 +1,7 @@
 # Project requirements
 
 Status: Normative foundation; decision-dependent values unresolved
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-27
 
 `MUST` items below are current repository invariants. They do not resolve an
 ADR. Fields marked `TBD` are unresolved and must not be converted into defaults
@@ -126,11 +126,17 @@ The following must be decided through ADRs before dependent implementation:
   availability, usability, and non-usable reason codes; exact schedule,
   timestamp association, run completion, initialization/reset, tracking-loss,
   and estimator-failure policies: **TBD**.
-- Exact replay/output coverage binding: **implemented for caller-retained event
-  and output batches**, requiring one-to-one expected-opportunity and observed-
-  envelope accounting by trigger-event identity and tuple ordinal; automatic
-  execution recording and proof that batches came from a validated estimator
-  session: **TBD**.
+- Exact replay/output coverage binding: **implemented**, requiring one-to-one
+  expected-opportunity and observed-envelope accounting by trigger-event
+  identity and tuple ordinal.
+- Direct causal execution recording: **implemented for one internally
+  constructed, fresh, clock-matched replay/session pair**, with one-event
+  release, no retained partially validated batch, first-failure retention,
+  later-suffix preservation, and structurally frozen in-memory plan/watermark/
+  count snapshots with delivery/reset progress. Persistent full-run traces,
+  expected-opportunity creation, failed-trigger coverage integration, complete
+  lifecycle/failure policy, adapter-internal proof, and scientific success
+  criteria: **TBD**.
 - Artifact vault, independent backup, retention capacity, and spending ceiling: **TBD**.
 - Control boundary: **PX4 retains stabilization, failsafes, and motor control**;
   edge hardware, runtime, precision, ROS 2 transport, simulator, and physical
