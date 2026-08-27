@@ -525,6 +525,48 @@ result, and explicit remaining blockers.
   training, and created no checkpoint or retained experiment artifact. No Brev
   stop or termination action was taken.
 
+## 2026-08-27 — M7 causal replay-to-estimator execution recorder implemented
+
+- Implementation evidence commit:
+  `a16c81baa71da5c249414b584e515ea6a341ab94` on branch `main`.
+- Added a direct recorder that constructs and privately retains one fresh,
+  clock-matched causal replay and estimator session. Replay releases at most one
+  event before each estimator delivery, so an estimator failure cannot consume
+  the later event suffix.
+- Successful evidence retains only complete, validated event/output batches.
+  The first consumed event affected by release, delivery, output validation, or
+  batch retention failure is recorded separately with its exception type and
+  exact session-delivery/reset-transition progress. Ordinary processing failure
+  is terminal; process-control exceptions terminalize the recorder and are
+  re-raised.
+- Structurally frozen in-memory snapshots bind the complete planned event tuple,
+  exact attempted prefix, watermark, replay/session counts, exhaustion state,
+  and reset generation. They reject coherent count/state forgeries, impossible
+  reset ordering, hidden output containers, and forged domain-record types.
+  Generic payloads are not deep-copied and no persistent full-run trace exists
+  yet.
+- Added fault-injection controls for interruption inside replay cursor/watermark
+  update, immediately after event release, before session delivery, between reset
+  transition and delivery recording, and during batch retention. These cases
+  either roll back an uncommitted release or retain an auditable terminal failure
+  without silently losing the later replay suffix.
+- Local verification: all 179 standard-library tests passed; repository policy
+  passed for 77 files; the pinned schema harness passed 9 schemas and 7
+  templates; Ruff lint/format, compileall, and `git diff --check` passed. Three
+  focused read-only/adversarial reviews reported no remaining P0/P1 findings.
+- A read-only Brev observation found `compact-vio-uav-gpu` `RUNNING`, `READY`,
+  and `HEALTHY`. Its clean checkout fast-forwarded to the exact implementation
+  commit, all 179 tests passed, repository policy passed for 77 files, and the
+  checkout remained clean.
+- The A10 smoke installed no dependency, downloaded no dataset, executed no VIO
+  algorithm or model training, and created no checkpoint or retained experiment
+  artifact. No Brev stop, reboot, deletion, or termination action was taken.
+- This slice closes the caller-supplied-batch provenance gap only for the
+  recorder path. Persistent trace serialization, expected-opportunity creation,
+  failed-trigger coverage integration, complete lifecycle/failure policy,
+  adapter-internal lineage/reset proof, resource timing, ATE/RPE, and scientific
+  success criteria remain open. M7 remains in progress.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
