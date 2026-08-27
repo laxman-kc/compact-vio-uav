@@ -308,6 +308,42 @@ result, and explicit remaining blockers.
   stop or termination action was taken; the project owner retains lifecycle
   control.
 
+## 2026-08-27 — M4 typed sensor-record envelope implemented and A10-smoked
+
+- Implementation evidence commit:
+  `048f7772f82bce9b50c6f4824f92759bade3fdd6` on branch `main`.
+- Added framework-neutral camera and IMU payload records, explicit time
+  intervals, quantity/unit/axis declarations, per-stream modality/frame
+  bindings, and a versioned opaque calibration-identity envelope in
+  `src/compact_vio/contracts/sensors.py`. Added 14 focused synthetic tests in
+  `tests/test_sensor_records.py`.
+- The existing `ReplayEvent` remains the only event identity, stream, clock,
+  measurement/availability timestamp, validity, and reset envelope. The sensor
+  records do not duplicate or override those fields.
+- Valid camera records require opaque image data. Valid IMU records require at
+  least one explicitly described gyro or accelerometer measurement, permitting
+  paired or independently sampled layouts. Invalid records may preserve partial
+  or missing raw measurements and remain observable.
+- Calibration binding now matches the exact stream, camera/IMU modality, frame,
+  clock, profile ID, calibration ID, and revision. The calibration payload
+  remains opaque and schema-identified; this is not the complete calibration
+  profile required for real-data acceptance.
+- No mono/stereo count, encoding, unit vocabulary, axis convention, timestamp
+  convention, shutter model, rate, intrinsics/distortion model, extrinsic,
+  temporal offset, IMU noise model, sensor hardware, dataset, numerical backend,
+  model, or training framework was selected.
+- Local verification: 89 unit tests passed; Ruff lint passed; all 45 Python
+  files were formatted; repository policy passed for 62 files; and
+  `git diff --check` passed.
+- The clean Brev checkout resolved to the exact implementation commit; all 89
+  tests passed there and repository policy passed for 62 files. A fresh
+  read-only status observation found `compact-vio-uav-gpu` `RUNNING`, `READY`,
+  and `HEALTHY`. No dependency or dataset was downloaded, no model was trained,
+  and no retained experiment artifact was created.
+- M4 remains in progress and ADR-0003 remains unresolved. The next M4 slice is
+  the complete versioned calibration-profile schema and synthetic negative
+  fixtures. No Brev stop or termination action was taken.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
