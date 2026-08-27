@@ -176,6 +176,14 @@ and every non-usable item retains one or more reason codes under a named
 classification policy. The primitive does not infer an output schedule,
 timestamp association, run completion, tracking failure, or pass/fail result.
 
+`compact_vio.evaluation.bind_output_coverage` binds that ledger to retained
+replay events and the exact estimator-output tuple returned for each event.
+Produced outcomes name a zero-based tuple ordinal; missing outcomes explicitly
+name no ordinal. Every expected opportunity and every observed output envelope
+must be accounted for exactly once. The binding never matches by timestamp or
+assumes one output per event, and a retained batch alone does not prove that it
+came from an `EstimatorSession` execution.
+
 ## State ownership
 
 | State | Authoritative location | Future temporary-worker treatment |

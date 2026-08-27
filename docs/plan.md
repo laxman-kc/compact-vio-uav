@@ -474,6 +474,14 @@ Implemented evaluator slice (not M7 exit evidence by itself):
 - The coverage primitive supplies exact counts and derived fractions without inferring
   an output schedule, timestamp association, pass/fail threshold, completion,
   reset, tracking loss, or estimator-failure classification.
+- An exact binding layer now links every declared opportunity to its triggering
+  replay event and, for produced outcomes, the precise ordinal in that event's
+  retained estimator-output tuple. It rejects missing/extra/reordered slots,
+  reused or unbound envelopes, wrong event identity, output-validity mismatch,
+  mixed clocks, and output availability before the triggering event.
+- Binding uses no timestamp proximity and does not assume one output per event.
+  Caller-supplied batches are not proof of an actual `EstimatorSession` run;
+  the causal execution recorder and complete lifecycle trace remain open.
 - These kernels are not aligned ATE, RPE, metric-scale evidence, run-level
   failure accounting, or a complete evaluator. M7 remains in progress.
 

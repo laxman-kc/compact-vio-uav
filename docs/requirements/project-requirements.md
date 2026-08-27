@@ -126,6 +126,11 @@ The following must be decided through ADRs before dependent implementation:
   availability, usability, and non-usable reason codes; exact schedule,
   timestamp association, run completion, initialization/reset, tracking-loss,
   and estimator-failure policies: **TBD**.
+- Exact replay/output coverage binding: **implemented for caller-retained event
+  and output batches**, requiring one-to-one expected-opportunity and observed-
+  envelope accounting by trigger-event identity and tuple ordinal; automatic
+  execution recording and proof that batches came from a validated estimator
+  session: **TBD**.
 - Artifact vault, independent backup, retention capacity, and spending ceiling: **TBD**.
 - Control boundary: **PX4 retains stabilization, failsafes, and motor control**;
   edge hardware, runtime, precision, ROS 2 transport, simulator, and physical

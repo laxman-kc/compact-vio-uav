@@ -199,7 +199,7 @@ compact-vio-uav/
 │   ├── contracts/                         [current: sensor payload/calibration-identity runtime records]
 │   ├── data/                              [planned: approved dataset adapters]
 │   ├── geometry/                          [current: translation trajectory records]
-│   ├── evaluation/                        [current: raw translation RMSE and output coverage]
+│   ├── evaluation/                        [current: translation RMSE, coverage, replay/output binding]
 │   ├── baselines/                         [planned: native classical adapters]
 │   ├── learning/                          [conditional on ADR-0004]
 │   │   ├── models/                        [conditional: direct and hybrid learned parts]
@@ -262,6 +262,15 @@ multi-label non-usable reasons as separate evidence. It does not inspect
 positions, infer an output schedule or timestamp pairing, or classify a
 non-usable item as an estimator failure. Run lifecycle, initialization, reset,
 tracking-loss, and completion semantics remain unresolved evaluator work.
+
+The coverage binding layer retains replay events and each event's exact ordered
+estimator-output tuple. Each expected opportunity binds to an explicit trigger
+event and either one zero-based output ordinal or no ordinal for a declared
+missing outcome. Event identity/order, clock, causal availability, output
+validity, exhaustive opportunity binding, and unbound extra outputs are checked
+without timestamp association or an assumed output rate. These caller-supplied
+batches recheck observable envelope consistency but do not prove that an
+`EstimatorSession` produced them; an execution recorder remains M7 work.
 
 ## Deployment boundary
 
