@@ -418,6 +418,43 @@ result, and explicit remaining blockers.
   training, and created no checkpoint or retained experiment artifact. No Brev
   stop or termination action was taken.
 
+## 2026-08-27 — M7 exact-pair translation RMSE kernel implemented
+
+- Implementation evidence commit:
+  `b81d276bff9fc3926b1b1f3d226331d6b974fc61` on branch `main`.
+- Added immutable Cartesian translation trajectories with explicit trajectory,
+  sequence, segment, sample, reference/tracked frame, transform direction,
+  translation unit, clock, timestamp-semantics, and timestamp identity.
+  Distinct samples at one timestamp remain observable and deterministically
+  ordered; empty segments remain representable for later failure accounting.
+- Added one stable metric kernel for
+  `sqrt(mean(||reference_position - estimated_position||^2))` over exact
+  pre-paired samples. Every invocation supplies a policy explicitly declaring
+  exact association, no interpolation, no alignment, and no scale correction.
+- Negative controls prove constant offsets, global rotation, and scale errors
+  remain nonzero. Sequence, segment, sample identity/time, frame, direction,
+  unit, clock, and time-semantics mismatches fail before computation; empty or
+  partial traces are not silently reported as survivors.
+- Component-global scaled accumulation handles large and tiny finite residuals
+  without intermediate square/norm overflow. Nonexact integer coordinates,
+  nonfinite differences, final overflow, and positive-error underflow fail
+  explicitly instead of producing a false zero or infinity.
+- This kernel is not aligned ATE, RPE, metric-scale proof, coverage/failure
+  evidence, or a complete evaluator. It selects no final association/alignment
+  protocol, numerical threshold, estimator, sensor, dataset, model, or backend.
+  M7 and M3 remain in progress.
+- Local verification: all 123 standard-library tests passed; repository policy
+  passed for 71 files; the pinned schema harness passed 9 schemas and 7
+  templates; Ruff lint/format and `git diff --check` passed. Two focused
+  adversarial reviews reported no remaining P0/P1 findings.
+- A read-only Brev observation found `compact-vio-uav-gpu` `RUNNING`, `READY`,
+  and `HEALTHY`. Its clean checkout fast-forwarded to the exact implementation
+  commit, all 123 tests passed, repository policy passed for 71 files, and the
+  checkout remained clean.
+- The A10 smoke installed no dependency, downloaded no dataset, ran no model
+  training, and created no checkpoint or retained experiment artifact. No Brev
+  stop or termination action was taken.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
