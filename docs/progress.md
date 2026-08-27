@@ -385,6 +385,39 @@ result, and explicit remaining blockers.
   on the A10, no model was trained, no retained experiment artifact was created,
   and no Brev stop or termination action was taken.
 
+## 2026-08-27 — M3 explicit estimator-interface slice implemented
+
+- Implementation evidence commit:
+  `a0579175fc78907ce014d12eff0182b7bc2adc00` on branch `main`.
+- Added an immutable framework-neutral declaration shape requiring a future
+  selected estimator profile to name its state schema/variables, metric-scale,
+  initialization/reset/recurrence, output-time/schedule, causality,
+  algorithmic/processing latency, staleness, and input-gap policies.
+- Startup initialization, post-reset initialization, and the relationship
+  between validity and initialization are required profile values with no
+  library default. Runtime outputs carry an atomic interface-identity and
+  initialization pair. The wrapper validates only observable metadata; it does
+  not claim that an adapter reset its internal state.
+- The prior estimator envelope remains backward compatible in an explicitly
+  undeclared mode, which is not evidence of M3 compliance. Mixed initialization
+  states in one output batch produce an ambiguous wrapper summary rather than
+  assuming that adapter order is lifecycle order.
+- No state variables, frame values, scale method, initialization/reset policy,
+  output rate, latency formula or ceiling, estimator algorithm, dataset, model,
+  numerical backend, research threshold, or scientific contribution was
+  selected. M3 and ADR-0004 remain in progress.
+- Local verification: all 105 standard-library unit tests passed; repository
+  policy passed for 66 files; the pinned schema harness passed 9 schemas and 7
+  templates; Ruff lint/format and `git diff --check` passed. Two independent
+  focused reviews reported no remaining P0/P1 findings.
+- A read-only Brev observation found `compact-vio-uav-gpu` `RUNNING`, `READY`,
+  and `HEALTHY`. Its clean checkout fast-forwarded to the exact implementation
+  commit, all 105 tests passed, repository policy passed for 66 files, and the
+  checkout remained clean.
+- The A10 smoke installed no dependency, downloaded no dataset, ran no model
+  training, and created no checkpoint or retained experiment artifact. No Brev
+  stop or termination action was taken.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
