@@ -277,6 +277,37 @@ result, and explicit remaining blockers.
   model was trained, no checkpoint was created, and no GPU lifecycle or paid
   execution action was performed during this documentation slice.
 
+## 2026-08-27 — M3 estimator-contract envelope implemented and A10-smoked
+
+- Implementation evidence commit:
+  `4f34e0b6a4f07604224aaf437c7fc51b5e005d41` on branch `main`.
+- Added the first framework-neutral estimator boundary in
+  `src/compact_vio/estimator.py` with focused tests in
+  `tests/test_estimator.py`.
+- The boundary accepts existing causal replay events without conversion and
+  requires every output envelope to declare its clock, estimate and
+  availability times, reset generation, validity, health code, frame IDs,
+  transform direction, translation/rotation units, and rotation
+  representation. Concrete values are required from a future selected profile;
+  none was chosen by this slice.
+- The state payload remains opaque. The code does not select the state vector,
+  concrete frames, transform convention, output rate, health vocabulary,
+  covariance representation, initialization policy, mono/stereo configuration,
+  sensor profile, numerical backend, model, training framework, dataset, or
+  deployment target.
+- Local verification on the implementation commit: 75 unit tests passed; Ruff
+  lint passed; all 42 Python files were formatted; repository policy passed for
+  59 files; and `git diff --check` passed.
+- The new `compact-vio-uav-gpu` worker was used only for a clean-checkout smoke.
+  Its checkout resolved to the exact implementation commit, all 75
+  standard-library tests passed, and repository policy passed for 59 files.
+  No dependency or dataset was downloaded, no estimator algorithm or model was
+  trained, and no checkpoint or retained experiment artifact was created.
+- M3 remains in progress. The exact estimator state/time/reset interface still
+  requires a later decision, and ADR-0003/ADR-0004 remain unresolved. No Brev
+  stop or termination action was taken; the project owner retains lifecycle
+  control.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
