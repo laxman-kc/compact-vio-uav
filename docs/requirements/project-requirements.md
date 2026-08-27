@@ -121,6 +121,11 @@ The following must be decided through ADRs before dependent implementation:
   alignment, or scale correction**; final ATE/RPE association/alignment
   protocols and numerical accuracy, failure, latency, memory, power, and
   thermal thresholds: **TBD**.
+- Explicit output-coverage kernel: **implemented for a caller-declared nonempty
+  opportunity ledger**, retaining missing/invalid/valid state, reference
+  availability, usability, and non-usable reason codes; exact schedule,
+  timestamp association, run completion, initialization/reset, tracking-loss,
+  and estimator-failure policies: **TBD**.
 - Artifact vault, independent backup, retention capacity, and spending ceiling: **TBD**.
 - Control boundary: **PX4 retains stabilization, failsafes, and motor control**;
   edge hardware, runtime, precision, ROS 2 transport, simulator, and physical

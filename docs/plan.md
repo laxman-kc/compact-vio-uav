@@ -467,8 +467,15 @@ Implemented evaluator slice (not M7 exit evidence by itself):
 - Synthetic controls prove offsets, rotations, and scale errors are retained;
   empty/partial or convention-mismatched trajectories fail instead of being
   silently paired or reported as survivors.
-- This is not aligned ATE, RPE, metric-scale evidence, coverage/failure
-  accounting, or a complete evaluator. M7 remains in progress.
+- An explicit output-coverage ledger now partitions every caller-declared
+  expected opportunity into missing, invalid, or valid output state; records
+  reference availability and explicit usability separately; and requires
+  reason codes for every non-usable item.
+- The coverage primitive supplies exact counts and derived fractions without inferring
+  an output schedule, timestamp association, pass/fail threshold, completion,
+  reset, tracking loss, or estimator-failure classification.
+- These kernels are not aligned ATE, RPE, metric-scale evidence, run-level
+  failure accounting, or a complete evaluator. M7 remains in progress.
 
 Prohibited work:
 

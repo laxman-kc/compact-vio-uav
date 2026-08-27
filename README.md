@@ -169,6 +169,13 @@ explicitly permits no interpolation, alignment, or scale correction. This is a
 raw translation-error kernel, not aligned ATE, RPE, a metric-scale proof, a
 coverage/failure score, or a real-data result.
 
+`compact_vio.evaluation.summarize_output_coverage` counts a retained, nonempty
+ledger of caller-declared expected output opportunities. Missing, invalid,
+valid, reference-available, and explicitly usable outcomes remain separate,
+and every non-usable item retains one or more reason codes under a named
+classification policy. The primitive does not infer an output schedule,
+timestamp association, run completion, tracking failure, or pass/fail result.
+
 ## State ownership
 
 | State | Authoritative location | Future temporary-worker treatment |

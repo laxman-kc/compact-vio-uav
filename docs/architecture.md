@@ -199,7 +199,7 @@ compact-vio-uav/
 │   ├── contracts/                         [current: sensor payload/calibration-identity runtime records]
 │   ├── data/                              [planned: approved dataset adapters]
 │   ├── geometry/                          [current: translation trajectory records]
-│   ├── evaluation/                        [current: raw exact-pair translation RMSE only]
+│   ├── evaluation/                        [current: raw translation RMSE and output coverage]
 │   ├── baselines/                         [planned: native classical adapters]
 │   ├── learning/                          [conditional on ADR-0004]
 │   │   ├── models/                        [conditional: direct and hybrid learned parts]
@@ -254,6 +254,14 @@ association with no interpolation, trajectory alignment, or scale correction.
 Constant offsets, rotations, and scale errors therefore remain visible. This
 kernel is deliberately not labelled ATE and does not establish association,
 coverage, failures, metric scale, or any final evaluation protocol.
+
+The first coverage kernel consumes a nonempty ordered ledger whose expected
+opportunities, classification policy, and reason schema are named explicitly.
+It preserves missing, invalid, valid, reference availability, usability, and
+multi-label non-usable reasons as separate evidence. It does not inspect
+positions, infer an output schedule or timestamp pairing, or classify a
+non-usable item as an estimator failure. Run lifecycle, initialization, reset,
+tracking-loss, and completion semantics remain unresolved evaluator work.
 
 ## Deployment boundary
 
