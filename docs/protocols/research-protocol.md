@@ -35,7 +35,9 @@ Before confirmatory candidate comparison or final-test access, record:
 - Stopping rule.
 - Allowed exploratory metrics.
 
-No primary hypothesis is selected in this foundation.
+ADR-0004 records a physically anchored hybrid as the working direction, but the
+primary hypothesis is not accepted for confirmatory testing until its endpoint,
+thresholds, trials, and compute budget are frozen.
 
 ## 3. Data protocol
 
@@ -56,16 +58,38 @@ No primary hypothesis is selected in this foundation.
 - Report algorithmic delay separately from wall-clock processing delay.
 - Replay complete sequences, including initialization and post-reset behavior.
 
-## 5. Required candidate controls
+## 5. Candidate and model-training order
 
-The accepted hypothesis determines the final set. A learned multimodal study normally requires:
+The accepted hypothesis determines the final set. If ADR-0004 accepts the
+current working direction, use the smallest sequence that can isolate the
+proposed contribution:
 
-- A classical filter reference.
-- A classical optimization reference where compatible with scope.
-- A visual-only diagnostic.
-- An IMU-only diagnostic.
-- An always-compute causal visual-inertial diagnostic.
-- The proposed candidate and ablations isolating its claimed contribution.
+1. Reproduce one native classical filter reference through the common replay and
+   evaluator. This branch does not use a learned-training framework.
+2. Add visual-only and IMU-only diagnostics only where needed to verify modality
+   contribution.
+3. Train one always-compute direct learned visual-inertial control in the
+   framework accepted by ADR-0004.
+4. Train one physically anchored hybrid in that framework, keeping the physical IMU
+   propagation/preintegration path explicit and learning the visual correction
+   or measurement.
+5. Run only the ablation needed to isolate that learned correction. Additional
+   pretraining, compute gating, robustness, or uncertainty experiments require a
+   separate declared rationale.
+
+The direct control and hybrid use the same permitted inputs, frozen source-group
+splits, preprocessing and tuning policy, declared training/compute budget,
+seeds/trials, and evaluator. Training uses the training split; validation
+selects a checkpoint under a frozen rule; final-test data is never used for
+gradient updates or checkpoint selection. A tiny CPU smoke precedes any GPU
+training request.
+
+The selected framework/version, accelerator stack, randomness/determinism
+settings, model identifier, configuration, seed, split hashes, stopping rule,
+and checkpoint-selection rule are recorded per run. PyTorch is the current
+proposal, not an accepted dependency. MLflow may observe metrics, but training
+and evaluation must work without it and the portable run bundle remains
+authoritative.
 
 Writing generic adapters and fixtures does not adopt a third-party estimator.
 Before running or incorporating a named implementation, pin its version and

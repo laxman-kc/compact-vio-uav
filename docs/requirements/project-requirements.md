@@ -27,6 +27,19 @@ by an implementation.
 | R-DATA-004 | Evaluation replay MUST NOT expose sensor information newer than the estimator output timestamp. | Causality tests and replay trace. |
 | R-DATA-005 | Dataset files MUST NOT be committed to Git unless an explicit rights and repository-size exception is recorded. | Repository scan. |
 
+## Training and model selection
+
+| ID | Requirement | Verification |
+|---|---|---|
+| R-TRAIN-001 | If learned/hybrid training is accepted in ADR-0004, its framework MUST be explicitly selected and its exact version, accelerator/runtime stack, determinism settings, and environment MUST be pinned per run. PyTorch is the current proposal, not an accepted requirement. | Accepted ADR-0004, environment lock, and run manifest. |
+| R-TRAIN-002 | Classical VIO baselines MUST execute through their native implementation and common replay adapter; they MUST NOT be routed through a learned-training framework merely to make the diagram uniform. | Baseline build/run record and dependency audit. |
+| R-TRAIN-003 | The direct learned control and physically anchored hybrid comparison MUST use equivalent permitted inputs, source-group splits, preprocessing policy, tuning policy, declared training/compute budget, seeds/trials, and frozen evaluator. | Cross-run manifest and protocol audit. |
+| R-TRAIN-004 | Training MUST use training membership only; validation MAY be used only for declared tuning, and final-test records MUST NOT be used for fitting, architecture selection, early stopping, normalization, or hyperparameter choice. | Split-access and run-log audit. |
+| R-TRAIN-005 | Synthetic pretraining, robustness training, modality gating, and uncertainty learning MUST be separate declared ablations rather than silent prerequisites or unequal advantages for one candidate. | Configuration and ablation matrix. |
+| R-TRAIN-006 | A tracker such as MLflow MAY mirror run metrics, but it MUST NOT be the sole model registry or evidence store; retained evidence MUST remain reconstructable from versioned configuration/manifests and externally retained hashed artifacts. | Tracker-independent bundle restoration. |
+| R-TRAIN-007 | Checkpoints, optimizer state, training histories, and exported model binaries MUST stay out of normal Git history and follow the artifact-retention policy. | Repository and artifact-manifest audit. |
+| R-TRAIN-008 | ONNX/export work MUST occur only for an evidence-selected learned component; TensorRT or another target-specific engine MUST remain conditional on the exact target decision and parity testing. | Selection record, export-parity report, and accepted deployment scope. |
+
 ## Estimator contract
 
 | ID | Requirement | Verification |
@@ -56,6 +69,8 @@ synthetic fixtures, unit tests, or bounded CPU experiments whose outputs are
 reproducible from Git.
 Short paid-worker smoke or reproduction checks may also proceed from a pushed
 revision when their duration, cost, outputs, and teardown owner are bounded.
+No future GPU-worker availability, configuration, access, or authorization is
+assumed from a previous worker or previous approval.
 
 | ID | Requirement | Verification |
 |---|---|---|
@@ -63,7 +78,7 @@ revision when their duration, cost, outputs, and teardown owner are bounded.
 | R-INFRA-002 | Reproducibility-critical and release artifacts MUST have a verified primary copy and an independent verified backup outside the worker. | Artifact index and hash verification. |
 | R-INFRA-003 | Important GPU work MUST NOT begin until a representative bundle has completed export, deletion of its disposable source test copy (not worker termination), restoration into a new location, checksum validation, and representative load/open verification. | Restore-test report. |
 | R-INFRA-004 | Credentials MUST NOT be recorded in source, configuration, manifests, logs, or artifacts. | Secret scan and manifest review. |
-| R-INFRA-005 | Worker cost ceiling, review time, and teardown authority MUST be recorded before extended paid work. | Run authorization record. |
+| R-INFRA-005 | Provisioning or using any future rented GPU worker MUST receive fresh, explicit project-owner confirmation for the exact bounded task; confirmation MUST NOT carry forward to another task. Before extended paid work, the worker cost ceiling, review time, and teardown authority MUST also be recorded. | Owner-confirmed bounded run plan; extended-run authorization record where applicable. |
 | R-INFRA-006 | Normal Git history and GitHub Actions artifacts MUST NOT be treated as the general binary-artifact vault or independent backup. | Repository/artifact-location audit. |
 | R-INFRA-007 | Capacity/path inspection alone MUST NOT satisfy R-INFRA-003 or establish storage independence. | Static-check report cross-referenced to the R-INFRA-003 restore record. |
 
@@ -91,7 +106,13 @@ The following must be decided through ADRs before dependent implementation:
   primary comparison**; exact state/frame/time/reset interface: **TBD**.
 - Monocular versus stereo and complete camera/IMU timing/calibration envelope: **TBD**.
 - Estimated state, output rate, initialization mode, and latency ceiling: **TBD**.
-- Primary research contribution and primary hypothesis: **TBD**.
+- Proposed training framework for learned/hybrid candidates: **PyTorch**;
+  framework selection and exact version, model architecture, objective,
+  optimizer, hyperparameters, and schedule: **TBD through ADR-0004**.
+- Primary working direction: **physically anchored compact learned visual
+  correction compared with an equal-budget direct learned control and a fast
+  classical reference**; confirmatory endpoint, thresholds, trials, and compute
+  budget: **TBD through ADR-0004**.
 - Dataset roles and exact source-group splits: **TBD**.
 - Numerical accuracy, failure, latency, memory, power, and thermal thresholds: **TBD**.
 - Artifact vault, independent backup, retention capacity, and spending ceiling: **TBD**.

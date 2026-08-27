@@ -1,7 +1,13 @@
 # A10 disposable worker environment
 
-Purpose: approved dataset-subset preparation, classical baseline execution,
-learned/hybrid training, common evaluation, and export-feasibility tests.
+Status: one live A10 exists for the bounded 2026-08-27 implementation smoke;
+future-task authorization is not implied.
+
+Each worker receives its own dated inventory. The current worker is approved
+only for repository checkout and implementation smoke verification. Dataset
+preparation, baseline execution, learned/hybrid training, common evaluation, and
+export-feasibility tests require later task-specific confirmation. The project
+does not assume that a later worker is an A10 or shares this image.
 
 Before the first paid experiment, capture and pin:
 
@@ -14,4 +20,5 @@ Before the first paid experiment, capture and pin:
 - dataset and split manifest hashes.
 
 The worker disk is scratch. A run is not durable until its governed bundle has
-been checksum-verified in two independent destinations outside Brev.
+been checksum-verified in two independent destinations outside the temporary
+worker.

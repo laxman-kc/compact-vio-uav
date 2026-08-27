@@ -5,20 +5,22 @@ Last reviewed: 2026-08-26
 
 ## 1. Authorize
 
-Before each paid A10 task, record a short bounded run plan containing:
+Before provisioning or using any future rented GPU worker, obtain fresh
+project-owner confirmation for that exact task and record a short bounded run
+plan containing:
 
 - owner and purpose;
 - immutable Git revision and exact configuration/command;
 - approved dataset subset, when data is used;
-- expected duration, spending limit, and review time;
+- expected duration, review time, and—when paid—a spending limit;
 - output/export destination and artifacts to retain; and
 - teardown responsibility.
 
 Obtain explicit project-owner approval for that bounded plan, then preserve the
-plan with the run record. A new paid task requires a new plan; previous approval
-does not carry forward. The optional worker-authorization schema can support
-more structured auditing, but its version 1 live validator is static-only and is
-not the execution path for research runs.
+plan with the run record. A new worker task requires a new plan; previous
+approval or access does not carry forward. The optional worker-authorization
+schema can support more structured auditing, but its version 1 live validator is
+static-only and is not the execution path for research runs.
 
 Before M2 passes, paid work is limited to short smoke or reproduction checks
 whose outputs are disposable and exactly reproducible from the pushed Git
@@ -39,6 +41,8 @@ after checking that no unique source or retained result would be lost.
 
 ## 3. Materialize the worker
 
+- Do this only after the equivalent local/CPU smoke path passes and the bounded
+  GPU task genuinely benefits from the worker.
 - Retrieve the immutable revision.
 - Instantiate the pinned execution environment.
 - Record OS, architecture, hardware, driver, runtime, dependency, and container fingerprints.

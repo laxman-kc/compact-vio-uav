@@ -1,8 +1,14 @@
 # A10 worker inventory — 2026-08-26
 
-This is a read-only observation of the currently running default Brev execution
-context for `compact-vio-uav-gpu`. It is evidence about the present worker, not a
-dependency lock or permission to install into the global environment.
+> Current-state notice: this file is a historical observation of a worker that
+> was later terminated. A read-only Brev listing at
+> `2026-08-27T03:36:30Z` returned no workspace. Any future GPU task requires
+> fresh project-owner confirmation and a new environment/lifecycle inventory.
+
+This is a read-only observation of the Brev execution context that was running
+for `compact-vio-uav-gpu` during the stated observation window. It is historical
+evidence about that worker, not a dependency lock or permission to install into
+another worker's global environment.
 
 | Component | Observed value |
 |---|---|
@@ -69,3 +75,12 @@ The repository clone is at `/home/ubuntu/compact-vio-uav`, outside the general
 `/home/ubuntu/workspace` location NVIDIA documents as persistent across a stop
 for stoppable instances. It is therefore treated as a disposable clean checkout;
 for a non-stoppable termination all worker disk writes are lost regardless.
+
+## Later lifecycle disposition
+
+The project owner reported that the observed worker was terminated. The
+read-only command `brev --no-check-latest list --json` returned
+`{"workspaces": null}` at `2026-08-27T03:36:30Z`, confirming that the CLI listed
+no workspace for the authenticated account at that observation. This does not
+independently prove final invoicing or future capacity. No future worker is
+assumed to share this worker's image, price, lifecycle flag, or environment.

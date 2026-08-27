@@ -22,6 +22,17 @@ control while remaining comparable to a fast classical VIO reference? Exact
 datasets, primary endpoint, thresholds, trials, and compute budget must still be
 frozen before confirmatory comparison or final-test access.
 
+If this ADR is accepted with the working direction, implementation and training
+remain deliberately bounded: establish the common replay/evaluator and
+classical reference first, then run one direct learned configuration and one
+physically anchored hybrid configuration at a time. PyTorch is the proposed
+framework for those learned components, not an accepted dependency; classical
+execution bypasses every learned-training framework. Synthetic pretraining,
+compute gating, robustness, and uncertainty are separate optional ablations.
+This working path does not select a dataset, camera count, framework, model
+topology, objective, optimizer, hyperparameters, seed count, numerical threshold,
+or deployment target, and it does not accept this ADR.
+
 ## Decision required
 
 Select exactly one primary contribution and define a falsifiable hypothesis. Candidate topics are:

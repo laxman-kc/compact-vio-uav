@@ -232,6 +232,51 @@ result, and explicit remaining blockers.
   sensor records, synthetic geometry fixtures, and evaluator core. M4 and M7
   remain in progress rather than complete.
 
+## 2026-08-26 — Training architecture and lean execution plan documented
+
+- Working-tree state at this entry: documentation changes are uncommitted on top
+  of commit `7d52bfe0027b8e2e24d465ba22c801a90ed6a255`; a remote evidence commit and CI
+  run are not yet recorded.
+- Refactored the reader-facing architecture around one common causal
+  data/replay/evaluation substrate and three explicit candidate lanes: native
+  classical VIO, a direct learned control, and a physically anchored hybrid.
+  PyTorch is documented as the proposed learned framework pending ADR-0004, not
+  as an installed or accepted dependency.
+- Added a current/planned/conditional technology table and repository tree so
+  existing infrastructure cannot be confused with future estimator, training,
+  export, or deployment code. Planned paths are created only with their first
+  tested behavior; no empty framework was added.
+- Made model production explicit: frozen training membership produces causal
+  training samples and checkpoints; validation applies a frozen selection rule;
+  final-test data is inference-only; every selected candidate returns through
+  the same common evaluator.
+- Recorded that classical execution bypasses learned-training frameworks, MLflow is optional and
+  non-authoritative, and ONNX/TensorRT/Jetson/ROS 2/PX4 remain conditional after
+  scientific selection and later deployment decisions.
+- Added the lean delivery rule: one reviewable behavior and one verification
+  boundary per implementation slice. Longer dataset transfer or model-training
+  runtime is planned, launched, monitored, reviewed, and exported as separate
+  bounded tasks rather than counted as planning time.
+- The project owner reported that the previous A10 was terminated. A fresh
+  read-only `brev --no-check-latest list --json` observation at
+  `2026-08-27T03:36:30Z` returned `{"workspaces": null}`. Earlier running-worker
+  entries remain valid historical observations; no live GPU worker, current
+  billing state, or future capacity is inferred beyond this CLI result.
+- Any future GPU provisioning or use now requires fresh owner confirmation for
+  that exact bounded task. Previous access or approval does not carry forward,
+  and a new worker requires a new inventory.
+- The exact source licence, mono/stereo sensor choice, dataset roles/splits,
+  model topology, objective, hyperparameters, confirmatory thresholds, artifact
+  stores, target hardware, and integration scope remain unresolved. No default
+  was invented for them.
+- Local validation: 65 unit tests passed; repository policy passed for 56 files;
+  the seven-schema/five-template harness passed with zero real governance
+  records and every authority/restore-gate truth flag false; Ruff lint passed
+  and 39 Python files were already formatted; `git diff --check` passed.
+- No implementation code or dependency changed, no dataset was downloaded, no
+  model was trained, no checkpoint was created, and no GPU lifecycle or paid
+  execution action was performed during this documentation slice.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

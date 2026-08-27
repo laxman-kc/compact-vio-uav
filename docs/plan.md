@@ -22,16 +22,43 @@ milestone may be explored in a disposable, non-claiming spike only when the
 earlier milestone explicitly permits it; a spike cannot be reported as project
 evidence.
 
-Local implementation, synthetic fixtures, evaluator work, bounded CPU tests,
-and short reproducible A10 checks may proceed before the durability gate. Such
-A10 checks must use a pushed revision, a time/cost bound, and disposable outputs.
-M2 gates important or extended paid GPU work and irreplaceable retained
-artifacts; it is not a global implementation gate.
+Local implementation, synthetic fixtures, evaluator work, and bounded CPU tests
+may proceed before the durability gate. A future short reproducible GPU check
+may proceed only after fresh owner confirmation and must use a pushed revision,
+a time/cost bound, and disposable outputs. M2 gates important or extended paid
+GPU work and irreplaceable retained artifacts; it is not a global
+implementation gate.
+
+A newly created A10 was observed ready on 2026-08-27 and is approved only for
+the current bounded implementation smoke. It is not approved for datasets or
+training. No access or approval carries forward; every later worker task
+requires fresh project-owner confirmation.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
 experiment lifecycle, that linked record governs the procedure and wins over a
 roadmap summary if wording drifts.
+
+## Lean delivery rule
+
+Implementation proceeds in small verifiable slices, not multi-hour planning
+phases:
+
+- One slice has one concrete output, such as one interface record, one adapter,
+  one metric, one baseline wrapper, or one training control.
+- A normal local documentation or implementation slice contains one reviewable
+  behavior and one verification boundary. If the work expands beyond that
+  boundary, stop coherently, record the exact blocker, and split the remainder
+  instead of extending the slice into a broad multi-hour phase.
+- Each slice changes only the necessary files, runs focused checks first, and
+  updates progress once. The full design is not re-audited unless a decision or
+  dependency actually changes.
+- Dataset transfers and model training may legitimately run longer than one
+  slice. Their preparation, launch, monitoring, result review, and export are
+  separate bounded tasks; elapsed GPU runtime is not treated as planning time.
+- No broad hyperparameter sweep is the first experiment. Run one configuration,
+  inspect its data, causality, loss, and runtime evidence, then authorize the
+  next change.
 
 ## Accepted scope and proposed research direction
 
@@ -62,6 +89,35 @@ deployment choices remain milestone work:
 This direction keeps the research physically grounded and the comparison
 falsifiable without locking hardware or final-test outcomes prematurely.
 
+### Simple model-training sequence
+
+If ADR-0004 accepts a learned/hybrid comparison, the model-training path begins
+only after the common data/evaluator substrate and one classical reference work.
+PyTorch is the current framework proposal, not an accepted dependency:
+
+1. Prepare approved training samples from the frozen training split. Validation
+   is used for declared tuning; final-test sequences stay sealed.
+2. Implement and run only the visual-only and IMU-only diagnostics needed to
+   validate modality contribution. Use the selected framework only if a
+   diagnostic is explicitly learned.
+3. Train one always-on direct learned visual-inertial control in the selected
+   framework.
+4. Train one physically anchored hybrid in the selected framework: physical IMU
+   propagation/preintegration provides the metric motion path and the learned
+   visual component provides a correction or measurement.
+5. Replay the classical reference and every frozen learned candidate through the
+   same evaluator. Select from accuracy, scale, coverage/failures, and measured
+   resource evidence—not training loss alone.
+6. Export only an evidence-selected learned component. ONNX is conditional;
+   TensorRT, Jetson, ROS 2, and PX4 remain later exact-target decisions.
+
+Classical VIO bypasses any neural training framework. MLflow is optional run
+visualization and never the authoritative model registry. TartanAir or other
+synthetic pretraining, compute gating, robustness training, and uncertainty are
+optional ablations after the direct and hybrid reference models work. No exact
+neural architecture, parameter count, optimizer, loss, resolution, batch size,
+or training duration is selected by this roadmap.
+
 ## Milestone overview
 
 | ID | Milestone | Status at this review | Dependency that controls status |
@@ -71,7 +127,7 @@ falsifiable without locking hardware or final-test outcomes prematurely.
 | M2 | Artifact durability for important GPU work | Blocked | Required before long or irreplaceable paid runs |
 | M3 | Scientific question and estimator contract | In progress | M1; local-VIO direction fixed, details remain |
 | M4 | Replay sensor, time, frame, and calibration contract | In progress | Synthetic timing contract unblocked; calibration profile remains |
-| M5 | Reproducible execution environments | In progress | Local and bounded A10 smoke paths are unblocked |
+| M5 | Reproducible execution environments | In progress | Local path active; no future GPU worker is provisioned |
 | M6 | Dataset approval and representative ingestion | Blocked | M3/M4 details and per-dataset rights review |
 | M7 | Common causal replay and evaluator | In progress | Synthetic replay unblocked; real-data exit depends on M6 |
 | M8 | Classical baseline reproduction | Blocked | M5–M7 and license review |
@@ -80,7 +136,7 @@ falsifiable without locking hardware or final-test outcomes prematurely.
 | M11 | Scientific selection and deployment shortlist | Blocked | Applicable M8–M10 evidence and frozen thresholds |
 | M12 | Conditional export, exact-target benchmark, and deployable selection | Blocked | M11; authorized provisional sensor/target choices |
 | M13 | Conditional ROS 2/PX4 and staged safety validation | Blocked | M12; accepted integration scope |
-| M14 | Release evidence and final worker disposition | Blocked | All applicable prior milestones |
+| M14 | Release evidence and conditional final worker disposition | Blocked | All applicable prior milestones |
 
 ## M0 — Reproducible repository foundation
 
@@ -94,7 +150,8 @@ Permitted work completed:
   contracts.
 - Strict run/bundle schemas, safe artifact inventory/verification, repository
   policy, package build, tests, and SHA-pinned CI actions.
-- A clean GitHub checkout and standard-library test run on the A10 worker.
+- A clean GitHub checkout and standard-library test run on the historical A10
+  worker that was later terminated.
 
 Exit evidence:
 
@@ -153,16 +210,17 @@ irreplaceable retained results:
   recovery copy outside the worker.
 - Run one representative export, checksum, restore-to-a-new-location, and
   load/open test before relying on the worker for irreplaceable results.
-- Keep source, configuration, manifests, and small results in GitHub. Treat the
-  A10 disk as disposable scratch space.
+- Keep source, configuration, manifests, and small results in GitHub. Treat any
+  future temporary GPU-worker disk as disposable scratch space.
 - Review the exact licence of each dataset or third-party implementation before
   use in the non-commercial research lane.
 
-The existing storage/authorization records and validators are optional support
-for documenting this gate; they are not the research architecture and do not
-block local code, synthetic fixtures, evaluator work, bounded CPU tests, or a
-short A10 smoke/reproduction task whose outputs are disposable and reproducible
-from the pushed revision.
+The governance storage-plan and worker-authorization records are optional audit
+support. The post-export evidence sidecar remains the required compact M2
+evidence record under the artifact policy. None is the research architecture or
+blocks local code, synthetic fixtures, evaluator work, bounded CPU tests, or a
+future short GPU smoke/reproduction task whose outputs are disposable and
+reproducible from the pushed revision.
 
 Prohibited work:
 
@@ -179,8 +237,8 @@ Exit evidence:
 - Accepted research-only project scope in ADR-0001. The exact licence remains a
   later external-reuse/release decision.
 - Storage/export approach recorded in ADR-0005.
-- Representative restore report with two verified copies outside Brev and a
-  successful load/open check.
+- Representative restore report with two verified copies outside the temporary
+  worker and a successful load/open check.
 
 ### Cost-control teardown exception
 
@@ -280,13 +338,26 @@ Exit evidence:
 
 Status: In progress.
 
-Dependencies: M1 for the local CPU environment. Important or extended paid A10
-work additionally depends on M2; estimator-specific environments depend on M3
-and M4.
+Current execution state: local, GitHub, and one freshly inventoried A10 approved
+only for the current bounded implementation smoke. Learned-training and dataset
+work remain outside this authorization.
+
+Dependencies: M1 for the local CPU environment. Important or extended future
+paid GPU work additionally depends on M2; estimator-specific environments depend
+on M3 and M4.
 
 Permitted work:
 
-- Maintain separate local-development, A10 x86-64 execution, and future target
+- Maintain a framework-neutral core environment for records, replay, geometry,
+  evaluation, and repository tooling.
+- Maintain an isolated native environment for each selected classical baseline;
+  no learned-training framework is a dependency of the common core or classical
+  lane.
+- Add a separate learned-training environment only after ADR-0004 accepts that
+  work and M9 starts. PyTorch is the current proposal. Add CUDA bindings only
+  for a freshly inventoried worker that benefits from them.
+- Keep MLflow as an optional extra. A valid run must work with tracking disabled.
+- Maintain separate local-development, future GPU-execution, and future target
   environment definitions.
 - Pin base image digest, OS/architecture, Python/C++ dependencies, compiler,
   CUDA/driver/framework/runtime versions, Git SHA, and hardware inventory.
@@ -294,13 +365,16 @@ Permitted work:
 
 Prohibited work:
 
-- Do not use an unrecorded global A10 environment for claim-supporting runs.
-- Do not treat the A10 stack as the future Jetson/edge stack.
+- Do not use an unrecorded global worker environment for claim-supporting runs.
+- Do not treat a training-worker stack as the future Jetson/edge stack.
 
 Exit evidence:
 
-- Rebuild instructions and dependency locks reproduce the declared smoke output
-  on a clean A10 checkout.
+- Current exit target: rebuild instructions and dependency locks reproduce the
+  declared core smoke output from a clean local checkout.
+- When an optional future GPU worker is provisioned, append separate inventory
+  and CUDA smoke evidence; historical A10 evidence does not satisfy that future
+  check.
 
 ## M6 — Dataset approval and representative ingestion
 
@@ -351,6 +425,10 @@ Required work:
   adapters that retain source provenance.
 - Implement online-equivalent causal replay, warm-up/reset/dropout/stale-state
   behavior, and explicit output availability time.
+- Keep canonical records, estimator outputs, replay, and evaluator
+  framework-neutral. A classical adapter must run without the learned-training
+  framework installed; a learned adapter performs framework conversion
+  internally.
 - Implement trajectory geometry and metric-scale checks, per-sequence ATE/RPE,
   initialization, completion, coverage, failures, resets, scale, and runtime
   distributions.
@@ -385,6 +463,10 @@ Recommended comparison set to evaluate, not preselected dependencies:
 Required work:
 
 - Pin upstream commit/license/dependencies and isolate each build.
+- Build and run the selected classical implementation through its native
+  toolchain and expose it only through the common estimator adapter. Do not wrap
+  it in a learned-framework module or require a learned framework/MLflow for
+  installation, replay, or evaluation.
 - Map identical permitted inputs and calibration to the common replay.
 - Reproduce trajectories, failures, coverage, timing, CPU/GPU/RAM, and repeated
   run variation on the same platform.
@@ -394,6 +476,8 @@ Exit evidence:
 
 - At least one stable, understood classical reference and a frozen baseline
   scorecard before novel-model selection.
+- A smoke check proves that the classical path imports and runs with every
+  learned-training framework and MLflow absent.
 - Recorded ADR-0002 follow-up feasibility/failure evidence; reopen the ADR before
   proceeding if the accepted estimator contract is invalidated.
 
@@ -413,12 +497,39 @@ matrix must include the controls and ablations required by the selected
 hypothesis while holding the frozen data, causality, evaluator, and declared
 resource/training budgets constant.
 
+For the current working direction, the smallest permitted training matrix is:
+
+- visual-only and IMU-only diagnostics where needed;
+- one always-on direct learned visual-inertial control;
+- one physically anchored hybrid candidate; and
+- only the ablation needed to isolate the learned correction from the physical
+  propagation path.
+
+If ADR-0004 accepts the proposed PyTorch path, the exact framework/runtime is
+pinned in each run. The direct control and hybrid share the permitted inputs,
+split, preprocessing, tuning policy, training/compute budget, seeds, and evaluator.
+MLflow may mirror metrics locally, but retained evidence comes from the frozen
+run bundle. Synthetic pretraining is a separate declared ablation and cannot be
+silently folded into only one candidate.
+
+Before requesting GPU capacity, each learned path must pass a tiny deterministic
+CPU smoke covering sample construction, forward/backward execution, checkpoint
+save/load, recurrent/reset state when present, and causal inference. Training
+then uses only the approved train split; the frozen validation rule selects the
+checkpoint; the selected checkpoint is evaluated through the same replay and
+evaluator as M8 whether or not MLflow is enabled.
+
 Prohibited work:
 
+- No learned/hybrid model implementation or training before ADR-0004 accepts
+  the primary contribution and framework choice. Framework-neutral records,
+  replay, evaluation, and classical baseline work continue independently.
 - No final-test tuning, overlapping windows across source groups, normalization
   fitted on held-out trajectories, bidirectional recurrence, or future frames.
 - No compute-saving claim from parameter count/FLOPs alone or from a gate that
   runs after the expensive visual encoder.
+- No checkpoint may exist only on temporary worker storage, and no MLflow server
+  may be required to reconstruct a run.
 
 Exit evidence:
 
@@ -503,8 +614,10 @@ Required work:
 - Pin the candidate OS/runtime/integration compatibility matrix and, when
   integration or physical testing is proposed, record the interface/fault-test
   plan, named safety authority, environment, and preconditions.
-- Build the production TensorRT engine/native package on the exact pinned target
-  stack; an A10-built engine is not target evidence.
+- Build the selected native/runtime package on the exact pinned target stack.
+  Build a TensorRT engine only if the winner has a neural component and
+  ADR-0006 selects TensorRT; a training-worker-built engine is not target
+  evidence.
 - Measure sustained batch-one sensor-to-output p50/p95/p99 latency, deadline
   misses, memory, power, temperature, clocks, and throttling, then rerun complete
   trajectory/failure evaluation for every precision.
@@ -553,11 +666,14 @@ Exit evidence:
   ADR-0003/ADR-0006 follow-up evidence. Material contradiction reopens or
   supersedes the affected ADR before the next integration stage.
 
-## M14 — Release evidence and final worker disposition
+## M14 — Release evidence and conditional final worker disposition
 
 Status: Blocked.
 
 Dependencies: every milestone applicable to the accepted scope.
+
+There is no worker to dispose of at this review. The lifecycle branch below
+applies only if a future paid worker exists at release time.
 
 Required work before release:
 
@@ -567,7 +683,7 @@ Required work before release:
 - Publish only approved code, metadata, documentation, and intentionally reviewed
   binary channels.
 
-Required work before final Brev lifecycle action:
+Required work before any final future-worker lifecycle action:
 
 - Confirm the exact source commit is reachable from GitHub and the worker has no
   unique source/configuration.
@@ -588,19 +704,27 @@ Exit evidence:
 
 ## Immediate execution queue
 
-1. Freeze the remaining local-VIO state, frame, timestamp, initialization, and
-   reset interface.
-2. Extend the implemented causal replay core with canonical sensor records and
-   synthetic geometry fixtures.
-3. Complete the synthetic evaluator and its future-leakage, frame, unit,
-   timestamp, scale, and partial-trajectory negative tests.
-4. Rights-check and ingest one representative dataset sequence; do not download
-   a full corpus first.
-5. Reproduce one stable classical baseline on the same replay contract.
-6. Use the A10 only for a bounded task that benefits from GPU compute; complete
-   M2 before long training, sweeps, or irreplaceable outputs.
-7. Implement the physically anchored compact hybrid candidate and only the
-   controls needed to test its primary hypothesis.
+Execute these as separate small slices; do not combine them into one long phase:
 
-The exact source licence remains a release decision. Worker deletion remains a
+1. Freeze the remaining local-VIO state/frame/time/reset interface.
+2. Add canonical typed camera/IMU/calibration records with synthetic tests.
+3. Add trajectory geometry and one metric at a time, followed by its negative
+   control.
+4. Rights-check and ingest one representative sequence only.
+5. Reproduce one stable classical baseline through the common replay.
+6. If an optional GPU worker is freshly approved and available, run one bounded
+   environment/data smoke.
+7. After ADR-0004 acceptance, implement the direct learned-control API with
+   focused tests.
+8. Run its tiny CPU train/checkpoint/inference smoke.
+9. Run and review one bounded direct-control training configuration.
+10. Implement the anchored-hybrid correction API with focused tests.
+11. Run its tiny CPU train/checkpoint/inference smoke.
+12. Run and review one bounded anchored-hybrid training configuration.
+13. Perform common evaluation and select; export only if the selected candidate
+   has a neural component and deployment scope is later approved.
+
+The exact source licence, mono/stereo decision, model architecture,
+hyperparameters, dataset roles/splits, thresholds, artifact stores, and target
+hardware remain their existing decision gates. Worker deletion remains a
 separate destructive action requiring explicit approval.

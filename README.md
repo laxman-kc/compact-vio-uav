@@ -13,6 +13,14 @@ The repository contains the reproducibility foundation and the first executable
 research primitive: a deterministic causal replay boundary for timestamped
 camera, IMU, and reset events. It does not yet contain an estimator, trained
 model, approved dataset split, deployable runtime, or flight-ready system.
+PyTorch is the proposed framework for future learned-component work, pending
+ADR-0004; MLflow is an optional, currently absent observer. Neither is a current
+package dependency.
+
+A newly created Brev A10 worker was observed `RUNNING`, `READY`, and `HEALTHY`
+on 2026-08-27 and is approved only for the current bounded implementation smoke.
+It is not approved for dataset acquisition or model training and is never
+treated as durable storage. A later task requires fresh owner confirmation.
 
 The project follows these invariants:
 
@@ -23,6 +31,35 @@ The project follows these invariants:
 - All estimator comparisons use one causal data/replay contract and one frozen evaluation protocol.
 - Dataset rights, provenance, grouping, and split membership are recorded before use.
 - Offline results do not authorize ROS/PX4 integration or physical flight.
+
+## Planned research and training path
+
+```text
+local development -> GitHub -> future temporary GPU worker
+                                      |
+approved datasets -> canonical data -> frozen source-group splits
+                                      |
+                  +-------------------+--------------------+
+                  |                   |                    |
+          classical VIO        direct learned VIO    anchored hybrid VIO
+          native execution    proposed framework    proposed framework
+                  |                   |                    |
+                  +-------------------+--------------------+
+                                      |
+                    common causal replay and evaluator
+                                      |
+                         scientific candidate selection
+                                      |
+             native package or checkpoint -> conditional export
+```
+
+Classical VIO is built and evaluated natively; it does not pass through any
+neural training framework. PyTorch is the current proposal for learned and
+hybrid candidates, not an accepted dependency. MLflow may observe a run, but
+versioned configuration, run manifests, artifact hashes, trajectories, and
+reports remain the portable source of truth. ONNX, TensorRT, Jetson, ROS 2, and
+PX4 work begins only if the selected candidate and a later deployment decision
+require it.
 
 ## Documentation map
 
@@ -48,10 +85,13 @@ The project follows these invariants:
 
 ## Foundation checks
 
-The current executable components are a standard-library-only bundle inventory,
-repository policy check, and read-only durability preflight. The inventory
-records every regular file by canonical relative path, byte size, and SHA-256,
-and rejects symbolic links and unsupported filesystem entries.
+The installed package runtime is standard-library-only and currently provides a
+causal replay primitive, bundle inventory/verification, two-copy content audit,
+repository policy check, and read-only durability preflight. The separate
+schema/record validator is development tooling and uses the repository's pinned
+`jsonschema` dependency. The inventory records every regular file by canonical
+relative path, byte size, and SHA-256, and rejects symbolic links and
+unsupported filesystem entries.
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests -v
@@ -96,7 +136,7 @@ dataset adapter or estimator.
 
 ## State ownership
 
-| State | Authoritative location | Brev/A10 treatment |
+| State | Authoritative location | Future temporary-worker treatment |
 |---|---|---|
 | Source, configuration, decisions, manifests | GitHub repository | Clean checkout of an immutable revision |
 | Raw/processed datasets and caches | Location recorded by dataset manifest | Disposable working copy |
@@ -104,11 +144,13 @@ dataset adapter or estimator.
 | Credentials | Approved secret store or local credential mechanism | Never committed; minimum access only |
 
 The artifact destination, recovery copy, retention budget, and cost ceiling are
-unresolved. That does not block local development or short, reproducible A10
-checks made from a pushed Git revision. Important or extended GPU experiments
-that can create irreplaceable results must wait for the storage restore gate in
-the [artifact policy](governance/artifacts/policy.md). Every paid task still has
-a short run plan, time/cost bound, export destination, and teardown owner.
+unresolved. There is no live A10; local development and synthetic CPU tests are
+the active path. A future temporary worker may be used only after fresh owner
+confirmation for a bounded task that benefits from GPU compute and starts from a
+pushed Git revision. Important or extended GPU experiments that can create
+irreplaceable results must wait for the storage restore gate in the
+[artifact policy](governance/artifacts/policy.md). Every paid task still has a
+short run plan, time/cost bound, export destination, and teardown owner.
 
 ## Decision status
 

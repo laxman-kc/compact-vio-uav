@@ -45,9 +45,10 @@ requiring this optional schema.
    parameters before committing a record.
 5. Change the record to `ready_for_owner_review` only when its schema conditions
    are satisfied and every referenced record is non-template evidence.
-6. Obtain an explicit project decision in its ADR. For bounded paid-worker
-   action authority, preserve the owner approval in an `owner_approved` worker
-   record; an informal chat acknowledgement is not a durable approval record.
+6. Obtain an explicit project decision in its ADR. For a bounded worker task,
+   preserve the approved run plan with the run evidence. If the optional worker
+   schema is used, an `owner_approved` record may support that audit; an
+   unauthenticated or unpreserved chat acknowledgement is not durable evidence.
 7. Preserve reviewed records. Correct a material error with a superseding record
    and trace the relationship instead of silently rewriting history.
 
