@@ -455,6 +455,41 @@ result, and explicit remaining blockers.
   training, and created no checkpoint or retained experiment artifact. No Brev
   stop or termination action was taken.
 
+## 2026-08-27 — M7 explicit output-coverage accounting implemented
+
+- Implementation evidence commit:
+  `75d5a3181abace3bb825fe48ea7749f99348bf2d` on branch `main`.
+- Added an immutable nonempty expected-opportunity denominator and a separate
+  ordered outcome ledger. Outcomes must match every independently declared
+  opportunity ID exactly and in order; omitted, extra, duplicate, or reordered
+  outcomes fail rather than increasing apparent coverage.
+- Each outcome records missing, invalid, or valid output state independently
+  from reference availability and explicit usability. A usable outcome requires
+  a valid output plus an available reference; every non-usable outcome retains
+  one or more unique reason codes under named opportunity, classification, and
+  reason-schema identifiers.
+- The summary retains the complete ledger and reports exact expected, produced,
+  missing, invalid, valid, reference-available/unavailable, usable, and
+  non-usable counts plus derived fractions and deterministic multi-label reason
+  counts. Public summaries are recomputed against the ledger so forged count
+  partitions are rejected.
+- This primitive does not infer an output schedule, timestamp association,
+  lifecycle completion, initialization/reset behavior, tracking loss,
+  estimator failure, position accuracy, or a pass/fail threshold. It prevents
+  silent omission inside a declared opportunity set but does not complete
+  `R-RI-004`, `R-EVAL-001`, or M7 by itself.
+- Local verification: all 137 standard-library tests passed; repository policy
+  passed; the pinned schema harness passed 9 schemas and 7 templates; Ruff
+  lint/format, compileall, and `git diff --check` passed. Two focused read-only
+  reviews reported no remaining P0/P1 findings.
+- A read-only Brev observation found `compact-vio-uav-gpu` `RUNNING`, `READY`,
+  and `HEALTHY`. Its clean checkout fast-forwarded to the exact implementation
+  commit, all 137 tests passed, repository policy passed for 73 files, and the
+  checkout remained clean.
+- The A10 smoke installed no dependency, downloaded no dataset, ran no model
+  training, and created no checkpoint or retained experiment artifact. No Brev
+  stop or termination action was taken.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
