@@ -567,6 +567,33 @@ result, and explicit remaining blockers.
   adapter-internal lineage/reset proof, resource timing, ATE/RPE, and scientific
   success criteria remain open. M7 remains in progress.
 
+## 2026-08-27 — M7 exact-pair signed translation residuals implemented
+
+- Implementation evidence commit:
+  `cab6e566e084868c1d975c3fe7051b20485abad8` on branch `main`.
+- Added an ordered, frozen residual series that retains signed
+  estimated-minus-reference Cartesian translation components for every exact
+  sample pair. It reuses the existing explicit exact-association,
+  no-interpolation, no-alignment, and no-scale-correction policy.
+- The residual and RMSE operations now share one exact-pair validator. Empty,
+  partial, reordered, convention-mismatched, non-finite, or numerically
+  unrepresentable differences fail visibly; the stable RMSE accumulator remains
+  unchanged.
+- Added focused controls for signed direction, equal-time sample ordering,
+  offsets, rotations, scale errors, finite extremes, public-record forgery, and
+  integer-difference precision. M7 remains in progress: this is not ATE/RPE,
+  coverage/completion evidence, frame-correctness proof, or a real-data result.
+- Local verification: all 191 standard-library tests passed; repository policy
+  passed for 78 files; the pinned schema harness passed 9 schemas and 7
+  templates; Ruff lint/format, compileall, and `git diff --check` passed. A
+  focused adversarial review reported no remaining P0/P1 findings.
+- A read-only Brev observation found `compact-vio-uav-gpu` `RUNNING`, `READY`,
+  and `HEALTHY`. Its clean checkout fast-forwarded to the implementation commit;
+  all 191 tests and the 78-file repository-policy check passed there.
+- The A10 smoke installed no dependency, downloaded no dataset, executed no VIO
+  algorithm or model training, and created no checkpoint or retained experiment
+  artifact. No Brev stop, reboot, deletion, or termination action was taken.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
