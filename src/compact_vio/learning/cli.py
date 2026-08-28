@@ -62,6 +62,7 @@ class RunSpec:
     dataset_doi: str
     training: TrainingConfig
     training_frame_strides: tuple[int, ...]
+    training_unroll_pairs: int
     splits: SequenceSplits
     integration_only: tuple[str, ...]
     archives: tuple[ArchiveIdentity, ...]
@@ -255,6 +256,11 @@ def load_run_spec(config_path: os.PathLike[str] | str) -> RunSpec:
         training_frame_strides = tuple(sampling["frame_strides"])
     else:
         training_frame_strides = (sampling.get("frame_stride"),)
+    training_unroll_pairs = sampling.get("unroll_pairs", 1)
+    if type(training_unroll_pairs) is not int or training_unroll_pairs <= 0:
+        raise LearningError("sampling.unroll_pairs must be a positive integer")
+    if training.batch_size % training_unroll_pairs:
+        raise LearningError("optimization.batch_size must be divisible by sampling.unroll_pairs")
     experiment_id = _text(document.get("experiment_id"), field="experiment_id")
     split_declared = _text(document.get("split_manifest"), field="split_manifest")
     split_path = _resolve_declared_path(config, split_declared)
@@ -268,6 +274,7 @@ def load_run_spec(config_path: os.PathLike[str] | str) -> RunSpec:
         dataset_doi=doi,
         training=training,
         training_frame_strides=training_frame_strides,  # type: ignore[arg-type]
+        training_unroll_pairs=training_unroll_pairs,
         splits=splits,
         integration_only=integration_only,
         archives=archives,
@@ -582,6 +589,217 @@ def _write_predictions_and_metrics(
     return sequence_results
 
 
+def _write_stateful_predictions_and_metrics(
+    *,
+    model: Any,
+    sequences: Sequence[EuRoCSequence],
+    config: TrainingConfig,
+    device: Any,
+    output_path: Path,
+    data_loader_type: Any,
+    dataset_type: Any,
+    collate: Any,
+    predict: Any,
+    subset_type: Any,
+    torch_module: Any,
+    evaluation_unroll_pairs: int,
+    maximum_samples: int | None = None,
+) -> dict[str, object]:
+    """Evaluate native stride-1 pairs with explicit causal fusion-state carry."""
+
+    if type(evaluation_unroll_pairs) is not int or evaluation_unroll_pairs <= 0:
+        raise LearningError("evaluation_unroll_pairs must be a positive integer")
+    sequence_results: dict[str, object] = {}
+    try:
+        output_handle = output_path.open("x", encoding="utf-8")
+    except OSError as exc:
+        raise LearningError(f"cannot create predictions artifact {output_path}: {exc}") from exc
+    with output_handle:
+        for sequence in sequences:
+            full_dataset = dataset_type(
+                (sequence,),
+                unroll_pairs=evaluation_unroll_pairs,
+                model_config=config.model,
+                data_config=config.data,
+                frame_strides=(1,),
+            )
+            eligible_pair_count = full_dataset.pair_count
+            dataset = full_dataset
+            if maximum_samples is not None:
+                maximum_chunks = max(1, maximum_samples // evaluation_unroll_pairs)
+                dataset = subset_type(
+                    dataset,
+                    _bounded_subset_indices(len(dataset), min(maximum_chunks, len(dataset))),
+                )
+            loader = data_loader_type(
+                dataset,
+                batch_size=1,
+                shuffle=False,
+                num_workers=config.num_workers,
+                collate_fn=collate,
+                pin_memory=device.type == "cuda",
+                persistent_workers=config.num_workers > 0,
+            )
+            reference: list[RelativePoseIncrement] = []
+            predicted: list[RelativePoseIncrement] = []
+            batch_latencies_seconds: list[float] = []
+            translation_squared_error = 0.0
+            rotation_squared_error = 0.0
+            selected_pair_count = 0
+            sample_count = 0
+            state_reset_count = 0
+            fusion_state = None
+            previous_chain_id: str | None = None
+            previous_chunk_index: int | None = None
+            model.zero_grad(set_to_none=True)
+            if device.type == "cuda":
+                torch_module.cuda.empty_cache()
+                torch_module.cuda.reset_peak_memory_stats(device)
+            for batch in loader:
+                if len(batch.chain_ids) != 1:
+                    raise LearningError("stateful evaluation requires one sequence chunk per batch")
+                chain_id = batch.chain_ids[0]
+                chunk_index = batch.chunk_indices[0]
+                contiguous = (
+                    previous_chain_id == chain_id
+                    and previous_chunk_index is not None
+                    and chunk_index == previous_chunk_index + 1
+                )
+                if batch.chain_starts[0] or not contiguous:
+                    fusion_state = None
+                    state_reset_count += 1
+                if device.type == "cuda":
+                    torch_module.cuda.synchronize(device)
+                inference_started = time.perf_counter()
+                prediction = predict(
+                    model,
+                    batch,
+                    device=device,
+                    initial_fusion_state=fusion_state,
+                )
+                if device.type == "cuda":
+                    torch_module.cuda.synchronize(device)
+                batch_latencies_seconds.append(time.perf_counter() - inference_started)
+                fusion_state = prediction.final_fusion_state
+                if not torch_module.equal(prediction.step_mask, batch.step_mask):
+                    raise LearningError("stateful prediction mask differs from the source batch")
+                for step_index, active in enumerate(batch.step_mask[0].tolist()):
+                    if not active:
+                        continue
+                    selected_pair_count += 1
+                    identity = batch.identities[0][step_index]
+                    if identity is None:
+                        raise LearningError("active stateful step is missing its source identity")
+                    truth = batch.target_motion[0, step_index].detach().to(device="cpu")
+                    predicted_row = prediction.motion_vectors[0, step_index]
+                    error = predicted_row - truth
+                    translation_squared_error += float(error[:3].square().sum())
+                    rotation_squared_error += float(error[3:].square().sum())
+                    sample_count += 1
+                    sample_id = f"{identity.previous_timestamp_ns}:{identity.current_timestamp_ns}"
+                    truth_values = tuple(float(value) for value in truth.tolist())
+                    predicted_values = tuple(float(value) for value in predicted_row.tolist())
+                    reference.append(
+                        RelativePoseIncrement(
+                            sequence_id=identity.sequence_id,
+                            sample_id=sample_id,
+                            start_timestamp_ns=identity.previous_timestamp_ns,
+                            end_timestamp_ns=identity.current_timestamp_ns,
+                            translation_previous_body_m=truth_values[:3],  # type: ignore[arg-type]
+                            rotation_vector_previous_to_current_rad=truth_values[3:],  # type: ignore[arg-type]
+                        )
+                    )
+                    predicted.append(
+                        RelativePoseIncrement(
+                            sequence_id=identity.sequence_id,
+                            sample_id=sample_id,
+                            start_timestamp_ns=identity.previous_timestamp_ns,
+                            end_timestamp_ns=identity.current_timestamp_ns,
+                            translation_previous_body_m=predicted_values[:3],  # type: ignore[arg-type]
+                            rotation_vector_previous_to_current_rad=predicted_values[3:],  # type: ignore[arg-type]
+                        )
+                    )
+                    json.dump(
+                        {
+                            "sequence_id": identity.sequence_id,
+                            "previous_timestamp_ns": identity.previous_timestamp_ns,
+                            "current_timestamp_ns": identity.current_timestamp_ns,
+                            "prediction": {
+                                "translation_previous_body_m": list(predicted_values[:3]),
+                                "rotation_vector_previous_to_current_rad": list(
+                                    predicted_values[3:]
+                                ),
+                            },
+                            "reference": {
+                                "translation_previous_body_m": list(truth_values[:3]),
+                                "rotation_vector_previous_to_current_rad": list(truth_values[3:]),
+                            },
+                        },
+                        output_handle,
+                        sort_keys=True,
+                        allow_nan=False,
+                    )
+                    output_handle.write("\n")
+                previous_chain_id = chain_id
+                previous_chunk_index = chunk_index
+                if batch.chain_ends[0]:
+                    fusion_state = None
+            if sample_count <= 0 or sample_count != selected_pair_count:
+                raise LearningError(
+                    f"test sequence {sequence.sequence_id!r} produced incomplete stateful output"
+                )
+            metrics = evaluate_relative_pose_sequence(tuple(reference), tuple(predicted))
+            zero_metrics = zero_motion_baseline(tuple(reference))
+            inference_seconds = math.fsum(batch_latencies_seconds)
+            sequence_results[sequence.sequence_id] = {
+                "pair_translation_rmse_m": math.sqrt(translation_squared_error / sample_count),
+                "pair_rotation_rmse_rad": math.sqrt(rotation_squared_error / sample_count),
+                "se3": asdict(metrics),
+                "zero_motion_se3": asdict(zero_metrics),
+                "coverage": {
+                    "eligible_pair_count": eligible_pair_count,
+                    "selected_pair_count": selected_pair_count,
+                    "produced_pair_count": sample_count,
+                    "produced_fraction_of_selected": sample_count / selected_pair_count,
+                },
+                "stateful_inference": {
+                    "evaluation_unroll_pairs": evaluation_unroll_pairs,
+                    "state_reset_count": state_reset_count,
+                    "state_carry_policy": "carry-only-contiguous-same-chain/v1",
+                },
+                "inference": {
+                    "scope": (
+                        "predict-sequence-batch-model-placement-eval-host-to-device-forward-"
+                        "and-device-to-host"
+                    ),
+                    "dedicated_warmup_batch_count": 0,
+                    "batch_count": len(batch_latencies_seconds),
+                    "total_seconds": inference_seconds,
+                    "pairs_per_second": sample_count / inference_seconds,
+                    "batch_latency_p50_ms": 1000.0
+                    * _empirical_percentile(batch_latencies_seconds, 0.5),
+                    "batch_latency_p95_ms": 1000.0
+                    * _empirical_percentile(batch_latencies_seconds, 0.95),
+                    "cuda_peak_allocated_bytes": (
+                        torch_module.cuda.max_memory_allocated(device)
+                        if device.type == "cuda"
+                        else None
+                    ),
+                    "cuda_peak_reserved_bytes": (
+                        torch_module.cuda.max_memory_reserved(device)
+                        if device.type == "cuda"
+                        else None
+                    ),
+                },
+            }
+        try:
+            output_handle.flush()
+            os.fsync(output_handle.fileno())
+        except OSError as exc:
+            raise LearningError(f"cannot finalize predictions artifact: {exc}") from exc
+    return sequence_results
+
+
 def _run(args: argparse.Namespace) -> int:
     try:
         import torch
@@ -591,10 +809,15 @@ def _run(args: argparse.Namespace) -> int:
             CheckpointProvenance,
             load_checkpoint,
         )
-        from compact_vio.learning.dataset import EuRoCPairDataset, collate_vio_batch
-        from compact_vio.learning.inference import predict_batch
+        from compact_vio.learning.dataset import (
+            EuRoCPairDataset,
+            EuRoCSequenceDataset,
+            collate_vio_batch,
+            collate_vio_sequence_batch,
+        )
+        from compact_vio.learning.inference import predict_batch, predict_sequence_batch
         from compact_vio.learning.model import CompactVIO
-        from compact_vio.learning.training import fit, seed_everything
+        from compact_vio.learning.training import fit, fit_sequence, seed_everything
     except ImportError as exc:
         raise LearningDependencyError(
             "training requires the project train extra (PyTorch, Pillow, and PyYAML)"
@@ -613,46 +836,90 @@ def _run(args: argparse.Namespace) -> int:
     test_sequences = _load_declared_sequences(data_root, spec.splits.test)
     all_sequences = (*train_sequences, *validation_sequences, *test_sequences)
 
-    dataset = EuRoCPairDataset
-    train_dataset = dataset(
-        train_sequences,
-        model_config=runtime_config.model,
-        data_config=runtime_config.data,
-        frame_strides=spec.training_frame_strides,
-    )
-    validation_dataset = dataset(
-        validation_sequences,
-        model_config=runtime_config.model,
-        data_config=runtime_config.data,
-        frame_strides=spec.training_frame_strides,
-    )
-    if args.smoke:
-        train_dataset = Subset(
-            train_dataset,
-            _bounded_subset_indices(len(train_dataset), _SMOKE_TRAIN_SAMPLES),
+    stateful = spec.training_unroll_pairs > 1
+    if stateful:
+        validation_unroll_pairs = spec.training_unroll_pairs if args.smoke else 128
+        train_dataset = EuRoCSequenceDataset(
+            train_sequences,
+            unroll_pairs=spec.training_unroll_pairs,
+            model_config=runtime_config.model,
+            data_config=runtime_config.data,
+            frame_strides=spec.training_frame_strides,
         )
-        validation_dataset = Subset(
-            validation_dataset,
-            _bounded_subset_indices(len(validation_dataset), _SMOKE_EVALUATION_SAMPLES),
+        validation_dataset = EuRoCSequenceDataset(
+            validation_sequences,
+            unroll_pairs=validation_unroll_pairs,
+            model_config=runtime_config.model,
+            data_config=runtime_config.data,
+            frame_strides=spec.training_frame_strides,
         )
+        if args.smoke:
+            train_dataset = Subset(
+                train_dataset,
+                _bounded_subset_indices(
+                    len(train_dataset),
+                    max(1, _SMOKE_TRAIN_SAMPLES // spec.training_unroll_pairs),
+                ),
+            )
+            validation_dataset = Subset(
+                validation_dataset,
+                range(
+                    min(
+                        len(validation_dataset),
+                        max(1, _SMOKE_EVALUATION_SAMPLES // validation_unroll_pairs),
+                    )
+                ),
+            )
+        training_batch_size = runtime_config.batch_size // spec.training_unroll_pairs
+        training_collate = collate_vio_sequence_batch
+        validation_collate = collate_vio_sequence_batch
+        fit_function = fit_sequence
+    else:
+        train_dataset = EuRoCPairDataset(
+            train_sequences,
+            model_config=runtime_config.model,
+            data_config=runtime_config.data,
+            frame_strides=spec.training_frame_strides,
+        )
+        validation_dataset = EuRoCPairDataset(
+            validation_sequences,
+            model_config=runtime_config.model,
+            data_config=runtime_config.data,
+            frame_strides=spec.training_frame_strides,
+        )
+        if args.smoke:
+            train_dataset = Subset(
+                train_dataset,
+                _bounded_subset_indices(len(train_dataset), _SMOKE_TRAIN_SAMPLES),
+            )
+            validation_dataset = Subset(
+                validation_dataset,
+                _bounded_subset_indices(len(validation_dataset), _SMOKE_EVALUATION_SAMPLES),
+            )
+        training_batch_size = runtime_config.batch_size
+        training_collate = collate_vio_batch
+        validation_collate = collate_vio_batch
+        fit_function = fit
     generator = torch.Generator()
     generator.manual_seed(runtime_config.seed)
     loader_options = {
-        "batch_size": runtime_config.batch_size,
         "num_workers": runtime_config.num_workers,
-        "collate_fn": collate_vio_batch,
         "pin_memory": device.type == "cuda",
         "persistent_workers": runtime_config.num_workers > 0,
         "worker_init_fn": _seed_worker,
     }
     train_loader = DataLoader(
         train_dataset,
+        batch_size=training_batch_size,
+        collate_fn=training_collate,
         shuffle=True,
         generator=generator,
         **loader_options,
     )
     validation_loader = DataLoader(
         validation_dataset,
+        batch_size=1 if stateful else runtime_config.batch_size,
+        collate_fn=validation_collate,
         shuffle=False,
         **loader_options,
     )
@@ -670,6 +937,7 @@ def _run(args: argparse.Namespace) -> int:
             f"{spec.experiment_id}:config={spec.config_sha256}:"
             f"split={spec.split_sha256}:"
             f"strides={','.join(str(stride) for stride in spec.training_frame_strides)}:"
+            f"unroll={spec.training_unroll_pairs}:"
             f"mode={'smoke' if args.smoke else 'full'}"
         ),
         train_sequence_ids=spec.splits.train,
@@ -696,7 +964,7 @@ def _run(args: argparse.Namespace) -> int:
             flush=True,
         )
 
-    fit_result = fit(
+    fit_result = fit_function(
         model,
         train_loader,
         validation_loader,
@@ -711,20 +979,37 @@ def _run(args: argparse.Namespace) -> int:
     history_path = output / "training-history.json"
     _write_json(history_path, history)
     predictions_path = output / "test-predictions.jsonl"
-    test_metrics = _write_predictions_and_metrics(
-        model=model,
-        sequences=test_sequences,
-        config=runtime_config,
-        device=device,
-        output_path=predictions_path,
-        data_loader_type=DataLoader,
-        dataset_type=EuRoCPairDataset,
-        collate=collate_vio_batch,
-        predict=predict_batch,
-        subset_type=Subset,
-        torch_module=torch,
-        maximum_samples=_SMOKE_EVALUATION_SAMPLES if args.smoke else None,
-    )
+    if stateful:
+        test_metrics = _write_stateful_predictions_and_metrics(
+            model=model,
+            sequences=test_sequences,
+            config=runtime_config,
+            device=device,
+            output_path=predictions_path,
+            data_loader_type=DataLoader,
+            dataset_type=EuRoCSequenceDataset,
+            collate=collate_vio_sequence_batch,
+            predict=predict_sequence_batch,
+            subset_type=Subset,
+            torch_module=torch,
+            evaluation_unroll_pairs=spec.training_unroll_pairs if args.smoke else 128,
+            maximum_samples=_SMOKE_EVALUATION_SAMPLES if args.smoke else None,
+        )
+    else:
+        test_metrics = _write_predictions_and_metrics(
+            model=model,
+            sequences=test_sequences,
+            config=runtime_config,
+            device=device,
+            output_path=predictions_path,
+            data_loader_type=DataLoader,
+            dataset_type=EuRoCPairDataset,
+            collate=collate_vio_batch,
+            predict=predict_batch,
+            subset_type=Subset,
+            torch_module=torch,
+            maximum_samples=_SMOKE_EVALUATION_SAMPLES if args.smoke else None,
+        )
     test_metrics_path = output / "test-metrics.json"
     _write_json(test_metrics_path, test_metrics)
     checkpoint_sha256 = sha256_file(checkpoint_path)
@@ -734,6 +1019,12 @@ def _run(args: argparse.Namespace) -> int:
         "experiment_id": spec.experiment_id,
         "execution_mode": "smoke" if args.smoke else "full",
         "training_frame_strides": list(spec.training_frame_strides),
+        "training_unroll_pairs": spec.training_unroll_pairs,
+        "fusion_state_policy": (
+            "zero-per-independent-pair/v1"
+            if spec.training_unroll_pairs == 1
+            else "zero-per-training-chunk-carry-contiguous-evaluation-chain/v1"
+        ),
         "runtime_config": runtime_config.to_dict(),
         "started_at": started_at,
         "completed_at": _utc_now(),

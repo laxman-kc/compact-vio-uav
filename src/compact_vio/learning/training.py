@@ -5,13 +5,13 @@ from __future__ import annotations
 import math
 import os
 import random
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
 from compact_vio.learning.checkpoint import CheckpointProvenance, save_checkpoint
 from compact_vio.learning.config import TrainingConfig
-from compact_vio.learning.dataset import VIOBatch
+from compact_vio.learning.dataset import VIOBatch, VIOSequenceBatch
 from compact_vio.learning.errors import LearningDependencyError, LearningError
 from compact_vio.learning.model import CompactVIO
 
@@ -176,28 +176,79 @@ def _forward_loss(
     return total, translation, rotation, prediction
 
 
+def _forward_sequence_loss(
+    model: CompactVIO,
+    batch: VIOSequenceBatch,
+    config: TrainingConfig,
+    *,
+    fusion_state: Tensor | None = None,
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+    """Return masked sequence losses, valid predictions/targets, and final state."""
+
+    output = model.forward_sequence(
+        batch.frame_pairs,
+        batch.imu,
+        batch.imu_lengths,
+        batch.delta_time_s,
+        batch.step_mask,
+        fusion_state,
+    )
+    prediction = output.motion_vector[batch.step_mask]
+    target = batch.target_motion[batch.step_mask]
+    total, translation, rotation = motion_loss(
+        prediction,
+        target,
+        translation_weight=config.translation_loss_weight,
+        rotation_weight=config.rotation_loss_weight,
+    )
+    return (
+        total,
+        translation,
+        rotation,
+        prediction,
+        target,
+        output.final_fusion_state,
+    )
+
+
 def train_one_epoch(
     model: CompactVIO,
-    batches: Iterable[VIOBatch],
+    batches: Iterable[VIOBatch | VIOSequenceBatch],
     *,
     optimizer: Optimizer,
     device: torch.device | str,
     config: TrainingConfig,
     scaler: torch.amp.GradScaler | None = None,
 ) -> EpochMetrics:
-    """Train for one complete loader pass with independent frame-pair samples."""
+    """Train one loader pass with legacy pairs or reset-per-chunk sequences.
+
+    Every :class:`VIOSequenceBatch` row starts from a zero fusion state. The
+    graph spans all unmasked steps in that chunk and ends at the optimizer
+    update, which is bounded truncated BPTT without cross-chunk leakage.
+    """
 
     model.train()
     actual_device = torch.device(device)
     amp_enabled = config.use_amp and actual_device.type == "cuda"
     accumulator = _Accumulator()
     for host_batch in batches:
-        if not isinstance(host_batch, VIOBatch):
-            raise LearningError("data loader must yield VIOBatch records")
+        if not isinstance(host_batch, (VIOBatch, VIOSequenceBatch)):
+            raise LearningError("data loader must yield VIOBatch or VIOSequenceBatch records")
         batch = host_batch.to(actual_device, non_blocking=actual_device.type == "cuda")
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(device_type=actual_device.type, enabled=amp_enabled):
-            total, translation, rotation, prediction = _forward_loss(model, batch, config)
+            if isinstance(batch, VIOSequenceBatch):
+                (
+                    total,
+                    translation,
+                    rotation,
+                    prediction,
+                    target,
+                    _,
+                ) = _forward_sequence_loss(model, batch, config)
+            else:
+                total, translation, rotation, prediction = _forward_loss(model, batch, config)
+                target = batch.target_motion
         if scaler is not None and amp_enabled:
             scaler.scale(total).backward()
             scaler.unscale_(optimizer)
@@ -213,7 +264,7 @@ def train_one_epoch(
             translation=translation,
             rotation=rotation,
             prediction=prediction,
-            target=batch.target_motion,
+            target=target,
         )
     return accumulator.finish()
 
@@ -221,37 +272,93 @@ def train_one_epoch(
 @torch.inference_mode()
 def evaluate(
     model: CompactVIO,
-    batches: Iterable[VIOBatch],
+    batches: Iterable[VIOBatch | VIOSequenceBatch],
     *,
     device: torch.device | str,
     config: TrainingConfig,
 ) -> EpochMetrics:
-    """Evaluate a held-out loader without gradients or stochastic dropout."""
+    """Evaluate legacy pairs or causally ordered stateful sequence chunks.
+
+    Sequence evaluation requires batch size one. State is carried only when
+    ``chain_id`` matches and ``chunk_index`` is exactly consecutive, and is
+    detached at every chunk boundary. ``chain_start`` always resets state;
+    ``chain_end`` removes it. These checks prevent state leakage across EuRoC
+    sequence, stride, phase, or continuity-segment chains.
+    """
 
     model.eval()
     actual_device = torch.device(device)
     amp_enabled = config.use_amp and actual_device.type == "cuda"
     accumulator = _Accumulator()
+    sequence_states: dict[str, Tensor] = {}
+    next_chunk_indices: dict[str, int] = {}
+    completed_chains: set[str] = set()
+    batch_kind: type[VIOBatch] | type[VIOSequenceBatch] | None = None
     for host_batch in batches:
-        if not isinstance(host_batch, VIOBatch):
-            raise LearningError("data loader must yield VIOBatch records")
+        if not isinstance(host_batch, (VIOBatch, VIOSequenceBatch)):
+            raise LearningError("data loader must yield VIOBatch or VIOSequenceBatch records")
+        current_kind = VIOSequenceBatch if isinstance(host_batch, VIOSequenceBatch) else VIOBatch
+        if batch_kind is None:
+            batch_kind = current_kind
+        elif batch_kind is not current_kind:
+            raise LearningError("evaluation loader must not mix pair and sequence batch types")
         batch = host_batch.to(actual_device, non_blocking=actual_device.type == "cuda")
-        with torch.autocast(device_type=actual_device.type, enabled=amp_enabled):
-            total, translation, rotation, prediction = _forward_loss(model, batch, config)
+        if isinstance(batch, VIOSequenceBatch):
+            if batch.frame_pairs.shape[0] != 1:
+                raise LearningError("stateful evaluation requires sequence batch size one")
+            chain_id = batch.chain_ids[0]
+            chunk_index = batch.chunk_indices[0]
+            if batch.chain_starts[0]:
+                if chunk_index != 0:
+                    raise LearningError("a chain_start sequence chunk must have chunk_index zero")
+                if chain_id in sequence_states or chain_id in completed_chains:
+                    raise LearningError("stateful evaluation encountered a repeated chain start")
+                fusion_state = None
+            else:
+                if chain_id not in sequence_states:
+                    raise LearningError("stateful evaluation chunk has no preceding chain state")
+                if next_chunk_indices[chain_id] != chunk_index:
+                    raise LearningError("stateful evaluation chunks must be exactly contiguous")
+                fusion_state = sequence_states[chain_id]
+            with torch.autocast(device_type=actual_device.type, enabled=amp_enabled):
+                (
+                    total,
+                    translation,
+                    rotation,
+                    prediction,
+                    target,
+                    final_state,
+                ) = _forward_sequence_loss(
+                    model,
+                    batch,
+                    config,
+                    fusion_state=fusion_state,
+                )
+            if batch.chain_ends[0]:
+                sequence_states.pop(chain_id, None)
+                next_chunk_indices.pop(chain_id, None)
+                completed_chains.add(chain_id)
+            else:
+                sequence_states[chain_id] = model.detach_fusion_state(final_state)
+                next_chunk_indices[chain_id] = chunk_index + 1
+        else:
+            with torch.autocast(device_type=actual_device.type, enabled=amp_enabled):
+                total, translation, rotation, prediction = _forward_loss(model, batch, config)
+            target = batch.target_motion
         accumulator.add(
             total=total,
             translation=translation,
             rotation=rotation,
             prediction=prediction,
-            target=batch.target_motion,
+            target=target,
         )
     return accumulator.finish()
 
 
 def fit(
     model: CompactVIO,
-    train_batches: Iterable[VIOBatch],
-    validation_batches: Iterable[VIOBatch],
+    train_batches: Iterable[VIOBatch | VIOSequenceBatch],
+    validation_batches: Iterable[VIOBatch | VIOSequenceBatch],
     *,
     device: torch.device | str,
     config: TrainingConfig,
@@ -261,12 +368,11 @@ def fit(
 ) -> FitResult:
     """Optimize and atomically retain the lowest validation-loss checkpoint.
 
-    V1 treats each causal frame pair as an independent optimization sample and
-    supplies a fresh zero state to its frame-pair fusion gate. Cross-frame
-    sequence-state training is not claimed. ``progress_callback`` runs
-    once after each completed train/validation epoch and any best-checkpoint
-    write, making long GPU runs observable without coupling this module to a
-    particular logger.
+    Legacy loaders retain independent-pair behavior. Sequence loaders perform
+    bounded reset-per-chunk BPTT for training and checked causal state carry for
+    validation. ``progress_callback`` runs once after each completed
+    train/validation epoch and any best-checkpoint write, making long GPU runs
+    observable without coupling this module to a particular logger.
     """
 
     if not isinstance(model, CompactVIO):
@@ -332,11 +438,52 @@ def fit(
     )
 
 
+def fit_sequence(
+    model: CompactVIO,
+    train_batches: Iterable[VIOSequenceBatch],
+    validation_batches: Iterable[VIOSequenceBatch],
+    *,
+    device: torch.device | str,
+    config: TrainingConfig,
+    checkpoint_path: Path | str,
+    provenance: CheckpointProvenance,
+    progress_callback: Callable[[int, EpochMetrics, EpochMetrics], None] | None = None,
+) -> FitResult:
+    """Fit bounded recurrent chunks using reset-train/carry-validation policy.
+
+    This named entry point makes the v3 temporal policy explicit while sharing
+    the optimizer, checkpoint schema, and deterministic AMP implementation with
+    :func:`fit`. The sequence batch type is checked inside every epoch.
+    """
+
+    class _SequenceBatchView:
+        def __init__(self, source: Iterable[VIOSequenceBatch]) -> None:
+            self.source = source
+
+        def __iter__(self) -> Iterator[VIOSequenceBatch]:
+            for batch in self.source:
+                if not isinstance(batch, VIOSequenceBatch):
+                    raise LearningError("fit_sequence loaders must yield VIOSequenceBatch records")
+                yield batch
+
+    return fit(
+        model,
+        _SequenceBatchView(train_batches),
+        _SequenceBatchView(validation_batches),
+        device=device,
+        config=config,
+        checkpoint_path=checkpoint_path,
+        provenance=provenance,
+        progress_callback=progress_callback,
+    )
+
+
 __all__ = [
     "EpochMetrics",
     "FitResult",
     "evaluate",
     "fit",
+    "fit_sequence",
     "motion_loss",
     "seed_everything",
     "train_one_epoch",

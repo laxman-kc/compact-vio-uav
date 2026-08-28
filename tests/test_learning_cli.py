@@ -18,6 +18,7 @@ from compact_vio.learning.errors import LearningError
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = REPOSITORY_ROOT / "configs/training/euroc_compact_vio_v1.json"
 STRIDE_CONFIG_PATH = REPOSITORY_ROOT / "configs/training/euroc_compact_vio_v2_stride_augmented.json"
+STATEFUL_CONFIG_PATH = REPOSITORY_ROOT / "configs/training/euroc_compact_vio_v3_stateful.json"
 SPLIT_PATH = REPOSITORY_ROOT / "configs/data/euroc_vicon_v1.json"
 
 
@@ -32,6 +33,7 @@ class LearningCliTests(unittest.TestCase):
         self.assertEqual(spec.training.data.image_mean, 0.5)
         self.assertEqual(spec.training.data.image_std, 0.25)
         self.assertEqual(spec.training_frame_strides, (1,))
+        self.assertEqual(spec.training_unroll_pairs, 1)
         self.assertEqual(
             spec.splits.train,
             ("V1_02_medium", "V2_01_easy", "V2_02_medium"),
@@ -51,10 +53,21 @@ class LearningCliTests(unittest.TestCase):
 
         self.assertEqual(augmented.training, baseline.training)
         self.assertEqual(augmented.training_frame_strides, (1, 2))
+        self.assertEqual(augmented.training_unroll_pairs, 1)
         self.assertEqual(
             augmented.experiment_id,
             "euroc-compact-vio-v2-stride-augmented",
         )
+
+    def test_stateful_config_changes_only_the_declared_unroll(self) -> None:
+        augmented = load_run_spec(STRIDE_CONFIG_PATH)
+        stateful = load_run_spec(STATEFUL_CONFIG_PATH)
+
+        self.assertEqual(stateful.training, augmented.training)
+        self.assertEqual(stateful.training_frame_strides, (1, 2))
+        self.assertEqual(stateful.training_unroll_pairs, 8)
+        self.assertEqual(stateful.training.batch_size // stateful.training_unroll_pairs, 8)
+        self.assertEqual(stateful.experiment_id, "euroc-compact-vio-v3-stateful")
 
     def test_overlapping_integration_and_train_split_is_rejected(self) -> None:
         config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))

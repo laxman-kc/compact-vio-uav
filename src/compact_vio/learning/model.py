@@ -29,6 +29,27 @@ class VIOOutput:
         return torch.cat((self.relative_translation_m, self.relative_rotation_vector_rad), dim=-1)
 
 
+@dataclass(frozen=True, slots=True)
+class VIOSequenceOutput:
+    """Masked relative-motion predictions and the final recurrent state.
+
+    Motion tensors have shape ``[B, S, 3]``, ``step_mask`` has shape
+    ``[B, S]``, and ``final_fusion_state`` has shape ``[B, F]``. Masked
+    motion rows are exactly zero and do not update the recurrent state.
+    """
+
+    relative_translation_m: Tensor
+    relative_rotation_vector_rad: Tensor
+    step_mask: Tensor
+    final_fusion_state: Tensor
+
+    @property
+    def motion_vector(self) -> Tensor:
+        """Return translation and rotation concatenated as ``[B, S, 6]``."""
+
+        return torch.cat((self.relative_translation_m, self.relative_rotation_vector_rad), dim=-1)
+
+
 class ConvNormActivation(nn.Sequential):
     """Bias-free convolution followed by group normalization and SiLU."""
 
@@ -55,9 +76,10 @@ class CompactVIO(nn.Module):
     """Predict pairwise 6-DoF motion from two images and causal IMU samples.
 
     The visual encoder sees only the previous/current grayscale frame pair. The
-    GRU sees exactly the supplied ``(previous, current]`` IMU sequence. A GRUCell
-    gates the fused frame-pair features from a fresh zero state. V1 intentionally
-    accepts and emits no cross-frame state because it is not trained statefully.
+    GRU sees exactly the supplied ``(previous, current]`` IMU sequence. Legacy
+    ``forward`` retains independent-pair behavior by default, while ``step`` and
+    ``forward_sequence`` make the fusion-GRU state explicit for bounded causal
+    unrolling.
     """
 
     def __init__(self, config: ModelConfig | None = None) -> None:
@@ -111,10 +133,10 @@ class CompactVIO(nn.Module):
 
         return sum(parameter.numel() for parameter in self.parameters() if parameter.requires_grad)
 
-    def _initial_fusion_state(
+    def initial_fusion_state(
         self, batch_size: int, *, device: torch.device | None = None
     ) -> Tensor:
-        """Create V1's mandatory per-frame-pair zero fusion state."""
+        """Create a zero fusion state with exact shape ``[B, F]``."""
 
         if type(batch_size) is not int or batch_size <= 0:
             raise LearningError("batch_size must be a positive integer")
@@ -124,19 +146,51 @@ class CompactVIO(nn.Module):
             device=device or reference.device,
         )
 
-    def forward(
+    def _initial_fusion_state(
+        self, batch_size: int, *, device: torch.device | None = None
+    ) -> Tensor:
+        """Backward-compatible alias for :meth:`initial_fusion_state`."""
+
+        return self.initial_fusion_state(batch_size, device=device)
+
+    def detach_fusion_state(self, fusion_state: Tensor) -> Tensor:
+        """Detach a valid ``[B, F]`` state at a truncation boundary."""
+
+        if not isinstance(fusion_state, Tensor):
+            raise LearningError("fusion_state must be a torch tensor")
+        if fusion_state.ndim != 2 or fusion_state.shape[1] != self.config.fusion_hidden_dim:
+            raise LearningError("fusion_state must have shape [batch, fusion_hidden_dim]")
+        if not fusion_state.is_floating_point() or not torch.isfinite(fusion_state).all():
+            raise LearningError("fusion_state must contain finite floating-point values")
+        return fusion_state.detach()
+
+    def _validated_fusion_state(
+        self,
+        fusion_state: Tensor | None,
+        *,
+        batch_size: int,
+        device: torch.device,
+    ) -> Tensor:
+        if fusion_state is None:
+            return self.initial_fusion_state(batch_size, device=device)
+        if not isinstance(fusion_state, Tensor):
+            raise LearningError("fusion_state must be a torch tensor or None")
+        if fusion_state.shape != (batch_size, self.config.fusion_hidden_dim):
+            raise LearningError("fusion_state must have shape [batch, fusion_hidden_dim]")
+        if not fusion_state.is_floating_point() or not torch.isfinite(fusion_state).all():
+            raise LearningError("fusion_state must contain finite floating-point values")
+        if fusion_state.device != device:
+            raise LearningError("fusion_state and model inputs must share a device")
+        return fusion_state
+
+    def _encode_pair_batch(
         self,
         frame_pairs: Tensor,
         imu: Tensor,
         imu_lengths: Tensor,
         delta_time_s: Tensor,
-    ) -> VIOOutput:
-        """Run a causal batch.
-
-        Expected shapes are ``[B,2,H,W]``, ``[B,T,6]``, ``[B]``, and
-        ``[B,1]``. Padding after each declared IMU length is ignored by the
-        packed GRU, which makes variable-rate windows deterministic.
-        """
+    ) -> Tensor:
+        """Validate and encode one flattened batch of causal frame pairs."""
 
         if frame_pairs.ndim != 4 or frame_pairs.shape[1] != 2:
             raise LearningError("frame_pairs must have shape [batch, 2, height, width]")
@@ -184,17 +238,164 @@ class CompactVIO(nn.Module):
             enforce_sorted=False,
         )
         _, imu_hidden = self.imu_encoder(packed)
-        fused = self.fusion_projection(
+        return self.fusion_projection(
             torch.cat((visual_features, imu_hidden[-1], delta_time_s), dim=-1)
         )
-        fusion_state = self.fusion_recurrence(
-            fused, self._initial_fusion_state(batch_size, device=frame_pairs.device)
+
+    def step(
+        self,
+        frame_pairs: Tensor,
+        imu: Tensor,
+        imu_lengths: Tensor,
+        delta_time_s: Tensor,
+        fusion_state: Tensor | None = None,
+    ) -> tuple[VIOOutput, Tensor]:
+        """Run one causal step and return its output plus next ``[B, F]`` state."""
+
+        fused = self._encode_pair_batch(frame_pairs, imu, imu_lengths, delta_time_s)
+        previous_state = self._validated_fusion_state(
+            fusion_state,
+            batch_size=frame_pairs.shape[0],
+            device=frame_pairs.device,
         )
-        motion = self.motion_head(fusion_state)
-        return VIOOutput(
-            relative_translation_m=motion[:, :3],
-            relative_rotation_vector_rad=motion[:, 3:],
+        next_state = self.fusion_recurrence(fused, previous_state)
+        motion = self.motion_head(next_state)
+        return (
+            VIOOutput(
+                relative_translation_m=motion[:, :3],
+                relative_rotation_vector_rad=motion[:, 3:],
+            ),
+            next_state,
+        )
+
+    def forward(
+        self,
+        frame_pairs: Tensor,
+        imu: Tensor,
+        imu_lengths: Tensor,
+        delta_time_s: Tensor,
+        fusion_state: Tensor | None = None,
+    ) -> VIOOutput:
+        """Run a causal batch.
+
+        Expected shapes are ``[B,2,H,W]``, ``[B,T,6]``, ``[B]``, and
+        ``[B,1]``. Padding after each declared IMU length is ignored by the
+        packed GRU, which makes variable-rate windows deterministic.
+        """
+
+        output, _ = self.step(
+            frame_pairs,
+            imu,
+            imu_lengths,
+            delta_time_s,
+            fusion_state,
+        )
+        return output
+
+    def forward_sequence(
+        self,
+        frame_pairs: Tensor,
+        imu: Tensor,
+        imu_lengths: Tensor,
+        delta_time_s: Tensor,
+        step_mask: Tensor,
+        fusion_state: Tensor | None = None,
+    ) -> VIOSequenceOutput:
+        """Run a padded causal sequence with a masked recurrent unroll.
+
+        Input shapes are ``[B,S,2,H,W]``, ``[B,S,T,6]``, ``[B,S]``,
+        ``[B,S,1]``, and boolean ``[B,S]``. Each mask row must be a nonempty
+        true prefix. Encoders are evaluated once over the flattened ``B*S``
+        axis; the fusion GRUCell is then unrolled in timestamp order.
+        """
+
+        if frame_pairs.ndim != 5 or frame_pairs.shape[2] != 2:
+            raise LearningError("frame_pairs must have shape [batch, steps, 2, height, width]")
+        batch_size, steps = frame_pairs.shape[:2]
+        if batch_size <= 0 or steps <= 0:
+            raise LearningError("sequence batch and step dimensions must be positive")
+        if (
+            frame_pairs.shape[3] != self.config.image_height_px
+            or frame_pairs.shape[4] != self.config.image_width_px
+        ):
+            raise LearningError(
+                "frame pair size does not match ModelConfig image_height_px/image_width_px"
+            )
+        if imu.ndim != 4 or imu.shape[:2] != (batch_size, steps) or imu.shape[3] != 6:
+            raise LearningError("imu must have shape [batch, steps, samples, 6]")
+        if imu_lengths.shape != (batch_size, steps):
+            raise LearningError("imu_lengths must have shape [batch, steps]")
+        if delta_time_s.shape != (batch_size, steps, 1):
+            raise LearningError("delta_time_s must have shape [batch, steps, 1]")
+        if step_mask.shape != (batch_size, steps) or step_mask.dtype != torch.bool:
+            raise LearningError("step_mask must be a boolean tensor with shape [batch, steps]")
+        if step_mask.device != frame_pairs.device:
+            raise LearningError("step_mask and model inputs must share a device")
+        if imu_lengths.device != frame_pairs.device:
+            raise LearningError("imu_lengths and model inputs must share a device")
+        if not torch.all(step_mask.any(dim=1)):
+            raise LearningError("each sequence row must contain at least one unmasked step")
+        if steps > 1 and torch.any((~step_mask[:, :-1]) & step_mask[:, 1:]):
+            raise LearningError("each step_mask row must be a true prefix followed by padding")
+        if imu_lengths.dtype not in (
+            torch.int8,
+            torch.int16,
+            torch.int32,
+            torch.int64,
+            torch.uint8,
+        ):
+            raise LearningError("imu_lengths must have an integer dtype")
+        if torch.any(imu_lengths < 0) or torch.any(imu_lengths > imu.shape[2]):
+            raise LearningError("each sequence IMU length must be in [0, padded_samples]")
+        if torch.any(imu_lengths[step_mask] <= 0):
+            raise LearningError("each unmasked sequence step must contain causal IMU samples")
+        if not frame_pairs.is_floating_point() or not imu.is_floating_point():
+            raise LearningError("frame_pairs and imu must be floating-point tensors")
+        if not delta_time_s.is_floating_point():
+            raise LearningError("delta_time_s must be a floating-point tensor")
+        if imu.device != frame_pairs.device or delta_time_s.device != frame_pairs.device:
+            raise LearningError("frame_pairs, imu, and delta_time_s must share a device")
+        if not torch.isfinite(frame_pairs).all() or not torch.isfinite(imu).all():
+            raise LearningError("frame_pairs and imu must contain only finite values")
+        if not torch.isfinite(delta_time_s).all():
+            raise LearningError("delta_time_s must contain only finite values")
+        if torch.any(delta_time_s[step_mask] <= 0):
+            raise LearningError("each unmasked delta_time_s must be positive")
+
+        safe_lengths = torch.where(step_mask, imu_lengths, torch.ones_like(imu_lengths))
+        safe_delta_time = torch.where(
+            step_mask.unsqueeze(-1), delta_time_s, torch.ones_like(delta_time_s)
+        )
+        fused = self._encode_pair_batch(
+            frame_pairs.reshape(
+                batch_size * steps,
+                2,
+                self.config.image_height_px,
+                self.config.image_width_px,
+            ),
+            imu.reshape(batch_size * steps, imu.shape[2], 6),
+            safe_lengths.reshape(batch_size * steps),
+            safe_delta_time.reshape(batch_size * steps, 1),
+        ).reshape(batch_size, steps, self.config.fusion_hidden_dim)
+        state = self._validated_fusion_state(
+            fusion_state,
+            batch_size=batch_size,
+            device=frame_pairs.device,
+        )
+        motions: list[Tensor] = []
+        for step_index in range(steps):
+            candidate = self.fusion_recurrence(fused[:, step_index], state)
+            active = step_mask[:, step_index].unsqueeze(-1)
+            state = torch.where(active, candidate, state)
+            motion = self.motion_head(state)
+            motions.append(torch.where(active, motion, torch.zeros_like(motion)))
+        motion_sequence = torch.stack(motions, dim=1)
+        return VIOSequenceOutput(
+            relative_translation_m=motion_sequence[:, :, :3],
+            relative_rotation_vector_rad=motion_sequence[:, :, 3:],
+            step_mask=step_mask,
+            final_fusion_state=state,
         )
 
 
-__all__ = ["CompactVIO", "VIOOutput"]
+__all__ = ["CompactVIO", "VIOOutput", "VIOSequenceOutput"]

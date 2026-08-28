@@ -248,7 +248,10 @@ class TrainingConfig:
             sampling = sampling_value
             if sampling["frame_stride"] != 1:
                 raise LearningError("V1 frame_stride must equal one")
-        elif set(sampling_value) == {"frame_strides", "max_pairs_per_sequence"}:
+        elif set(sampling_value) in (
+            {"frame_strides", "max_pairs_per_sequence"},
+            {"frame_strides", "max_pairs_per_sequence", "unroll_pairs"},
+        ):
             sampling = sampling_value
             strides = sampling["frame_strides"]
             if (
@@ -258,6 +261,9 @@ class TrainingConfig:
                 or len(strides) != len(set(strides))
             ):
                 raise LearningError("frame_strides must contain unique positive integers")
+            unroll_pairs = sampling.get("unroll_pairs", 1)
+            if type(unroll_pairs) is not int or unroll_pairs <= 0:
+                raise LearningError("unroll_pairs must be a positive integer")
         else:
             raise LearningError(
                 "sampling must declare frame_stride or frame_strides plus max_pairs_per_sequence"
