@@ -80,6 +80,37 @@ arm, all metrics, and exact hashes. This position-only decision is not a
 full-pose/rotation result, ATE, deployment approval, or publication-grade
 confirmation.
 
+The immediate production work is one controlled v5 experiment, not an open
+tuning loop. V2 remains the exact control. The new
+`compact-vio-export-inference` path produces an optimizer-free PyTorch
+checkpoint that retains canonical `TrainingConfig`, provenance, inference
+policy, and selected source epoch/metrics lineage, but not optimizer state or
+full training history. A local real-v2 export passed exact identity and bitwise
+prediction parity; its temporary artifact SHA-256 is
+`4e2281a97a071cd20c16b2e5329a750b681fa74aea53002f110662ebc7fba29e`.
+Immutable-revision reproduction and durable retention remain pending. V5 keeps
+v2's architecture, data/split, frame
+strides, seed, optimizer, independent-pair state policy, checkpoint rule, and
+30-epoch schedule; its only intended behavioral change is an explicit
+unit-weight Smooth-L1 translation-magnitude loss, configured by
+`translation_magnitude_loss_weight: 1.0` in
+`configs/training/euroc_compact_vio_v5_magnitude.json`. No v5 training or
+evaluation result is claimed yet.
+The [prospective control record](reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md)
+defines the smoke, single-run, fresh-evaluation, rejection, and full-pose gates.
+V5 must first match or improve v2's exact selected validation translation and
+rotation RMSE; failure stops the experiment before `MH_02_easy` is inspected.
+
+`V2_03_difficult` and `MH_01_easy` have already informed development, so neither
+can be presented as untouched v5 confirmation. `MH_02_easy`, from the same
+verified Machine Hall archive, is now reserved as the one next position-only
+decision unit; its exact source identities and protocol must be frozen before
+candidate results are inspected. Once used, `MH_02_easy` is consumed and cannot
+select another model. If v5 fails any frozen gate, it is rejected and v2
+remains the narrow-endpoint candidate. Even a passing v5 still requires a
+separately frozen full-pose comparison against v2, zero motion, and a native
+classical baseline before direct learned VIO can be promoted.
+
 All four training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies, including
 `outputs/euroc-compact-vio-v4-translation-state-full-94d834a`. The MH_01
@@ -187,6 +218,7 @@ and verified.
 - [Architecture decision records](docs/adr/README.md)
 - [Research protocol](docs/protocols/research-protocol.md)
 - [Experiment lifecycle](docs/protocols/experiment-lifecycle.md)
+- [Controlled v5 magnitude-loss experiment](reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md)
 - [Dataset governance policy](governance/datasets/policy.md)
 - [Candidate dataset registry](governance/datasets/registry.yaml)
 - [Artifact policy](governance/artifacts/policy.md)

@@ -95,6 +95,7 @@ class TrainingConfig:
     learning_rate: float = 3e-4
     weight_decay: float = 1e-4
     translation_loss_weight: float = 1.0
+    translation_magnitude_loss_weight: float = 0.0
     rotation_loss_weight: float = 10.0
     gradient_clip_norm: float = 1.0
     num_workers: int = 4
@@ -116,6 +117,10 @@ class TrainingConfig:
             "gradient_clip_norm",
         ):
             _positive_float(getattr(self, field), field=field)
+        _non_negative_float(
+            self.translation_magnitude_loss_weight,
+            field="translation_magnitude_loss_weight",
+        )
         _non_negative_float(self.weight_decay, field="weight_decay")
         _non_negative_integer(self.num_workers, field="num_workers")
         _non_negative_integer(self.seed, field="seed")
@@ -125,7 +130,10 @@ class TrainingConfig:
     def to_dict(self) -> dict[str, Any]:
         """Return the canonical JSON-compatible configuration mapping."""
 
-        return asdict(self)
+        value = asdict(self)
+        if self.translation_magnitude_loss_weight == 0.0:
+            value.pop("translation_magnitude_loss_weight")
+        return value
 
     @classmethod
     def from_dict(cls, value: Mapping[str, object]) -> TrainingConfig:
@@ -141,6 +149,7 @@ class TrainingConfig:
             "learning_rate",
             "weight_decay",
             "translation_loss_weight",
+            "translation_magnitude_loss_weight",
             "rotation_loss_weight",
             "gradient_clip_norm",
             "num_workers",
@@ -240,21 +249,27 @@ class TrainingConfig:
                 "model must contain the exact legacy fields and optional rotation_state_source"
             )
         model = model_value
-        optimization = _exact_mapping(
-            value["optimization"],
-            {
-                "epochs",
-                "batch_size",
-                "learning_rate",
-                "weight_decay",
-                "translation_loss_weight",
-                "rotation_loss_weight",
-                "gradient_clip_norm",
-                "num_workers",
-                "amp",
-            },
-            field="optimization",
-        )
+        optimization_fields = {
+            "epochs",
+            "batch_size",
+            "learning_rate",
+            "weight_decay",
+            "translation_loss_weight",
+            "rotation_loss_weight",
+            "gradient_clip_norm",
+            "num_workers",
+            "amp",
+        }
+        optimization_value = value["optimization"]
+        if not isinstance(optimization_value, Mapping) or set(optimization_value) not in (
+            optimization_fields,
+            optimization_fields | {"translation_magnitude_loss_weight"},
+        ):
+            raise LearningError(
+                "optimization must contain the exact legacy fields and optional "
+                "translation_magnitude_loss_weight"
+            )
+        optimization = optimization_value
         sampling_value = value["sampling"]
         if not isinstance(sampling_value, Mapping):
             raise LearningError("sampling must be a mapping")
@@ -311,6 +326,9 @@ class TrainingConfig:
             learning_rate=optimization["learning_rate"],  # type: ignore[arg-type]
             weight_decay=optimization["weight_decay"],  # type: ignore[arg-type]
             translation_loss_weight=optimization["translation_loss_weight"],  # type: ignore[arg-type]
+            translation_magnitude_loss_weight=optimization.get(
+                "translation_magnitude_loss_weight", 0.0
+            ),  # type: ignore[arg-type]
             rotation_loss_weight=optimization["rotation_loss_weight"],  # type: ignore[arg-type]
             gradient_clip_norm=optimization["gradient_clip_norm"],  # type: ignore[arg-type]
             num_workers=optimization["num_workers"],  # type: ignore[arg-type]

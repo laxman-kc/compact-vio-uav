@@ -44,6 +44,13 @@ were copied and checksum-verified; the worker was intentionally left running.
 That dated state and authorization do not carry forward. A future paid-worker
 run still requires current inventory and its own bounded record.
 
+The immediate follow-up is the
+[controlled v5 magnitude-loss experiment](../reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md).
+It retains v2 as the control, permits one loss change and one bounded training
+run, and requires a predeclared fresh evaluation before any replacement
+decision. Implementation and local smoke may proceed now; paid execution still
+requires the current worker and run gates above.
+
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
 experiment lifecycle, that linked record governs the procedure and wins over a
@@ -143,8 +150,8 @@ configuration and must not be invented in documentation.
 | M5 | Reproducible execution environments | In progress | Local path active; worker tasks require fresh inventory and authorization |
 | M6 | EuRoC development ingestion and split | Complete | Versioned split/acquisition plan, official archive identity, extracted-source hashes, and focused tests |
 | M7 | Common causal replay and evaluator | In progress | Raw real-data SE(3) slice executed; common lifecycle/coverage exit remains |
-| M8 | Compact model and bounded training | Complete | A10 smoke, four bounded 30-epoch runs, and checksum-verified checkpoints |
-| M9 | Held-out prototype inference and evaluation | In progress | Fresh frozen position-only selection exists; full-pose/rotation/ATE and common lifecycle evidence remain |
+| M8 | Compact model and bounded training | Complete | A10 smoke, four bounded 30-epoch runs, and checksum-verified checkpoints; the optional v5 follow-up does not reopen the completed vertical-slice exit |
+| M9 | Held-out prototype inference and evaluation | In progress | V2 has a narrow position selection; controlled v5 execution, a fresh replacement decision, full-pose/rotation/ATE, and common lifecycle evidence remain |
 | M10 | Later baselines, reliability ablations, and failure atlas | Conditional | Reproducible M9 prototype evidence and a separately frozen ablation protocol |
 | M11 | Confirmatory final-test execution and scientific selection | Blocked | Reproducible candidate set, sealed untouched membership, and frozen confirmatory protocol |
 | M12 | Conditional export, exact-target benchmark, and deployable selection | Blocked | M11; authorized provisional sensor/target choices |
@@ -653,6 +660,20 @@ the independently matching worker/local artifact-manifest SHA-256 is
 Because prior `V2_03_difficult` results motivated the change, this is
 exploratory development evidence rather than fresh confirmation.
 
+Controlled v5 follow-up: retain the complete v2 model/data/optimization
+configuration and add only
+`translation_magnitude_loss_weight: 1.0` in
+`configs/training/euroc_compact_vio_v5_magnitude.json`. The exact objective is
+the sum of unit-weight Smooth-L1 translation-vector, translation-magnitude, and
+rotation losses. Its prospective SHA-256 is
+`7f5e50785ed1907c26f5bbea6766a4fc13fd3df591c8930ef8b15ac9f7d71af0`.
+The legacy v1–v4 behavior remains the same because the new
+configuration field defaults to `0.0`. Local implementation verification and
+temporary v2 inference-only export parity have passed; immutable-revision
+reproduction, retained export evidence, smoke, bounded training, and every v5
+result remain pending. This optional controlled run does not reopen M8's
+completed vertical-slice exit.
+
 ## M9 — Held-out prototype inference and evaluation
 
 Status: In progress.
@@ -730,6 +751,45 @@ artifact-manifest SHA-256
 `184d9427ebec373edb4da222bba5ea382146369a61b471b92b30b0e328ce8e76`.
 The reviewed report records the exact archive/source/calibration/reference,
 checkpoint, summary, metric, and prediction hashes.
+
+### Controlled v5 replacement decision — pending execution
+
+The [prospective control record](../reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md)
+owns the next replacement decision. It permits exactly one v2-derived
+configuration with an added unit-weight Smooth-L1 translation-magnitude term,
+one bounded 30-epoch run, and no sweep. V2 remains the control and must first
+be exported with `compact-vio-export-inference`. The checkpoint retains the
+canonical `TrainingConfig`, provenance, source SHA-256, inference policy, and
+selected source epoch/metrics lineage, but no optimizer state or full training
+history. Canonical metadata/model-state hashes, exclusive atomic write, exact
+parameter identity, and deterministic prediction parity are mandatory.
+
+Before any `MH_02_easy` inference, the selected v5 checkpoint must have
+validation translation RMSE at most `0.058765891780989885` m and validation
+rotation RMSE at most `0.0061899144990098035` rad. These limits are the exact
+selected-v2 validation values. A missing, non-finite, or greater result rejects
+v5 before the reserved evaluation unit is inspected.
+
+Neither `V2_03_difficult` nor `MH_01_easy` is untouched for this hypothesis.
+`MH_02_easy`, from the same verified Machine Hall archive, is reserved for this
+one position-only replacement decision by
+`configs/data/euroc_machine_hall_mh02_position_v1.json`, prospective SHA-256
+`3546ed0ed0721224c156e8b929ba5cf3aba517da381cc0f832162380599ca137`.
+Its exact extracted source identities and protocol must be frozen before
+candidate outcomes are inspected. On that unit, v5 must have identical complete
+eligible coverage, pair displacement-magnitude RMSE strictly below both v2 and
+zero motion, cumulative scored-distance RMSE strictly below v2, and distance
+ratio strictly closer to `1.0` than v2. A tie or any failed gate rejects v5 and
+retains v2 for its existing narrow endpoint; no post-result repair run is part
+of this plan. Once candidate results are inspected, `MH_02_easy` is consumed and
+cannot support another model-selection decision.
+
+Even a passing v5 is provisional until a separate frozen full-pose evaluation
+compares the retained learned candidate, v2, zero motion, and a native
+classical baseline. Dataset/backend selection, the full-pose primary metric,
+thresholds, and tie rule remain pending protocol freeze. If the direct learned
+candidate fails that frozen rule, direct-model tuning stops and the next
+architecture investigation is the IMU-anchored hybrid.
 
 Required work:
 
@@ -934,31 +994,43 @@ Exit evidence:
 
 Execute these as separate small slices; do not combine them into one long phase:
 
-1. Record exact EuRoC Vicon Room unit identities, rights, modalities,
-   acquisition location, sizes/checksums, and sequence-disjoint split roles.
-2. Implement the smallest `cam0`/IMU/ground-truth adapter and validate official
-   calibration, timestamps, frames, units, continuity, and relative-pose label
-   construction with focused negative tests.
-3. Implement the compact PyTorch visual encoder, temporal IMU encoder, gated fusion,
-   relative translation/rotation heads, losses, trainer, and checkpoint loader
-   with focused tensor/geometry/gradient tests.
-4. Run sample inspection and one tiny overfit/forward-backward/save-load smoke.
-5. From a pushed immutable revision and current bounded worker record, run one
-   training configuration; monitor loss/runtime and export the selected
-   checkpoint plus tracker-independent run evidence.
-6. Execute held-out development inference and trajectory integration, then
-   report ATE, RPE, rotation error, coverage/failures, latency, and memory.
-7. Verify the retained checkpoint/result bundle and update the progress ledger
-   with only observed results.
-8. Based on prototype evidence, separately decide whether a native classical
-   reference or A/B/C/D reliability/failure-atlas work is worth running.
-9. Freeze and execute a confirmatory protocol only for a publishable claim.
-10. Export ONNX or begin target/ROS/PX4 work only after its separate evidence
-    and deployment decisions pass.
+1. Freeze the locally tested inference-checkpoint, v5-loss/configuration, and
+   `MH_02_easy` role-record slices in one immutable revision. Run full local
+   checks, push it, and require green CI; no local pass is a quality result.
+2. From that clean checkout, repeat the real-v2 inference export, exact state
+   verification, and bitwise prediction parity. Retain the artifact and its
+   canonical metadata/model-state hashes outside the disposable worker. The
+   temporary local artifact proves behavior but is not the retained package.
+3. Re-observe the worker, record the bounded authorization, and confirm a new
+   v5 smoke/full output path plus export destinations before paid work.
+4. Execute exactly one deterministic v5 smoke on the execution worker. It must
+   complete load, forward, backward, optimizer update, checkpoint save/load,
+   inference, and finite metric checks.
+5. If the smoke passes, execute exactly one 30-epoch v5 run. Do not sweep or
+   repair the configuration from `V2_03_difficult` or `MH_01_easy` results.
+6. Apply the frozen selected-v2 validation guardrails to v5. Stop before
+   `MH_02_easy` if translation RMSE exceeds `0.058765891780989885` m or rotation
+   RMSE exceeds `0.0061899144990098035` rad. If both pass, export and verify the
+   v5 checkpoint/run bundle and append exact revision, commands, times,
+   environment, selected epoch, hashes, failures, and artifact locations to the
+   prospective report and progress ledger.
+7. Finalize source identities for the reserved `MH_02_easy` position unit, then
+   freeze its eligible-pair construction, v2/v5/zero baselines, metrics,
+   coverage gates, and no-tie rule before running any candidate.
+8. Execute that frozen position decision once. Reject v5 on a tie or any failed
+   gate; otherwise retain it provisionally. In either case, publish the complete
+   metric/coverage table and do not tune from the result.
+9. Select and freeze a full-pose unit and native classical backend under one
+   fairness contract. Compare the retained learned candidate, v2, zero motion,
+   and classical VIO on ATE, RPE, rotation, drift, coverage/failures, latency,
+   and memory. Stop direct-model tuning and move to the IMU-anchored hybrid if
+   the candidate fails the frozen rule.
+10. Consider ONNX, target benchmarking, ROS 2, PX4, or flight work only after a
+    learned candidate passes the full-pose gate and separate deployment/safety
+    decisions are accepted.
 
-The dataset family/modalities, PyTorch framework, and model family are selected
-by ADR-0004. Exact source units/hashes, split roles, preprocessing, layer sizes,
-rotation representation, hyperparameters, metric policies, artifact stores,
-and target hardware remain versioned configuration or later-decision values.
-No task in this queue assumes current Brev/A10 state. Worker deletion remains a
-separate destructive action requiring explicit approval.
+No task in this queue assumes current A10 state. The exact `MH_02_easy`
+source/protocol identities, full-pose dataset, classical backend, full-pose
+primary metric/thresholds, artifact stores, and target hardware remain pending
+their explicit freezes; this plan does not silently choose them. Worker
+deletion remains a separate destructive action requiring explicit approval.

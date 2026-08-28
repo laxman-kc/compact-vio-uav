@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import tempfile
 import unittest
 from dataclasses import replace
@@ -9,6 +10,7 @@ from pathlib import Path
 from compact_vio.learning.cli import (
     _bounded_subset_indices,
     _empirical_percentile,
+    _git_revision,
     _prepare_output_directory,
     _runtime_training_config,
     build_parser,
@@ -30,6 +32,42 @@ V4_ROTATION_STATE_SOURCE = "current-pair-zero-initialized-fusion-state/v1"
 
 
 class LearningCliTests(unittest.TestCase):
+    def test_git_revision_requires_a_fully_clean_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            config = repository / "config.json"
+            config.write_text("{}\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q", str(repository)], check=True)
+            subprocess.run(["git", "-C", str(repository), "add", "config.json"], check=True)
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(repository),
+                    "-c",
+                    "user.name=compact-vio-test",
+                    "-c",
+                    "user.email=compact-vio-test@example.invalid",
+                    "commit",
+                    "-q",
+                    "-m",
+                    "fixture",
+                ],
+                check=True,
+            )
+
+            revision = _git_revision(config)
+            self.assertEqual(len(revision), 40)
+
+            (repository / "untracked.py").write_text("value = 1\n", encoding="utf-8")
+            with self.assertRaisesRegex(LearningError, "clean Git checkout"):
+                _git_revision(config)
+
+            (repository / "untracked.py").unlink()
+            config.write_text('{"changed": true}\n', encoding="utf-8")
+            with self.assertRaisesRegex(LearningError, "clean Git checkout"):
+                _git_revision(config)
+
     def test_checked_in_experiment_and_split_bind_exact_runtime_config(self) -> None:
         spec = load_run_spec(CONFIG_PATH)
 

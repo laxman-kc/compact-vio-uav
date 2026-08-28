@@ -341,7 +341,7 @@ def _git_revision(config_path: Path) -> str:
             timeout=30,
         ).stdout.strip()
         dirty = subprocess.run(
-            ["git", "-C", str(repository), "status", "--porcelain", "--untracked-files=no"],
+            ["git", "-C", str(repository), "status", "--porcelain", "--untracked-files=all"],
             check=True,
             capture_output=True,
             text=True,
@@ -351,7 +351,11 @@ def _git_revision(config_path: Path) -> str:
         raise LearningError(f"cannot capture Git revision: {exc}") from exc
     if len(revision) != 40 or any(character not in "0123456789abcdef" for character in revision):
         raise LearningError("Git returned an invalid full revision")
-    return f"{revision}-dirty" if dirty else revision
+    if dirty:
+        raise LearningError(
+            "training requires a clean Git checkout with no tracked or untracked changes"
+        )
+    return revision
 
 
 def _seed_worker(worker_id: int) -> None:
@@ -387,8 +391,8 @@ def _history_json(result: Any) -> list[dict[str, object]]:
     return [
         {
             "epoch": index,
-            "train": asdict(train),
-            "validation": asdict(validation),
+            "train": _epoch_metrics_json(train),
+            "validation": _epoch_metrics_json(validation),
         }
         for index, (train, validation) in enumerate(
             zip(result.train_history, result.validation_history, strict=True), start=1
@@ -396,10 +400,43 @@ def _history_json(result: Any) -> list[dict[str, object]]:
     ]
 
 
+def _epoch_metrics_json(metrics: Any) -> dict[str, object]:
+    """Serialize optional v5 loss evidence without changing legacy run records."""
+
+    document = asdict(metrics)
+    if document.get("translation_magnitude_loss") is None:
+        document.pop("translation_magnitude_loss", None)
+    return document
+
+
 def _runtime_training_config(config: TrainingConfig, *, smoke: bool) -> TrainingConfig:
     if type(smoke) is not bool:
         raise LearningError("smoke must be boolean")
     return replace(config, epochs=_SMOKE_EPOCHS) if smoke else config
+
+
+def _checkpoint_split_id(
+    spec: RunSpec,
+    config: TrainingConfig,
+    *,
+    smoke: bool,
+) -> str:
+    """Bind checkpoint provenance to sampling, state, and optional v5 loss policy."""
+
+    identity = (
+        f"{spec.experiment_id}:config={spec.config_sha256}:"
+        f"split={spec.split_sha256}:"
+        f"strides={','.join(str(stride) for stride in spec.training_frame_strides)}:"
+        f"unroll={spec.training_unroll_pairs}:"
+        f"rotation-state-source={config.model.rotation_state_source}:"
+    )
+    if config.translation_magnitude_loss_weight > 0.0:
+        identity += (
+            "translation-magnitude-loss=smooth-l1-l2-norm-v1:"
+            "translation-magnitude-weight="
+            f"{config.translation_magnitude_loss_weight:.17g}:"
+        )
+    return identity + f"mode={'smoke' if smoke else 'full'}"
 
 
 def _bounded_subset_indices(sample_count: int, maximum_samples: int) -> tuple[int, ...]:
@@ -933,14 +970,7 @@ def _run(args: argparse.Namespace) -> int:
     }
     provenance = CheckpointProvenance.create(
         dataset_id=f"EuRoC DOI {spec.dataset_doi}",
-        split_id=(
-            f"{spec.experiment_id}:config={spec.config_sha256}:"
-            f"split={spec.split_sha256}:"
-            f"strides={','.join(str(stride) for stride in spec.training_frame_strides)}:"
-            f"unroll={spec.training_unroll_pairs}:"
-            f"rotation-state-source={runtime_config.model.rotation_state_source}:"
-            f"mode={'smoke' if args.smoke else 'full'}"
-        ),
+        split_id=_checkpoint_split_id(spec, runtime_config, smoke=args.smoke),
         train_sequence_ids=spec.splits.train,
         validation_sequence_ids=spec.splits.validation,
         source_sha256=source_hashes,
@@ -956,8 +986,8 @@ def _run(args: argparse.Namespace) -> int:
                 {
                     "event": "epoch_complete",
                     "epoch": epoch,
-                    "train": asdict(train),
-                    "validation": asdict(validation),
+                    "train": _epoch_metrics_json(train),
+                    "validation": _epoch_metrics_json(validation),
                 },
                 sort_keys=True,
                 allow_nan=False,
@@ -975,7 +1005,28 @@ def _run(args: argparse.Namespace) -> int:
         provenance=provenance,
         progress_callback=report_progress,
     )
-    best_metadata = load_checkpoint(checkpoint_path, model=model, map_location=device)
+    if _git_revision(spec.config_path) != provenance.code_revision:
+        raise LearningError("Git revision changed during training")
+    best_metadata = load_checkpoint(
+        checkpoint_path,
+        model=model,
+        map_location=device,
+        expected_config=runtime_config,
+        expected_provenance=provenance,
+    )
+    expected_best_metrics = {
+        **fit_result.train_history[fit_result.best_epoch - 1].to_dict(prefix="train/"),
+        **fit_result.validation_history[fit_result.best_epoch - 1].to_dict(prefix="validation/"),
+    }
+    if (
+        best_metadata.config != runtime_config
+        or best_metadata.provenance != provenance
+        or best_metadata.epoch != fit_result.best_epoch
+        or best_metadata.metrics != expected_best_metrics
+    ):
+        raise LearningError(
+            "selected checkpoint metadata does not match the completed training run"
+        )
     history = _history_json(fit_result)
     history_path = output / "training-history.json"
     _write_json(history_path, history)
@@ -1014,6 +1065,21 @@ def _run(args: argparse.Namespace) -> int:
     test_metrics_path = output / "test-metrics.json"
     _write_json(test_metrics_path, test_metrics)
     checkpoint_sha256 = sha256_file(checkpoint_path)
+    if _git_revision(spec.config_path) != provenance.code_revision:
+        raise LearningError("Git revision changed during training or evaluation")
+    if sha256_file(spec.config_path) != spec.config_sha256:
+        raise LearningError("training configuration changed during execution")
+    if sha256_file(spec.split_path) != spec.split_sha256:
+        raise LearningError("split manifest changed during execution")
+    if {
+        sequence.sequence_id: sequence_sources_sha256(sequence.root) for sequence in all_sequences
+    } != source_hashes:
+        raise LearningError("EuRoC sequence source bytes changed during execution")
+    if {
+        sequence.sequence_id: calibration_sources_sha256(sequence.root)
+        for sequence in all_sequences
+    } != calibration_hashes:
+        raise LearningError("EuRoC calibration source bytes changed during execution")
     summary = {
         "schema_version": "1.0.0",
         "status": "completed",

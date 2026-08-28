@@ -11,6 +11,7 @@ from unittest.mock import patch
 from compact_vio.learning.errors import LearningError
 from compact_vio.learning.position_evaluate_cli import (
     CandidateDecisionInput,
+    _enforce_validation_guardrail,
     apply_position_decision_rule,
     build_parser,
     load_position_evaluation_protocol,
@@ -79,6 +80,34 @@ def _protocol() -> dict[str, object]:
             },
         ],
     }
+
+
+def _controlled_magnitude_protocol() -> dict[str, object]:
+    value = _protocol()
+    value["evaluation_id"] = "euroc-mh02-v2-v5-magnitude-position-v1"
+    value["dataset"]["sequence_id"] = "MH_02_easy"  # type: ignore[index]
+    value["decision_rule_id"] = (
+        "full-sensor-and-reference-coverage/beat-zero-pair-rmse/"
+        "v5-beats-v2-on-pair-cumulative-and-distance-ratio/no-tie-no-retry/v1"
+    )
+    value["validation_guardrail"] = {
+        "candidate_id": "v5",
+        "max_selected_validation_translation_rmse_m": 0.058765891780989885,
+        "max_selected_validation_rotation_rmse_rad": 0.0061899144990098035,
+    }
+    value["candidates"] = [
+        {
+            "candidate_id": "v2",
+            "checkpoint_sha256": "2" * 64,
+            "inference_policy_id": "independent-zero-state-per-pair/v1",
+        },
+        {
+            "candidate_id": "v5",
+            "checkpoint_sha256": "5" * 64,
+            "inference_policy_id": "independent-zero-state-per-pair/v1",
+        },
+    ]
+    return value
 
 
 class PositionEvaluationCliTests(unittest.TestCase):
@@ -207,6 +236,123 @@ class PositionEvaluationCliTests(unittest.TestCase):
                 protocol,
                 outcomes,
                 zero_motion_pair_rmse_m=0.2,
+            )
+
+    def test_controlled_magnitude_rule_accepts_only_when_every_gate_passes(self) -> None:
+        protocol = self._load(_controlled_magnitude_protocol())
+        outcomes = (
+            CandidateDecisionInput("v2", 100, 100, 90, 90, 0.08, 2.0, 0.60),
+            CandidateDecisionInput("v5", 100, 100, 90, 90, 0.07, 1.5, 0.75),
+        )
+
+        accepted = apply_position_decision_rule(
+            protocol,
+            outcomes,
+            zero_motion_pair_rmse_m=0.1,
+        )
+
+        self.assertEqual(accepted["decision"], "accept_v5")
+        self.assertEqual(accepted["selected_candidate_id"], "v5")
+        self.assertTrue(all(accepted["comparison_gates"].values()))
+
+        # V2's earlier endpoint is not a new v5 eligibility gate. V5 is accepted
+        # when it beats both V2 and zero motion with complete matched coverage.
+        v2_loses_to_zero = (
+            CandidateDecisionInput("v2", 100, 100, 90, 90, 0.11, 2.0, 0.60),
+            CandidateDecisionInput("v5", 100, 100, 90, 90, 0.09, 1.5, 0.75),
+        )
+        accepted_against_both = apply_position_decision_rule(
+            protocol,
+            v2_loses_to_zero,
+            zero_motion_pair_rmse_m=0.1,
+        )
+        self.assertEqual(accepted_against_both["decision"], "accept_v5")
+        self.assertFalse(
+            accepted_against_both["candidate_eligibility"][0]["beats_zero_motion_pair_rmse"]
+        )
+
+        failed_ratio = (
+            outcomes[0],
+            CandidateDecisionInput("v5", 100, 100, 90, 90, 0.07, 1.5, 0.50),
+        )
+        rejected = apply_position_decision_rule(
+            protocol,
+            failed_ratio,
+            zero_motion_pair_rmse_m=0.1,
+        )
+        self.assertEqual(rejected["decision"], "retain_v2")
+        self.assertEqual(rejected["selected_candidate_id"], "v2")
+        self.assertFalse(rejected["comparison_gates"]["distance_ratio_error_lower_than_v2"])
+
+    def test_controlled_magnitude_rule_rejects_missing_metrics_or_wrong_candidates(self) -> None:
+        protocol = self._load(_controlled_magnitude_protocol())
+        with self.assertRaisesRegex(LearningError, "requires cumulative RMSE"):
+            apply_position_decision_rule(
+                protocol,
+                (
+                    CandidateDecisionInput("v2", 1, 1, 1, 1, 0.08),
+                    CandidateDecisionInput("v5", 1, 1, 1, 1, 0.07),
+                ),
+                zero_motion_pair_rmse_m=0.1,
+            )
+
+    def test_controlled_validation_guardrail_is_enforced_before_inference(self) -> None:
+        protocol = self._load(_controlled_magnitude_protocol())
+        passing = {
+            "v2": {},
+            "v5": {
+                "validation/translation_rmse_m": 0.058765891780989885,
+                "validation/rotation_rmse_rad": 0.0061899144990098035,
+            },
+        }
+        _enforce_validation_guardrail(protocol, passing)
+
+        failing = {
+            **passing,
+            "v5": {
+                **passing["v5"],
+                "validation/translation_rmse_m": 0.05876589178098989,
+            },
+        }
+        with self.assertRaisesRegex(LearningError, "validation guardrail failed"):
+            _enforce_validation_guardrail(protocol, failing)
+        with self.assertRaisesRegex(LearningError, "missing, negative, or non-finite"):
+            _enforce_validation_guardrail(protocol, {"v2": {}, "v5": {}})
+        negative = {
+            **passing,
+            "v5": {
+                **passing["v5"],
+                "validation/rotation_rmse_rad": -0.001,
+            },
+        }
+        with self.assertRaisesRegex(LearningError, "missing, negative, or non-finite"):
+            _enforce_validation_guardrail(protocol, negative)
+
+        wrong_guardrail = _controlled_magnitude_protocol()
+        wrong_guardrail["validation_guardrail"]["candidate_id"] = "v2"  # type: ignore[index]
+        with self.assertRaisesRegex(LearningError, "must apply to candidate_id 'v5'"):
+            self._load(wrong_guardrail)
+
+        relaxed_guardrail = _controlled_magnitude_protocol()
+        relaxed_guardrail["validation_guardrail"][  # type: ignore[index]
+            "max_selected_validation_rotation_rmse_rad"
+        ] = 0.01
+        with self.assertRaisesRegex(LearningError, "exact frozen selected-v2 limits"):
+            self._load(relaxed_guardrail)
+
+        wrong = _controlled_magnitude_protocol()
+        wrong["candidates"][1]["candidate_id"] = "other"  # type: ignore[index]
+        with self.assertRaisesRegex(LearningError, "exact v2, v5 order"):
+            self._load(wrong)
+
+        with self.assertRaisesRegex(LearningError, "identical candidate coverage counts"):
+            apply_position_decision_rule(
+                protocol,
+                (
+                    CandidateDecisionInput("v2", 100, 100, 90, 90, 0.08, 2.0, 0.6),
+                    CandidateDecisionInput("v5", 99, 99, 89, 89, 0.07, 1.5, 0.7),
+                ),
+                zero_motion_pair_rmse_m=0.1,
             )
 
     def test_cli_accepts_only_declared_device_and_checkpoint_shape(self) -> None:

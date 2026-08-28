@@ -1143,6 +1143,75 @@ result, and explicit remaining blockers.
   PYTHONPATH=src python3 -m compact_vio.artifacts verify outputs/euroc-mh01-frozen-position-deea10f
   ```
 
+## 2026-08-28 — Controlled v5 implementation prepared locally
+
+- Working-tree state at this entry: uncommitted on base revision
+  `4076066875cb93aa44bc5180a00afb04b386669f`. An immutable implementation
+  revision, remote CI result, clean execution checkout, and any paid-run
+  evidence remain pending.
+- Retained v2 remains the control: selected epoch 28, checkpoint SHA-256
+  `17698fbf70862bf1aae17925081b0baf536d2c5b84fa6dcaea7b69926e3c3605`,
+  and independent-zero-state-per-pair inference policy. The local
+  `compact-vio-export-inference` slice requires the expected source hash and
+  state policy, binds canonical model-state and metadata hashes, retains the
+  canonical `TrainingConfig`, provenance, source identity, and selected source
+  epoch/metrics lineage, omits optimizer state and full training history,
+  writes atomically without overwrite, and remains loadable through the normal
+  `load_inference_model` boundary.
+- The real selected v2 checkpoint was exported locally to a temporary
+  non-repository path and passed bitwise prediction parity. The source
+  checkpoint SHA-256 remained
+  `17698fbf70862bf1aae17925081b0baf536d2c5b84fa6dcaea7b69926e3c3605`;
+  the temporary inference artifact, canonical metadata, and canonical
+  model-state SHA-256 values were
+  `4e2281a97a071cd20c16b2e5329a750b681fa74aea53002f110662ebc7fba29e`,
+  `63f632912862067c471020d4cda4f2e87772eda0f2d59a29f434fba71a8be321`,
+  and `f70693fc2c188773ef8e78779f6e5d1a01b22e14067204cd8cc18ba4691d650d`.
+  Selected source epoch 28 and its exact metrics were retained as lineage. This
+  temporary output is implementation verification, not a durable retained
+  execution artifact.
+- The controlled v5 configuration is
+  `configs/training/euroc_compact_vio_v5_magnitude.json`, prospective SHA-256
+  `7f5e50785ed1907c26f5bbea6766a4fc13fd3df591c8930ef8b15ac9f7d71af0`.
+  Relative to v2, it changes only the experiment identity and adds
+  `translation_magnitude_loss_weight: 1.0`. The objective is the sum of
+  unit-weight Smooth-L1 translation-vector, translation L2-magnitude, and
+  rotation losses. A zero default preserves legacy v1–v4 configuration and
+  checkpoint behavior; v5 records the magnitude term separately.
+- The selected v5 checkpoint is prohibited from inspecting `MH_02_easy` unless
+  validation translation RMSE is at most `0.058765891780989885` m and
+  validation rotation RMSE is at most `0.0061899144990098035` rad, the exact
+  selected-v2 values. Missing, non-finite, or greater values reject v5 before
+  the fresh unit.
+- `configs/data/euroc_machine_hall_mh02_position_v1.json` prospectively reserves
+  `MH_02_easy` from the already identified Machine Hall archive for one
+  position-only v2/v5/zero-motion decision. Its prospective SHA-256 is
+  `3546ed0ed0721224c156e8b929ba5cf3aba517da381cc0f832162380599ca137`.
+  The final evaluation protocol and extracted source/calibration/reference
+  identities remain pending. Once candidate results are inspected, this unit
+  is consumed and cannot support another model decision.
+- Observed local validation for this uncommitted slice: the full suite passed
+  351 tests with 42 optional-dependency skips; repository policy checked 136
+  files with zero violations; all 10 schemas and 7 templates passed; Ruff
+  0.16.4 lint and format checks passed; compileall and `git diff --check`
+  passed. The focused tests
+  include single-change config identity, legacy compatibility, exact
+  magnitude-loss arithmetic, finite gradients, separate metric recording,
+  source-hash/overwrite/policy/integrity rejection, and bitwise inference
+  parity on deterministic synthetic inputs.
+- The controlled position evaluator now hard-codes the exact selected-v2
+  validation translation/rotation limits, requires them in the future protocol,
+  and preflights every checkpoint hash, inference policy, dataset provenance,
+  split exclusion, and selected validation metric before loading the reserved
+  sequence or producing a prediction. It also requires identical complete
+  v2/v5 coverage and makes the v5-below-zero gate explicit.
+- No retained v2 inference package was produced from an immutable revision, no
+  v5 smoke or training run was launched, no v5 checkpoint or metric exists, and
+  no `MH_02_easy` data or candidate result was inspected in this local slice.
+  No worker, dataset, storage, lifecycle, ROS/PX4, or flight action was
+  performed. M8's original vertical-slice exit remains complete; M9 remains in
+  progress and M12 remains blocked.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

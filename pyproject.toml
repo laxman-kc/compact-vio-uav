@@ -30,6 +30,7 @@ compact-vio-repo-check = "compact_vio.repository_policy:main"
 compact-vio-euroc = "compact_vio.data.acquire:main"
 compact-vio-train = "compact_vio.learning.cli:main"
 compact-vio-evaluate-position = "compact_vio.learning.position_evaluate_cli:main"
+compact-vio-export-inference = "compact_vio.learning.inference_export_cli:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

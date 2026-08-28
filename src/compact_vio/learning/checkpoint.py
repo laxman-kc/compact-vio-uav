@@ -267,14 +267,25 @@ def load_checkpoint(
     model: nn.Module,
     optimizer: Optimizer | None = None,
     map_location: torch.device | str = "cpu",
+    expected_config: TrainingConfig | None = None,
+    expected_provenance: CheckpointProvenance | None = None,
 ) -> LoadedCheckpoint:
-    """Load a weights-only-safe checkpoint and strictly restore model state."""
+    """Load a weights-only-safe checkpoint and strictly restore model state.
+
+    Callers resuming or evaluating a just-completed run can bind the complete
+    expected configuration and provenance. Those checks occur before any model
+    or optimizer state is restored.
+    """
 
     source = Path(path)
     if not source.is_file() or source.is_symlink():
         raise LearningError(f"checkpoint must be a regular non-symlink file: {source}")
     if not isinstance(model, nn.Module):
         raise LearningError("model must be a torch.nn.Module")
+    if expected_config is not None and type(expected_config) is not TrainingConfig:
+        raise LearningError("expected_config must be a TrainingConfig or None")
+    if expected_provenance is not None and type(expected_provenance) is not CheckpointProvenance:
+        raise LearningError("expected_provenance must be CheckpointProvenance or None")
     try:
         payload = torch.load(source, map_location=map_location, weights_only=True)
     except (OSError, RuntimeError, ValueError, EOFError, pickle.UnpicklingError) as exc:
@@ -293,6 +304,8 @@ def load_checkpoint(
     if set(payload) != required or payload["schema_version"] != _SCHEMA_VERSION:
         raise LearningError("checkpoint schema is unsupported or incomplete")
     config = TrainingConfig.from_dict(payload["config"])
+    if expected_config is not None and config != expected_config:
+        raise LearningError("checkpoint training configuration differs from the expected run")
     declared_model_config = getattr(model, "config", None)
     if declared_model_config is not None and declared_model_config != config.model:
         raise LearningError("checkpoint config does not match the supplied model architecture")
@@ -301,6 +314,8 @@ def load_checkpoint(
         raise LearningError("checkpoint epoch must be a non-negative integer")
     metrics = _metrics(payload["metrics"])
     provenance = _parse_provenance(payload["provenance"])
+    if expected_provenance is not None and provenance != expected_provenance:
+        raise LearningError("checkpoint provenance differs from the expected run")
     try:
         model.load_state_dict(payload["model_state_dict"], strict=True)
         if optimizer is not None:

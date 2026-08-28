@@ -37,9 +37,18 @@ _DECISION_RULE_ID = (
     "full-sensor-and-reference-coverage/beat-zero-pair-rmse/"
     "minimum-pair-displacement-magnitude-rmse/no-tie-break/v1"
 )
+_CONTROLLED_MAGNITUDE_DECISION_RULE_ID = (
+    "full-sensor-and-reference-coverage/beat-zero-pair-rmse/"
+    "v5-beats-v2-on-pair-cumulative-and-distance-ratio/no-tie-no-retry/v1"
+)
+_DECISION_RULE_IDS = frozenset({_DECISION_RULE_ID, _CONTROLLED_MAGNITUDE_DECISION_RULE_ID})
 _INDEPENDENT_POLICY = "independent-zero-state-per-pair/v1"
 _STATEFUL_POLICY = "stateful-contiguous-native-pairs/v1"
 _INFERENCE_POLICIES = frozenset({_INDEPENDENT_POLICY, _STATEFUL_POLICY})
+_VALIDATION_TRANSLATION_METRIC = "validation/translation_rmse_m"
+_VALIDATION_ROTATION_METRIC = "validation/rotation_rmse_rad"
+_FROZEN_V2_VALIDATION_TRANSLATION_RMSE_M = 0.058765891780989885
+_FROZEN_V2_VALIDATION_ROTATION_RMSE_RAD = 0.0061899144990098035
 
 
 def _text(value: object, *, field: str) -> str:
@@ -298,6 +307,25 @@ class PositionEvaluationCandidate:
 
 
 @dataclass(frozen=True, slots=True)
+class PositionValidationGuardrail:
+    """Pre-inference validation limits for one selected training checkpoint."""
+
+    candidate_id: str
+    max_selected_validation_translation_rmse_m: float
+    max_selected_validation_rotation_rmse_rad: float
+
+    def __post_init__(self) -> None:
+        _identifier(self.candidate_id, field="validation_guardrail.candidate_id")
+        for field in (
+            "max_selected_validation_translation_rmse_m",
+            "max_selected_validation_rotation_rmse_rad",
+        ):
+            value = getattr(self, field)
+            if type(value) is not float or not math.isfinite(value) or value < 0.0:
+                raise LearningError(f"validation_guardrail.{field} must be finite and non-negative")
+
+
+@dataclass(frozen=True, slots=True)
 class PositionEvaluationProtocol:
     """Strict, immutable fresh-evaluation protocol loaded from committed JSON."""
 
@@ -307,6 +335,7 @@ class PositionEvaluationProtocol:
     metric_policy_id: str
     decision_rule_id: str
     candidates: tuple[PositionEvaluationCandidate, ...]
+    validation_guardrail: PositionValidationGuardrail | None
     source_path: Path
     source_sha256: str
 
@@ -318,7 +347,7 @@ class PositionEvaluationProtocol:
             raise LearningError("sampling must be a PositionEvaluationSampling")
         if self.metric_policy_id != _METRIC_POLICY_ID:
             raise LearningError("unsupported metric_policy_id")
-        if self.decision_rule_id != _DECISION_RULE_ID:
+        if self.decision_rule_id not in _DECISION_RULE_IDS:
             raise LearningError("unsupported decision_rule_id")
         if (
             type(self.candidates) is not tuple
@@ -332,6 +361,37 @@ class PositionEvaluationProtocol:
         hashes = tuple(item.checkpoint_sha256 for item in self.candidates)
         if len(hashes) != len(set(hashes)):
             raise LearningError("candidate checkpoint hashes must be unique")
+        if self.decision_rule_id == _CONTROLLED_MAGNITUDE_DECISION_RULE_ID:
+            if type(self.validation_guardrail) is not PositionValidationGuardrail:
+                raise LearningError(
+                    "controlled magnitude-loss protocol requires a validation_guardrail"
+                )
+            if identifiers != ("v2", "v5"):
+                raise LearningError(
+                    "controlled magnitude-loss protocol requires candidates in exact v2, v5 order"
+                )
+            if any(
+                candidate.inference_policy_id != _INDEPENDENT_POLICY
+                for candidate in self.candidates
+            ):
+                raise LearningError(
+                    "controlled magnitude-loss protocol requires independent-pair inference"
+                )
+            if self.validation_guardrail.candidate_id != "v5":
+                raise LearningError("validation_guardrail must apply to candidate_id 'v5'")
+            if (
+                self.validation_guardrail.max_selected_validation_translation_rmse_m
+                != _FROZEN_V2_VALIDATION_TRANSLATION_RMSE_M
+                or self.validation_guardrail.max_selected_validation_rotation_rmse_rad
+                != _FROZEN_V2_VALIDATION_ROTATION_RMSE_RAD
+            ):
+                raise LearningError(
+                    "validation_guardrail must equal the exact frozen selected-v2 limits"
+                )
+        elif self.validation_guardrail is not None:
+            raise LearningError(
+                "validation_guardrail is supported only by the controlled magnitude-loss rule"
+            )
         if not isinstance(self.source_path, Path) or not self.source_path.is_absolute():
             raise LearningError("source_path must be an absolute pathlib.Path")
         _digest(self.source_sha256, field="source_sha256", pattern=_HEX_64)
@@ -350,20 +410,19 @@ def load_position_evaluation_protocol(path: Path | str) -> PositionEvaluationPro
     if not source.is_file():
         raise LearningError("evaluation protocol must be a regular non-symlink file")
     source_value, source_bytes = _json_without_duplicate_keys(source)
-    root = _exact_mapping(
-        source_value,
-        {
-            "record_type",
-            "schema_version",
-            "evaluation_id",
-            "dataset",
-            "sampling",
-            "metric_policy_id",
-            "decision_rule_id",
-            "candidates",
-        },
-        field="evaluation protocol",
-    )
+    root_fields = {
+        "record_type",
+        "schema_version",
+        "evaluation_id",
+        "dataset",
+        "sampling",
+        "metric_policy_id",
+        "decision_rule_id",
+        "candidates",
+    }
+    if type(source_value) is dict and "validation_guardrail" in source_value:
+        root_fields.add("validation_guardrail")
+    root = _exact_mapping(source_value, root_fields, field="evaluation protocol")
     if root["record_type"] != _RECORD_TYPE or root["schema_version"] != _SCHEMA_VERSION:
         raise LearningError("unsupported evaluation protocol record_type or schema_version")
     dataset = _exact_mapping(
@@ -406,6 +465,18 @@ def load_position_evaluation_protocol(path: Path | str) -> PositionEvaluationPro
             field=f"candidates[{index}]",
         )
         candidates.append(PositionEvaluationCandidate(**candidate))  # type: ignore[arg-type]
+    guardrail: PositionValidationGuardrail | None = None
+    if "validation_guardrail" in root:
+        guardrail_value = _exact_mapping(
+            root["validation_guardrail"],
+            {
+                "candidate_id",
+                "max_selected_validation_translation_rmse_m",
+                "max_selected_validation_rotation_rmse_rad",
+            },
+            field="validation_guardrail",
+        )
+        guardrail = PositionValidationGuardrail(**guardrail_value)  # type: ignore[arg-type]
     try:
         return PositionEvaluationProtocol(
             evaluation_id=root["evaluation_id"],  # type: ignore[arg-type]
@@ -414,6 +485,7 @@ def load_position_evaluation_protocol(path: Path | str) -> PositionEvaluationPro
             metric_policy_id=root["metric_policy_id"],  # type: ignore[arg-type]
             decision_rule_id=root["decision_rule_id"],  # type: ignore[arg-type]
             candidates=tuple(candidates),
+            validation_guardrail=guardrail,
             source_path=source,
             source_sha256=hashlib.sha256(source_bytes).hexdigest(),
         )
@@ -431,6 +503,8 @@ class CandidateDecisionInput:
     reference_pair_count: int
     scored_pair_count: int
     pair_displacement_magnitude_rmse_m: float
+    cumulative_scored_distance_rmse_m: float | None = None
+    scored_distance_ratio: float | None = None
 
     def __post_init__(self) -> None:
         _identifier(self.candidate_id, field="candidate_id")
@@ -448,6 +522,12 @@ class CandidateDecisionInput:
             or self.pair_displacement_magnitude_rmse_m < 0.0
         ):
             raise LearningError("pair displacement-magnitude RMSE must be finite and non-negative")
+        for field in ("cumulative_scored_distance_rmse_m", "scored_distance_ratio"):
+            value = getattr(self, field)
+            if value is not None and (
+                type(value) is not float or not math.isfinite(value) or value < 0.0
+            ):
+                raise LearningError(f"{field} must be None or a finite non-negative float")
 
 
 def apply_position_decision_rule(
@@ -456,7 +536,7 @@ def apply_position_decision_rule(
     *,
     zero_motion_pair_rmse_m: float,
 ) -> dict[str, object]:
-    """Apply the frozen full-coverage/zero-control/minimum-RMSE rule exactly."""
+    """Apply one supported frozen position-only decision rule exactly."""
 
     if type(protocol) is not PositionEvaluationProtocol:
         raise LearningError("protocol must be an exact PositionEvaluationProtocol")
@@ -474,6 +554,87 @@ def apply_position_decision_rule(
         or zero_motion_pair_rmse_m < 0.0
     ):
         raise LearningError("zero_motion_pair_rmse_m must be finite and non-negative")
+
+    if protocol.decision_rule_id == _CONTROLLED_MAGNITUDE_DECISION_RULE_ID:
+        if expected != ("v2", "v5"):
+            raise LearningError(
+                "controlled magnitude-loss rule requires candidates in exact v2, v5 order"
+            )
+        if any(
+            item.cumulative_scored_distance_rmse_m is None or item.scored_distance_ratio is None
+            for item in outcomes
+        ):
+            raise LearningError(
+                "controlled magnitude-loss rule requires cumulative RMSE and distance ratio"
+            )
+        baseline, experimental = outcomes
+        baseline_counts = (
+            baseline.sensor_pair_count,
+            baseline.produced_pair_count,
+            baseline.reference_pair_count,
+            baseline.scored_pair_count,
+        )
+        experimental_counts = (
+            experimental.sensor_pair_count,
+            experimental.produced_pair_count,
+            experimental.reference_pair_count,
+            experimental.scored_pair_count,
+        )
+        if experimental_counts != baseline_counts:
+            raise LearningError(
+                "controlled magnitude-loss rule requires identical candidate coverage counts"
+            )
+        coverage = {
+            item.candidate_id: {
+                "full_sensor_coverage": item.produced_pair_count == item.sensor_pair_count,
+                "full_reference_coverage": item.scored_pair_count == item.reference_pair_count,
+                "beats_zero_motion_pair_rmse": (
+                    item.pair_displacement_magnitude_rmse_m < zero_motion_pair_rmse_m
+                ),
+            }
+            for item in outcomes
+        }
+        both_have_full_coverage = all(
+            values["full_sensor_coverage"] and values["full_reference_coverage"]
+            for values in coverage.values()
+        )
+        assert baseline.cumulative_scored_distance_rmse_m is not None
+        assert experimental.cumulative_scored_distance_rmse_m is not None
+        assert baseline.scored_distance_ratio is not None
+        assert experimental.scored_distance_ratio is not None
+        gates = {
+            "pair_displacement_magnitude_rmse_lower_than_zero_motion": (
+                experimental.pair_displacement_magnitude_rmse_m < zero_motion_pair_rmse_m
+            ),
+            "pair_displacement_magnitude_rmse_lower_than_v2": (
+                experimental.pair_displacement_magnitude_rmse_m
+                < baseline.pair_displacement_magnitude_rmse_m
+            ),
+            "cumulative_scored_distance_rmse_lower_than_v2": (
+                experimental.cumulative_scored_distance_rmse_m
+                < baseline.cumulative_scored_distance_rmse_m
+            ),
+            "distance_ratio_error_lower_than_v2": (
+                abs(1.0 - experimental.scored_distance_ratio)
+                < abs(1.0 - baseline.scored_distance_ratio)
+            ),
+        }
+        accepted = both_have_full_coverage and all(gates.values())
+        return {
+            "decision_rule_id": protocol.decision_rule_id,
+            "zero_motion_pair_rmse_m": zero_motion_pair_rmse_m,
+            "candidate_eligibility": [
+                {"candidate_id": item.candidate_id, **coverage[item.candidate_id]}
+                for item in outcomes
+            ],
+            "comparison_gates": gates,
+            "decision": "accept_v5" if accepted else "retain_v2",
+            "selected_candidate_id": "v5" if accepted else "v2",
+            "scope": (
+                "controlled position-only v2-versus-v5 displacement-magnitude endpoint; "
+                "not a full-pose, rotation, ATE, deployment, or publication-grade approval"
+            ),
+        }
 
     eligibility: list[dict[str, object]] = []
     eligible: list[CandidateDecisionInput] = []
@@ -626,6 +787,88 @@ def _resolve_checkpoints(
     return resolved
 
 
+def _validate_candidate_checkpoint_metadata(
+    *,
+    candidate: PositionEvaluationCandidate,
+    metadata: Any,
+    evaluation_sequence_id: str,
+    expected_dataset_id: str,
+) -> None:
+    if metadata.provenance.dataset_id != expected_dataset_id:
+        raise LearningError(
+            f"checkpoint {candidate.candidate_id!r} dataset identity differs from protocol DOI"
+        )
+    if evaluation_sequence_id in (
+        *metadata.provenance.train_sequence_ids,
+        *metadata.provenance.validation_sequence_ids,
+    ):
+        raise LearningError(
+            f"evaluation sequence {evaluation_sequence_id!r} appears in checkpoint "
+            f"{candidate.candidate_id!r} training/validation provenance"
+        )
+
+
+def _enforce_validation_guardrail(
+    protocol: PositionEvaluationProtocol,
+    metrics_by_candidate: Mapping[str, Mapping[str, float]],
+) -> None:
+    guardrail = protocol.validation_guardrail
+    if guardrail is None:
+        return
+    metrics = metrics_by_candidate.get(guardrail.candidate_id)
+    if metrics is None:
+        raise LearningError("validation guardrail candidate metrics are missing")
+    checks = (
+        (
+            _VALIDATION_TRANSLATION_METRIC,
+            guardrail.max_selected_validation_translation_rmse_m,
+        ),
+        (
+            _VALIDATION_ROTATION_METRIC,
+            guardrail.max_selected_validation_rotation_rmse_rad,
+        ),
+    )
+    for metric_name, maximum in checks:
+        value = metrics.get(metric_name)
+        if type(value) is not float or not math.isfinite(value) or value < 0.0:
+            raise LearningError(
+                f"validation guardrail metric {metric_name!r} is missing, negative, or non-finite"
+            )
+        if value > maximum:
+            raise LearningError(
+                f"validation guardrail failed: {metric_name}={value!r} exceeds {maximum!r}"
+            )
+
+
+def _preflight_candidate_checkpoints(
+    protocol: PositionEvaluationProtocol,
+    checkpoints: Mapping[str, Path],
+    *,
+    expected_dataset_id: str,
+) -> None:
+    """Validate every checkpoint and the selected validation gate before inference."""
+
+    from compact_vio.learning.inference import load_inference_model
+
+    metrics_by_candidate: dict[str, Mapping[str, float]] = {}
+    for candidate in protocol.candidates:
+        model, metadata = load_inference_model(
+            checkpoints[candidate.candidate_id],
+            device="cpu",
+            expected_inference_policy_id=candidate.inference_policy_id,
+            expected_checkpoint_sha256=candidate.checkpoint_sha256,
+        )
+        _validate_candidate_checkpoint_metadata(
+            candidate=candidate,
+            metadata=metadata,
+            evaluation_sequence_id=protocol.dataset.sequence_id,
+            expected_dataset_id=expected_dataset_id,
+        )
+        metrics_by_candidate[candidate.candidate_id] = metadata.metrics
+        del model
+    _enforce_validation_guardrail(protocol, metrics_by_candidate)
+
+
 def _candidate_predictions(
     *,
     candidate: PositionEvaluationCandidate,
@@ -651,19 +894,18 @@ def _candidate_predictions(
         predict_sequence_batch,
     )
 
-    model, metadata = load_inference_model(checkpoint_path, device=device)
-    if metadata.provenance.dataset_id != expected_dataset_id:
-        raise LearningError(
-            f"checkpoint {candidate.candidate_id!r} dataset identity differs from protocol DOI"
-        )
-    if sequence.sequence_id in (
-        *metadata.provenance.train_sequence_ids,
-        *metadata.provenance.validation_sequence_ids,
-    ):
-        raise LearningError(
-            f"evaluation sequence {sequence.sequence_id!r} appears in checkpoint "
-            f"{candidate.candidate_id!r} training/validation provenance"
-        )
+    model, metadata = load_inference_model(
+        checkpoint_path,
+        device=device,
+        expected_inference_policy_id=candidate.inference_policy_id,
+        expected_checkpoint_sha256=candidate.checkpoint_sha256,
+    )
+    _validate_candidate_checkpoint_metadata(
+        candidate=candidate,
+        metadata=metadata,
+        evaluation_sequence_id=sequence.sequence_id,
+        expected_dataset_id=expected_dataset_id,
+    )
     model.zero_grad(set_to_none=True)
     if device.type == "cuda":
         torch_module.cuda.empty_cache()
@@ -1032,6 +1274,11 @@ def _run(args: argparse.Namespace) -> int:
     ):
         raise LearningError("archive identity does not match the frozen evaluation protocol")
     checkpoints = _resolve_checkpoints(protocol, args.checkpoint)
+    _preflight_candidate_checkpoints(
+        protocol,
+        checkpoints,
+        expected_dataset_id=f"EuRoC DOI {protocol.dataset.doi}",
+    )
     output = _prepare_output_directory(args.output_dir)
     data_root = Path(args.data_root).resolve(strict=True)
     sequence_root = data_root / protocol.dataset.sequence_id
@@ -1140,6 +1387,8 @@ def _run(args: argparse.Namespace) -> int:
                 reference_pair_count=len(scored_reference_pairs),
                 scored_pair_count=len(scored),
                 pair_displacement_magnitude_rmse_m=(metrics.pair_displacement_magnitude_rmse_m),
+                cumulative_scored_distance_rmse_m=(metrics.cumulative_scored_distance_rmse_m),
+                scored_distance_ratio=metrics.scored_distance_ratio,
             )
         )
 
@@ -1215,6 +1464,11 @@ def _run(args: argparse.Namespace) -> int:
             "sensor_origin_projection_policy_id": (
                 protocol.sampling.sensor_origin_projection_policy_id
             ),
+            "validation_guardrail": (
+                asdict(protocol.validation_guardrail)
+                if protocol.validation_guardrail is not None
+                else None
+            ),
         },
         "dataset": {
             **asdict(protocol.dataset),
@@ -1285,6 +1539,7 @@ __all__ = [
     "PositionEvaluationCandidate",
     "PositionEvaluationProtocol",
     "PositionEvaluationSampling",
+    "PositionValidationGuardrail",
     "apply_position_decision_rule",
     "build_parser",
     "load_position_evaluation_protocol",

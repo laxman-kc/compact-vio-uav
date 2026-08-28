@@ -35,9 +35,10 @@ class EpochMetrics:
     translation_rmse_m: float
     rotation_rmse_rad: float
     samples: int
+    translation_magnitude_loss: float | None = None
 
     def to_dict(self, *, prefix: str = "") -> dict[str, float]:
-        return {
+        values = {
             f"{prefix}total_loss": self.total_loss,
             f"{prefix}translation_loss": self.translation_loss,
             f"{prefix}rotation_loss": self.rotation_loss,
@@ -45,6 +46,9 @@ class EpochMetrics:
             f"{prefix}rotation_rmse_rad": self.rotation_rmse_rad,
             f"{prefix}samples": float(self.samples),
         }
+        if self.translation_magnitude_loss is not None:
+            values[f"{prefix}translation_magnitude_loss"] = self.translation_magnitude_loss
+        return values
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,16 +65,19 @@ class FitResult:
 class _Accumulator:
     weighted_total: float = 0.0
     weighted_translation: float = 0.0
+    weighted_translation_magnitude: float = 0.0
     weighted_rotation: float = 0.0
     translation_squared_error: float = 0.0
     rotation_squared_error: float = 0.0
     samples: int = 0
+    has_translation_magnitude: bool = False
 
     def add(
         self,
         *,
         total: Tensor,
         translation: Tensor,
+        translation_magnitude: Tensor | None,
         rotation: Tensor,
         prediction: Tensor,
         target: Tensor,
@@ -78,6 +85,11 @@ class _Accumulator:
         batch_size = target.shape[0]
         self.weighted_total += float(total.detach()) * batch_size
         self.weighted_translation += float(translation.detach()) * batch_size
+        if translation_magnitude is not None:
+            self.weighted_translation_magnitude += (
+                float(translation_magnitude.detach()) * batch_size
+            )
+            self.has_translation_magnitude = True
         self.weighted_rotation += float(rotation.detach()) * batch_size
         error = prediction.detach() - target
         self.translation_squared_error += float(error[:, :3].square().sum())
@@ -94,6 +106,11 @@ class _Accumulator:
             translation_rmse_m=math.sqrt(self.translation_squared_error / self.samples),
             rotation_rmse_rad=math.sqrt(self.rotation_squared_error / self.samples),
             samples=self.samples,
+            translation_magnitude_loss=(
+                self.weighted_translation_magnitude / self.samples
+                if self.has_translation_magnitude
+                else None
+            ),
         )
         if not all(
             math.isfinite(value)
@@ -103,6 +120,11 @@ class _Accumulator:
                 values.rotation_loss,
                 values.translation_rmse_m,
                 values.rotation_rmse_rad,
+                *(
+                    (values.translation_magnitude_loss,)
+                    if values.translation_magnitude_loss is not None
+                    else ()
+                ),
             )
         ):
             raise LearningError("epoch produced non-finite metrics")
@@ -137,8 +159,14 @@ def motion_loss(
     *,
     translation_weight: float,
     rotation_weight: float,
+    translation_magnitude_weight: float = 0.0,
 ) -> tuple[Tensor, Tensor, Tensor]:
-    """Return weighted total, translation, and rotation Smooth-L1 losses."""
+    """Return weighted total, translation-vector, and rotation Smooth-L1 losses.
+
+    A nonzero ``translation_magnitude_weight`` adds Smooth-L1 loss between the
+    predicted and target translation L2 norms. Its zero default preserves the
+    legacy v1-v4 objective and checkpoint behavior exactly.
+    """
 
     if prediction.shape != target.shape or prediction.ndim != 2 or prediction.shape[1] != 6:
         raise LearningError("prediction and target must both have shape [batch, 6]")
@@ -150,16 +178,48 @@ def motion_loss(
     ):
         if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
             raise LearningError(f"{field} must be a finite positive number")
+    if (
+        type(translation_magnitude_weight) not in (int, float)
+        or not math.isfinite(translation_magnitude_weight)
+        or translation_magnitude_weight < 0
+    ):
+        raise LearningError("translation_magnitude_weight must be a finite non-negative number")
     translation = torch.nn.functional.smooth_l1_loss(prediction[:, :3], target[:, :3])
     rotation = torch.nn.functional.smooth_l1_loss(prediction[:, 3:], target[:, 3:])
-    return translation_weight * translation + rotation_weight * rotation, translation, rotation
+    legacy_total = translation_weight * translation + rotation_weight * rotation
+    if translation_magnitude_weight == 0.0:
+        return legacy_total, translation, rotation
+    translation_magnitude = torch.nn.functional.smooth_l1_loss(
+        torch.linalg.vector_norm(prediction[:, :3], dim=1),
+        torch.linalg.vector_norm(target[:, :3], dim=1),
+    )
+    return (
+        legacy_total + translation_magnitude_weight * translation_magnitude,
+        translation,
+        rotation,
+    )
+
+
+def _configured_translation_magnitude_loss(
+    prediction: Tensor,
+    target: Tensor,
+    config: TrainingConfig,
+) -> Tensor | None:
+    if config.translation_magnitude_loss_weight == 0.0:
+        return None
+    predicted_translation = prediction.detach()[:, :3]
+    target_translation = target.detach()[:, :3]
+    return torch.nn.functional.smooth_l1_loss(
+        torch.linalg.vector_norm(predicted_translation, dim=1),
+        torch.linalg.vector_norm(target_translation, dim=1),
+    )
 
 
 def _forward_loss(
     model: CompactVIO,
     batch: VIOBatch,
     config: TrainingConfig,
-) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor | None, Tensor, Tensor]:
     output = model(
         batch.frame_pairs,
         batch.imu,
@@ -172,8 +232,14 @@ def _forward_loss(
         batch.target_motion,
         translation_weight=config.translation_loss_weight,
         rotation_weight=config.rotation_loss_weight,
+        translation_magnitude_weight=config.translation_magnitude_loss_weight,
     )
-    return total, translation, rotation, prediction
+    translation_magnitude = _configured_translation_magnitude_loss(
+        prediction,
+        batch.target_motion,
+        config,
+    )
+    return total, translation, translation_magnitude, rotation, prediction
 
 
 def _forward_sequence_loss(
@@ -182,7 +248,7 @@ def _forward_sequence_loss(
     config: TrainingConfig,
     *,
     fusion_state: Tensor | None = None,
-) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor | None, Tensor, Tensor, Tensor, Tensor]:
     """Return masked sequence losses, valid predictions/targets, and final state."""
 
     output = model.forward_sequence(
@@ -200,10 +266,13 @@ def _forward_sequence_loss(
         target,
         translation_weight=config.translation_loss_weight,
         rotation_weight=config.rotation_loss_weight,
+        translation_magnitude_weight=config.translation_magnitude_loss_weight,
     )
+    translation_magnitude = _configured_translation_magnitude_loss(prediction, target, config)
     return (
         total,
         translation,
+        translation_magnitude,
         rotation,
         prediction,
         target,
@@ -241,13 +310,20 @@ def train_one_epoch(
                 (
                     total,
                     translation,
+                    translation_magnitude,
                     rotation,
                     prediction,
                     target,
                     _,
                 ) = _forward_sequence_loss(model, batch, config)
             else:
-                total, translation, rotation, prediction = _forward_loss(model, batch, config)
+                (
+                    total,
+                    translation,
+                    translation_magnitude,
+                    rotation,
+                    prediction,
+                ) = _forward_loss(model, batch, config)
                 target = batch.target_motion
         if scaler is not None and amp_enabled:
             scaler.scale(total).backward()
@@ -262,6 +338,7 @@ def train_one_epoch(
         accumulator.add(
             total=total,
             translation=translation,
+            translation_magnitude=translation_magnitude,
             rotation=rotation,
             prediction=prediction,
             target=target,
@@ -324,6 +401,7 @@ def evaluate(
                 (
                     total,
                     translation,
+                    translation_magnitude,
                     rotation,
                     prediction,
                     target,
@@ -343,11 +421,18 @@ def evaluate(
                 next_chunk_indices[chain_id] = chunk_index + 1
         else:
             with torch.autocast(device_type=actual_device.type, enabled=amp_enabled):
-                total, translation, rotation, prediction = _forward_loss(model, batch, config)
+                (
+                    total,
+                    translation,
+                    translation_magnitude,
+                    rotation,
+                    prediction,
+                ) = _forward_loss(model, batch, config)
             target = batch.target_motion
         accumulator.add(
             total=total,
             translation=translation,
+            translation_magnitude=translation_magnitude,
             rotation=rotation,
             prediction=prediction,
             target=target,

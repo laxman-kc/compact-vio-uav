@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "experiment_id": "euroc-compact-vio-v5-magnitude",
+  "seed": 20260828,
+  "split_manifest": "configs/data/euroc_vicon_v1.json",
+  "image": {
+    "width_px": 256,
+    "height_px": 160,
+    "mean": 0.5,
+    "std": 0.25
+  },
+  "model": {
+    "visual_feature_dim": 256,
+    "imu_hidden_dim": 128,
+    "fusion_hidden_dim": 256,
+    "dropout": 0.1,
+    "gyro_scale_rad_s": 1.0,
+    "acceleration_scale_m_s2": 9.80665
+  },
+  "optimization": {
+    "epochs": 30,
+    "batch_size": 64,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.00001,
+    "translation_loss_weight": 1.0,
+    "translation_magnitude_loss_weight": 1.0,
+    "rotation_loss_weight": 1.0,
+    "gradient_clip_norm": 5.0,
+    "num_workers": 8,
+    "amp": true
+  },
+  "sampling": {
+    "frame_strides": [1, 2],
+    "max_pairs_per_sequence": null
+  },
+  "selection": {
+    "metric": "validation_weighted_motion_loss",
+    "mode": "min"
+  }
+}

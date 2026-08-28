@@ -1,0 +1,37 @@
+{
+  "record_type": "euroc_acquisition_plan",
+  "schema_version": "1.0.0",
+  "dataset": {
+    "title": "The EuRoC micro aerial vehicle datasets",
+    "doi": "10.3929/ethz-b-000690084",
+    "landing_page": "https://www.research-collection.ethz.ch/entities/researchdata/bcaf173e-5dac-484b-bc37-faf97a594f1f",
+    "rights_statement": "In Copyright - Non-Commercial Use Permitted",
+    "publisher": "ETH Zurich"
+  },
+  "archives": [
+    {
+      "archive_id": "machine_hall",
+      "filename": "machine_hall.zip",
+      "url": "https://www.research-collection.ethz.ch/server/api/core/bitstreams/7b2419c1-62b5-4714-b7f8-485e5fe3e5fe/content",
+      "size_bytes": 12683729426,
+      "md5": "363f5c2502b469cdd97ef85997714806",
+      "sha256": "5ed7d07903f8d19b6c8808e2ae8a0872b281f6e34ef5497023b8ac58c3de0f6f",
+      "sequences": ["MH_02_easy"]
+    }
+  ],
+  "evaluation_role": {
+    "fresh_position_only": ["MH_02_easy"]
+  },
+  "modalities": [
+    "cam0_grayscale",
+    "imu0_gyroscope",
+    "imu0_accelerometer"
+  ],
+  "reference_source": "leica0_position_only",
+  "notes": [
+    "MH_02_easy is prospectively frozen for one position-only comparison of the existing v2 checkpoint and the single controlled v5 magnitude-loss checkpoint.",
+    "The v5 architecture, split, seed, optimizer, schedule, objective, validation guardrails, and stop rule were fixed before MH_02_easy extraction or prediction inspection.",
+    "The Leica stream supplies 3D position, not reference orientation; rotation, direction, full-pose ATE, and deployment claims remain out of scope.",
+    "After this comparison MH_02_easy is consumed and must not be reused for another model-selection decision."
+  ]
+}

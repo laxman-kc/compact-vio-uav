@@ -1,10 +1,10 @@
 # Configuration registry
 
-This directory holds versioned, human-reviewable configuration contracts and
-will later hold approved baseline, model-candidate, and experiment
-configuration. It intentionally contains no default estimator, sensor, dataset
-split, loss, threshold, or deployment target: those values remain blocked by
-the decision gates in `docs/`.
+This directory holds versioned, human-reviewable inputs for the implemented
+EuRoC acquisition, compact learned-VIO training, and frozen evaluation paths.
+Checked-in files declare exact identities and policies; machine-local paths,
+credentials, downloaded data, checkpoints, and run outputs remain outside this
+directory.
 
 Current calibration files:
 
@@ -23,20 +23,31 @@ assessment whose raw profile hash, identity, revision, validity fingerprint,
 scope, criteria, and required checks all validate. A profile never approves
 itself and is not edited after assessment; changes create a new revision.
 
-The later dataset adapter projects one validated profile into the existing
-runtime `CalibrationRecord` without inventing fields: `calibration_id`,
-`sensor_profile_id`, `revision_id`, `provenance_id`,
-`validity_conditions_id`, and `replay_clock_id` map directly; the profile
-schema `$id` supplies `schema_id`; and each camera/IMU stream plus its frame
-supplies one modality-specific `SensorBinding`. That adapter and any real
-profile remain M6 work.
+The EuRoC adapter reads native camera, IMU, calibration, full-pose reference,
+and position-only Leica records without replacing their source calibration.
+Generic calibration profiles still project into runtime `CalibrationRecord`
+objects without inventing fields: `calibration_id`, `sensor_profile_id`,
+`revision_id`, `provenance_id`, `validity_conditions_id`, and
+`replay_clock_id` map directly; the profile schema `$id` supplies `schema_id`;
+and each camera/IMU stream plus its frame supplies one modality-specific
+`SensorBinding`.
 
-When a track is approved, add its configuration below one of these namespaces:
+Current namespaces:
 
-- `baselines/` for classical reference implementations;
-- `models/` for learned or hybrid candidate definitions;
-- `experiments/` for resolved run configurations that reference frozen dataset
-  and split manifests.
+- `data/` records exact source archives, sequence roles, split membership, and
+  acquisition policies. The `MH_02_easy` record is prospective: it reserves one
+  position-only v2-versus-v5 evaluation and does not claim extraction or a
+  result.
+- `training/` contains the fully resolved v1-v5 experiment configurations.
+  Each new candidate changes only the fields declared by its reviewed plan.
+- `evaluation/` contains frozen checkpoint-evaluation protocols after source,
+  calibration, reference, and checkpoint hashes are known. A prospective data
+  role is not itself an executable evaluation protocol.
+- `schemas/` and `templates/` retain the generic calibration contracts and
+  visibly synthetic validation fixtures.
+
+Future `baselines/` or model-family namespaces are created only with their first
+tested implementation; empty scaffolding is intentionally avoided.
 
 Every claim-supporting run must preserve the fully resolved configuration in its
 experiment bundle. Configuration files must contain no credentials, machine-
