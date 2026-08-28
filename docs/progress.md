@@ -1033,6 +1033,116 @@ result, and explicit remaining blockers.
   fresh, predeclared evaluation unit. M7 and M9 remain in progress. The worker
   remains running; no stop, deletion, or termination action was taken.
 
+## 2026-08-28 — Frozen MH_01 position-only checkpoint evaluation completed
+
+- Evaluation commit `deea10f767dd207c181d09521d47667cc15c8d6d` was on
+  `origin/main`. The completed NVIDIA A10 / PyTorch 2.7.0 evaluation ran from
+  `2026-08-28T07:45:34.870708Z` to `2026-08-28T07:47:00.566678Z` and recorded
+  `85.6959709560033` seconds total duration.
+- GitHub Actions succeeded for Python 3.10 and 3.12 in
+  [run 33152517547](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33152517547).
+  The A10 gate ran all 329 tests successfully, including the new
+  dependency-gated PyTorch end-to-end evaluation smoke.
+- Evaluation ID `euroc-mh01-frozen-checkpoints-position-v1` used protocol
+  `configs/evaluation/euroc_mh01_frozen_checkpoints_position_v1.json`, SHA-256
+  `2610644fdcffaf2d44f327f3135de3795cfcaa91f7d9a8491d850035a7073425`.
+  It froze exact checkpoint, association, sensor-origin projection, metric, and
+  decision identities before predictions were inspected; no model,
+  hyperparameter, checkpoint, association, alignment, scale, threshold, or
+  rule tuning occurred during evaluation.
+- Dataset identity was EuRoC `MH_01_easy`, DOI
+  `10.3929/ethz-b-000690084`, under the recorded
+  `In Copyright - Non-Commercial Use Permitted` statement. The
+  12,683,729,426-byte `machine_hall.zip` archive had MD5
+  `363f5c2502b469cdd97ef85997714806` and SHA-256
+  `5ed7d07903f8d19b6c8808e2ae8a0872b281f6e34ef5497023b8ac58c3de0f6f`.
+  Sensor-source, sensor-calibration, and position-reference SHA-256 values were
+  `10dd5e711a8c063c16b65d2fe69baa979e8b39299bcaaf5643c5683f27a6977f`,
+  `966b51d7ecd4086f0c7f8ccb6644d8d66447f5eb703c4398c3bf0bde10f16085`,
+  and `5ff4628faea7594c21668f6e31b9e92718ce844902da225b2727acc880742ee0`.
+- The source contained 3,682 camera frames, 36,820 IMU measurements, and 3,099
+  Leica position samples. The frozen linear association retained 3,139 camera
+  frames, all interpolated and none exact at a reference timestamp. It allowed
+  no extrapolation and at most a 100,000,000 ns reference bracket. The maximum
+  observed bracket was 647,000,064 ns; 543 frames were rejected over gaps, none
+  outside reference coverage, and 207 contiguous reference segments remained.
+  This yielded 2,926 eligible and 755 rejected native pairs.
+- V2, v3, and v4 each received all 3,681 sensor pairs, produced all 3,681, and
+  scored all 2,926 reference-eligible pairs; 755 produced pairs remained
+  explicitly excluded by the reference rule. “Full reference coverage” in the
+  decision therefore means every eligible pair was scored, not that the
+  reference had no gaps.
+- The declared Leica origin in the IMU/prediction frame was
+  `[0.0748903, -0.0184772, -0.120209]` m. Predicted rotation affected the
+  projected Leica displacement through this lever arm, but there was no
+  independent reference orientation endpoint.
+- Candidate checkpoint SHA-256 values were v2
+  `17698fbf70862bf1aae17925081b0baf536d2c5b84fa6dcaea7b69926e3c3605`,
+  v3 `40d18a9a3a04131d04e06a4ab313279613d1dc2339d1758f99777ecb70de8c37`,
+  and v4
+  `e775adb16aa4f9522aa577a32704a54db5c82c53685b0e97fb8d149402bf159d`.
+- In the order pair displacement-magnitude RMSE, cumulative scored-distance
+  RMSE, predicted scored distance, reference scored distance, distance ratio,
+  and total scored-distance error, exact position-only results were: zero
+  motion `(0.02649378180034436, 35.44859693185987, 0.0,
+  63.4297877162257, 0.0, 63.4297877162257)`; v2
+  `(0.017339865612729627, 13.507518956747258, 38.7786801480933,
+  63.4297877162257, 0.6113638645865039, 24.651107568132396)`; v3
+  `(0.017810416665698072, 9.18286459081829, 46.772033634109,
+  63.4297877162257, 0.7373827868281585, 16.657754082116696)`; and v4
+  `(0.018905045864944767, 19.676000848537885, 28.49295141000196,
+  63.4297877162257, 0.44920458409028075, 34.93683630622374)`, in metres
+  except for the dimensionless ratio.
+- All three candidates passed the frozen full-eligible-coverage and beat-zero
+  gates. The rule selected the minimum pair displacement-magnitude RMSE with no
+  tie-break; v2 was therefore selected for this position-only endpoint. V3's
+  lower cumulative-distance RMSE was not the frozen selection field.
+- The result remained at A10 path
+  `/home/ubuntu/compact-vio-runs/euroc-mh01-frozen-position-deea10f` and was
+  copied to ignored local path `outputs/euroc-mh01-frozen-position-deea10f`.
+  `evaluation-summary.json` SHA-256 was
+  `65d37221572c458ca86281ef01c3ae41345fb35b66c99ef632ddfe0f894de5b4`.
+  The deterministic seven-file artifact manifest verified successfully at
+  both paths with raw SHA-256
+  `184d9427ebec373edb4da222bba5ea382146369a61b471b92b30b0e328ce8e76`.
+  Metric/prediction hashes were v2
+  `3860a222ba5efe2576050fd01d65723c75567bdfc9c17585914a5254586a3726` /
+  `e0416e5af3f5fbbefbde148046d7e636213302adf5c24f4db60a435faa87f4d4`,
+  v3 `82db78b164ffdec6acb44540f7f7ba3b57aba4e8b9c785fc51712a5bb05213a3` /
+  `77447263b74079f7b257f4d2a2c23c66c7e0e306e7d0799e1910a78f3cfc7c6a`,
+  and v4
+  `c0223dac0e17f9a9d36fd7ba5b6d8847684ea2713c14662d291abbbe2739ce65` /
+  `7ce297f9cdd50509fd5da22eee0ef221b8219e74f46d3f16a4d1fdb37cb0fded`.
+  Matching content does not by itself satisfy the independent recovery-copy
+  restore gate.
+- This endpoint scores displacement magnitudes from exact preassociated
+  position pairs with the declared lever arm and no internal interpolation,
+  alignment, or scale fitting. It does not score displacement direction,
+  heading, independent rotation, full pose, or ATE and does not support an
+  estimator-wide superiority, generalization, publication, deployment,
+  onboard-performance, safety, or flight claim. It does not erase the prior
+  `V2_03_difficult` exploratory history. M7 and M9 remain in progress. The
+  worker remains running by explicit choice; no stop, deletion, or termination
+  action was part of this evaluation.
+- Final post-documentation validation passed: 329 local tests with 29
+  dependency-gated skips; repository policy checked 129 files with zero
+  violations; the pinned schema harness passed 10 schemas and 7 templates
+  while leaving every unresolved governance truth flag false; Ruff lint and
+  format passed for all 100 Python files; compileall and `git diff --check`
+  passed; and artifact verification reported `ok: true` with no missing,
+  unexpected, size-mismatched, or hash-mismatched file. Exact commands:
+
+  ```bash
+  PYTHONPATH=src python3 -m unittest discover -s tests -q
+  PYTHONPATH=src python3 -m compact_vio.repository_policy .
+  uv run --no-project --with 'jsonschema[format-nongpl]==4.26.0' python scripts/validate_schemas.py
+  uv run --no-project --with ruff==0.16.4 ruff check .
+  uv run --no-project --with ruff==0.16.4 ruff format --check .
+  PYTHONPATH=src python3 -m compileall -q src tests
+  git diff --check
+  PYTHONPATH=src python3 -m compact_vio.artifacts verify outputs/euroc-mh01-frozen-position-deea10f
+  ```
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

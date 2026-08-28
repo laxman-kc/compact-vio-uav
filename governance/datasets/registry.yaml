@@ -5,8 +5,9 @@ evidence_brief: governance/datasets/evidence/representative-unit-candidate-brief
 
 # EuRoC is selected for the accepted training-first development prototype.
 # Every other entry remains a candidate. Exact EuRoC archives, checksums,
-# modalities, and sequence-disjoint development membership are recorded in the
-# linked acquisition plan rather than duplicated here.
+# modalities, sequence-disjoint development membership, and the separately
+# frozen Machine Hall position endpoint are recorded in the linked plans rather
+# than duplicated here.
 datasets:
   - id: tartanair-v2
     name: TartanAir V2
@@ -27,6 +28,7 @@ datasets:
     project_role: training_validation_held_out_prototype_evaluation
     official_url: https://projects.asl.ethz.ch/datasets/euroc-mav/
     acquisition_plan: configs/data/euroc_vicon_v1.json
+    position_evaluation_plan: configs/data/euroc_machine_hall_position_v1.json
     rights:
       status: recorded_from_official_archive
       label: In Copyright - Non-Commercial Use Permitted

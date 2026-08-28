@@ -36,11 +36,13 @@ stride-augmented follow-up at commit
 commit `336e88c7e80f6841c7d25b7da311172b40f5a3ba` added causal recurrent unroll.
 A third exploratory follow-up at commit
 `94d834a82bddb2e6185fb70ec289fd45017c325c` isolated recurrent state to the
-translation output. All four runs executed on 2026-08-28. Their records,
-checkpoints, and outputs were copied and checksum-verified; the worker was
-intentionally left running. That dated state and authorization do not carry
-forward. A future paid-worker run still requires current inventory and its own
-bounded record.
+translation output. All four training runs executed on 2026-08-28. A separate
+frozen position-only evaluation at commit
+`deea10f767dd207c181d09521d47667cc15c8d6d` then evaluated the three retained
+candidate checkpoints on `MH_01_easy`. Their records, checkpoints, and outputs
+were copied and checksum-verified; the worker was intentionally left running.
+That dated state and authorization do not carry forward. A future paid-worker
+run still requires current inventory and its own bounded record.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -142,7 +144,7 @@ configuration and must not be invented in documentation.
 | M6 | EuRoC development ingestion and split | Complete | Versioned split/acquisition plan, official archive identity, extracted-source hashes, and focused tests |
 | M7 | Common causal replay and evaluator | In progress | Raw real-data SE(3) slice executed; common lifecycle/coverage exit remains |
 | M8 | Compact model and bounded training | Complete | A10 smoke, four bounded 30-epoch runs, and checksum-verified checkpoints |
-| M9 | Held-out prototype inference and evaluation | In progress | Exploratory baseline/runtime/coverage evidence exists; fresh evaluation and model quality remain |
+| M9 | Held-out prototype inference and evaluation | In progress | Fresh frozen position-only selection exists; full-pose/rotation/ATE and common lifecycle evidence remain |
 | M10 | Later baselines, reliability ablations, and failure atlas | Conditional | Reproducible M9 prototype evidence and a separately frozen ablation protocol |
 | M11 | Confirmatory final-test execution and scientific selection | Blocked | Reproducible candidate set, sealed untouched membership, and frozen confirmatory protocol |
 | M12 | Conditional export, exact-target benchmark, and deployable selection | Blocked | M11; authorized provisional sensor/target choices |
@@ -695,9 +697,39 @@ than v2. Under the frozen three-gate rule it passed translation and ATE but
 failed rotation, so v4 is rejected as the replacement candidate and does not
 close M9.
 
-`V2_03_difficult` is now closed to further architecture or hyperparameter
-selection. The next model-quality decision must use a fresh evaluation unit
-whose role and acceptance rule are declared before its predictions are read.
+`V2_03_difficult` is closed to further architecture or hyperparameter
+selection. The next checkpoint decision therefore used the separately frozen
+`MH_01_easy` position-only endpoint described below.
+
+Fresh position-only evaluation evidence: commit
+`deea10f767dd207c181d09521d47667cc15c8d6d` froze checkpoint, association,
+projection, metric, and decision identities before evaluating v2, v3, and v4.
+The protocol SHA-256 is
+`2610644fdcffaf2d44f327f3135de3795cfcaa91f7d9a8491d850035a7073425`.
+All three candidates produced all 3,681 native sensor pairs and scored all
+2,926 reference-eligible pairs. The frozen 100 ms no-extrapolation association
+excluded 543 camera frames over reference gaps and 755 native pairs, retaining
+207 contiguous reference segments. The Leica origin in the IMU/prediction
+frame was `[0.0748903, -0.0184772, -0.120209]` m.
+
+The zero-motion pair displacement-magnitude RMSE was
+`0.02649378180034436` m. V2, v3, and v4 measured
+`0.017339865612729627`, `0.017810416665698072`, and
+`0.018905045864944767` m, respectively. Each met the rule's complete eligible
+coverage and beat-zero gates; v2 had the minimum pair RMSE and was selected
+without a tie or tuning. The selected result is limited to exact preassociated
+position-displacement magnitudes with the declared lever arm, no internal
+interpolation, alignment, or scale fitting. It is not full pose, an independent
+rotation endpoint, ATE, a deployment decision, or publication-grade evidence,
+so M9 remains in progress.
+
+The A10 result at
+`/home/ubuntu/compact-vio-runs/euroc-mh01-frozen-position-deea10f` and ignored
+local copy at `outputs/euroc-mh01-frozen-position-deea10f` share verified
+artifact-manifest SHA-256
+`184d9427ebec373edb4da222bba5ea382146369a61b471b92b30b0e328ce8e76`.
+The reviewed report records the exact archive/source/calibration/reference,
+checkpoint, summary, metric, and prediction hashes.
 
 Required work:
 

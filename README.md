@@ -65,11 +65,31 @@ but failed the rotation gate and was rejected as a replacement candidate.
 No further model or hyperparameter selection will use `V2_03_difficult`; the
 next quality decision requires a fresh, predeclared evaluation unit.
 
-All four A10 result bundles were copied to ignored local paths and
+Commit `deea10f767dd207c181d09521d47667cc15c8d6d` then froze v2, v3,
+and v4 checkpoint identities plus a position-only `MH_01_easy` endpoint before
+execution. Under protocol SHA-256
+`2610644fdcffaf2d44f327f3135de3795cfcaa91f7d9a8491d850035a7073425`,
+all candidates produced 3,681 sensor pairs and scored all 2,926
+reference-eligible pairs; 755 pairs remained visibly excluded by the frozen
+reference-gap rule. V2's pair displacement-magnitude RMSE of
+`0.017339865612729627` m was the rule's minimum and beat the zero-motion value
+of `0.02649378180034436` m, so v2 was selected for this endpoint without tuning.
+The [reviewed report](reports/euroc-mh01-frozen-position-evaluation-2026-08-28.md)
+records the association, 207 retained reference segments, declared Leica lever
+arm, all metrics, and exact hashes. This position-only decision is not a
+full-pose/rotation result, ATE, deployment approval, or publication-grade
+confirmation.
+
+All four training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies, including
-`outputs/euroc-compact-vio-v4-translation-state-full-94d834a`. The worker remains
-running by explicit choice and has not been stopped or terminated. Worker
-storage is never treated as durable.
+`outputs/euroc-compact-vio-v4-translation-state-full-94d834a`. The MH_01
+evaluation artifacts at
+`/home/ubuntu/compact-vio-runs/euroc-mh01-frozen-position-deea10f` were copied to
+ignored local path `outputs/euroc-mh01-frozen-position-deea10f`; their
+seven-file artifact manifest verified at both locations with SHA-256
+`184d9427ebec373edb4da222bba5ea382146369a61b471b92b30b0e328ce8e76`.
+The worker remains running by explicit choice and has not been stopped or
+terminated. Worker storage is never treated as durable.
 
 The project follows these invariants:
 

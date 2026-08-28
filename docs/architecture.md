@@ -7,24 +7,27 @@ Last reviewed: 2026-08-28
 
 The architecture separates durable project state from disposable computation
 and the common scientific substrate from estimator-specific implementations.
-The accepted scope is causal metric-scale local VIO. ADR-0004 selects a compact
+The accepted scope is causal metric-scale local VIO. ADR-0004 selected a compact
 PyTorch training-first vertical slice over EuRoC Vicon Room `cam0`, IMU, and
-ground truth. A/B/C/D reliability experiments are later research ablations, not
-the implementation critical path. Mapping, loop closure, flight control, and
-target deployment are outside the current core.
+ground truth; that adapter-to-checkpoint-to-evaluation path is implemented and
+has executed. A separately frozen `MH_01_easy` position-only endpoint has also
+evaluated the retained v2, v3, and v4 checkpoints without retraining and selected
+v2 only for that narrow endpoint. A/B/C/D reliability experiments are later
+research ablations, not the implementation critical path. Mapping, loop
+closure, flight control, and target deployment are outside the current core.
 
 ## Planes
 
 ### Versioned control plane
 
-GitHub currently stores source, tests, environment definitions, requirements,
-ADRs, schemas, policies, and small reviewed evidence. When created, versioned
-experiment/training configurations, dataset/split manifests, seeds,
-checkpoint-selection metadata, run manifests, artifact indexes, checksums, and
-small reviewed reports also belong here. An optional tracking service is a
-view/cache, not an authority. GitHub is not the normal store for datasets,
-caches, complete training histories, large checkpoints, or target-specific
-engine files.
+GitHub stores source, tests, environment definitions, requirements, ADRs,
+schemas, policies, versioned data/training/evaluation configurations,
+dataset/split manifests, seeds, checkpoint-selection metadata, checksums, and
+small reviewed reports. Future run manifests and small artifact indexes also
+belong here. An optional tracking service is a view/cache, not an authority.
+GitHub is not the normal store for datasets, caches, complete training
+histories, large checkpoints, prediction series, or target-specific engine
+files.
 
 ### Development and staging plane
 
@@ -37,8 +40,8 @@ evaluation work, or tiny CPU training smoke tests once a trainer exists.
 
 ### Disposable execution plane
 
-A future GPU worker would receive an immutable Git revision and approved data
-subsets, then perform only the bounded preprocessing, baseline execution,
+A disposable GPU worker receives an immutable Git revision and approved data
+subsets, then performs only the bounded preprocessing, baseline execution,
 training, evaluation, or profiling task that justified it. Worker-local
 datasets, caches, tracking databases, checkpoints, and logs would be disposable
 until exported and verified.
@@ -51,11 +54,13 @@ The previous A10 worker described in the
 [2026-08-26 Brev observation](../environments/a10/inventory-2026-08-26.md) was
 terminated. A new worker was observed `RUNNING`, `READY`, and `HEALTHY` on
 2026-08-27; its [dated inventory](../environments/a10/inventory-2026-08-27.md)
-is recorded separately, and the owner authorized that bounded implementation
-smoke only. The observation and authorization do not carry forward. Every later
-task requires fresh state, inventory, and owner confirmation; lifecycle
-capability and price must be re-observed rather than inherited from either
-worker.
+is recorded separately. Bounded owner-authorized tasks on 2026-08-28 executed
+four training runs and the frozen Machine Hall evaluation from pushed
+revisions. At the end of the recorded evaluation the worker remained running by
+explicit choice. These dated observations and authorizations do not authorize
+another task. Every later task requires fresh state, inventory, and owner
+confirmation; lifecycle capability and price must be re-observed rather than
+inherited.
 
 ### Durable artifact plane
 
@@ -112,26 +117,61 @@ evaluator. Official calibration is consumed and checked rather than estimated
 or silently replaced. Source sequences are the split groups, so frame windows
 from one physical recording cannot leak across memberships.
 
+## Frozen Machine Hall position-only evaluation path
+
+```text
+official Machine Hall archive -> byte/hash verification -> MH_01_easy
+                                                         |
+                              +--------------------------+------------------+
+                              |                                             |
+                    cam0 + causal imu0                            Leica positions
+                              |                                             |
+                 sensor-only inference data               frozen <=100 ms association
+                              |                                             |
+                 fixed v2/v3/v4 checkpoints                eligible native pair set
+                              |                                             |
+                predicted relative t and R                                |
+                              |                                             |
+          IMU-to-Leica lever-arm projection -------------------------------+
+                              |
+               sensor-point displacement magnitudes
+                              |
+        frozen coverage/beat-zero/minimum-pair-RMSE rule
+                              |
+                v2 position-endpoint selection
+```
+
+This path does not expose Leica values to model inference. It derives the
+Leica origin in the prediction frame from both native `imu0` and `leica0`
+`T_BS` transforms and projects each prediction with
+`t_I + R_relative r_IL - r_IL`. The reference has position but no orientation,
+so only exact preassociated displacement magnitudes are scored. Reference-gap
+filtering retains disjoint native-pair segments visibly; it does not join them
+into one full trajectory. Consequently this branch cannot report direction,
+heading, an independent rotation endpoint, ATE, or final pose.
+
 ## Model and training boundary
 
 The learned estimator consumes two temporally ordered `cam0` images and the
-causally corresponding IMU window. A compact CNN encodes visual change. A
-declared GRU or Conv1D implementation encodes the IMU window. Version 1 uses a
-zero-initialized gated fusion cell per supervised frame pair; it does not expose
-an untrained cross-frame recurrent state. The head predicts relative translation
-and a declared relative-rotation representation. Exact shapes, normalization, rotation representation, loss
-weights, optimizer, and schedule are resolved in versioned development
-configuration and tested before a run; the architecture does not invent their
-values.
+causally corresponding IMU window. A compact CNN encodes visual change, an IMU
+GRU encodes the variable-length inertial window, and a recurrent fusion cell
+feeds a relative translation/rotation head. The implemented v1/v2 pair path
+zero-initializes fusion state for each independent pair. V3/v4 add explicit
+masked causal sequence unroll for bounded training and carry state only across
+contiguous evaluation chunks of one chain; v4 changes only the declared
+rotation-state routing. Exact shapes, normalization, rotation representation,
+loss weights, optimizer, seed, unroll, state policy, and schedule are resolved
+in versioned configurations and retained in checkpoints.
 
-Training starts with sample inspection and a tiny overfit/forward-backward/
-save-load smoke, then one bounded configuration. Training membership alone
-supplies fitted statistics and gradients. Validation serves only its declared
-selection role, and held-out development test records never tune the model.
-Every retained run remains reconstructable from versioned configuration,
-manifests, trajectories, metrics, environment records, and the exact checkpoint.
-Tracking services are optional views, never the authority. Checkpoints and large
-histories stay out of Git.
+The executed workflow used sample inspection and deterministic
+forward-backward/save-load smoke gates before bounded 30-epoch configurations.
+Training membership alone supplied fitted statistics and gradients. Validation
+served its declared checkpoint-selection role. `V2_03_difficult` produced
+exploratory development evidence and is closed to further architecture or
+hyperparameter selection. Every retained run binds versioned configuration,
+source membership and hashes, metrics, environment facts, and the exact
+checkpoint. Tracking services are optional views, never the authority;
+checkpoints, prediction rows, and large histories stay out of Git.
 
 The first checkpoint and held-out report establish a development prototype, not
 a publishable or flight-ready claim. A native classical reference and the
@@ -140,31 +180,38 @@ their own fairness and confirmation protocols.
 
 ## Current implementation boundary
 
-Implemented now: repository/evidence tooling, the generic causal event-release
-primitive, a framework-neutral estimator envelope with a required declaration
-shape and initialization/reset validation, a direct causal execution recorder,
-typed camera/IMU payload records, immutable translation-trajectory records, raw
-exact-pair signed translation-residual and translation-RMSE kernels, explicit
-output-coverage accounting and binding, a deterministic payload-omitted terminal
-recorder-envelope projection, and strict persisted calibration-profile plus
-separate assessment contracts. The committed fixture is synthetic and rejected.
-The accepted next implementation boundary is the smallest real EuRoC adapter,
-split manifest, learned model, training smoke, checkpoint path, and held-out
-evaluation path. Until their execution evidence is recorded, the repository
-makes no trained-model or real-data result claim. ONNX, TensorRT, ROS 2, PX4,
-and flight integration remain outside this slice.
+Implemented now: repository/evidence tooling; the generic causal event-release,
+estimator-envelope, execution-recorder, coverage, and payload-omitted trace
+boundaries; typed camera/IMU and trajectory records; raw exact-pair residual,
+RMSE, and SE(3) evaluation; and persisted calibration-profile/assessment
+contracts. The data layer safely verifies and extracts the selected EuRoC
+archives, loads strict full-state Vicon sequences, loads sensor-only sequences,
+loads Leica position references without inventing orientation, constructs
+causal frame-pair/IMU windows, and records source/calibration hashes.
+
+The learned layer implements strict configuration, relative-motion geometry,
+independent and causal-sequence datasets, the compact PyTorch CNN/IMU-GRU/fusion
+model, deterministic training and validation, checkpoints, independent and
+stateful inference, raw SE(3) result writing, and the frozen Machine Hall
+position-only evaluator. Four bounded 30-epoch A10 training runs, exploratory
+`V2_03_difficult` evaluations, and the fresh position-only checkpoint decision
+have executed; their reviewed reports and exact external artifact identities are
+recorded. M7/M9 remain in progress because the fresh endpoint has no reference
+orientation or direction and the common lifecycle/full-pose exit evidence is
+not complete. ONNX, TensorRT, ROS 2, PX4, and flight integration remain outside
+the implemented slice.
 
 ## Technology stack by status
 
 | Layer | Current implementation | Planned or conditional boundary |
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
-| Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces, additional geometry/evaluator and lifecycle behavior, actual dataset profiles, and adapters are planned; exact state/policy identifiers, final metric protocols, sensor configuration, conventions, thresholds, and numerical backend remain unresolved. |
-| Development data | EuRoC Vicon Room family, monocular `cam0`, six-axis IMU, official calibration, and ground truth selected by ADR-0004 | Exact source units, identities, sizes, hashes, and sequence-level split memberships belong in acquisition/split manifests. |
-| Learned estimator | PyTorch selected by ADR-0004; implementation evidence pending | Compact image-pair CNN, temporal IMU GRU, zero-initialized gated frame-pair fusion, and relative translation/rotation head. Exact numerical choices belong in versioned configuration. |
+| Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
+| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified acquisition; versioned Vicon and Machine Hall identities, hashes, calibration, split, and endpoint configurations | Other datasets or physical sensors require separate rights, calibration, provenance, and role records. |
+| Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, deterministic checkpoints, and four completed A10 runs | Further tuning on the seen development sequence is closed. New model changes, compression, or export require a separately frozen purpose and evaluation unit. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
-| GPU execution | Dated A10 implementation-smoke evidence exists | Present state and every later task require fresh inventory and owner confirmation. |
+| GPU execution | Dated A10 smoke, four bounded training runs, and one frozen checkpoint evaluation are recorded; the worker remained running at the last observation | Present state and every later task require fresh inventory and owner confirmation. |
 | Export/deployment | Not implemented | ONNX is conditional; TensorRT, Jetson/other edge hardware, ROS 2, and PX4 scope are unresolved. |
 
 ## Repository structure: current and planned
@@ -181,9 +228,8 @@ compact-vio-uav/
 ├── governance/                            [current: policies/schemas/draft templates; zero authoritative records]
 ├── environments/                          [current: dated A10 inventories]
 ├── experiments/
-│   ├── schemas/                           [current: run/artifact/evidence/recorder-envelope schemas]
-│   └── configs/                           [planned: frozen experiment configs]
-├── configs/                               [current: calibration schemas/rejected synthetic fixtures; other configs planned]
+│   └── schemas/                           [current: run/artifact/evidence/recorder-envelope schemas]
+├── configs/                               [current: calibration schemas plus data/training/evaluation records]
 ├── src/compact_vio/
 │   ├── replay.py                          [current]
 │   ├── estimator.py                       [current: estimator envelope/interface declaration]
@@ -194,13 +240,10 @@ compact-vio-uav/
 │   ├── preflight.py                       [current]
 │   ├── repository_policy.py               [current]
 │   ├── contracts/                         [current: sensor payload/calibration-identity runtime records]
-│   ├── data/                              [planned: EuRoC adapter, calibration and split loading]
+│   ├── data/                              [current: verified EuRoC acquisition/full-state/sensor-only/Leica adapters]
 │   ├── geometry/                          [current: translation trajectory records]
-│   ├── evaluation/                        [current: residual/RMSE, coverage, replay/output binding]
-│   ├── learning/                          [planned by accepted ADR-0004]
-│   │   ├── models/                        [planned: compact visual/IMU/fusion model]
-│   │   ├── training/                      [planned: train/checkpoint path]
-│   │   └── inference/                     [planned: checkpoint and trajectory path]
+│   ├── evaluation/                        [current: residual/RMSE, SE(3), position magnitude, coverage/binding]
+│   ├── learning/                          [current: config/data/model/train/checkpoint/inference/evaluation CLIs]
 │   ├── backend/                           [later: classical/shared-backend research]
 │   ├── baselines/                         [later: native classical reference]
 │   ├── inertial/                          [later: modular ablation substrate]
@@ -209,7 +252,7 @@ compact-vio-uav/
 │   ├── health/                            [later: D-monitor/D]
 │   ├── estimators/                        [later tested compositions; estimator.py remains the contract]
 ├── tests/                                 [current; expands one slice at a time]
-├── reports/                               [current: output policy/README; reviewed result files future]
+├── reports/                               [current: policy/index and reviewed v2/v3/v4/MH_01 results]
 └── deployment/                            [conditional: export/target/ROS 2/PX4]
 ```
 
@@ -249,8 +292,9 @@ The first implemented replay primitive distinguishes
 `measurement_time_ns`—when a measurement applies—from
 `available_time_ns`—when an online estimator may observe it. All events use one
 declared clock per replay; same-time ordering is explicit; and reset or invalid
-events are delivered rather than filtered. Dataset adapters will later map
-source timestamps and payloads into this contract.
+events are delivered rather than filtered. The EuRoC adapters now map native
+camera/IMU timestamps and payloads into the learned data path; adapters for any
+other source must preserve the same explicit semantics.
 
 The estimator declaration currently freezes only which decisions a profile
 must name: state schema/variables, metric-scale mechanism, initialization,
