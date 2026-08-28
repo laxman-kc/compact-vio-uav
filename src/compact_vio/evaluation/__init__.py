@@ -18,6 +18,12 @@ from compact_vio.evaluation.coverage_binding import (
     OutputEnvelopeSlot,
     bind_output_coverage,
 )
+from compact_vio.evaluation.execution_coverage import (
+    RECORDED_OUTPUT_COVERAGE_BINDING_ID,
+    ExecutionCoverageBindingError,
+    RecordedOutputCoverage,
+    bind_recorded_output_coverage,
+)
 from compact_vio.evaluation.translation import (
     EXACT_PAIR_TRANSLATION_RESIDUALS_ID,
     EXACT_PAIR_TRANSLATION_RMSE_ID,
@@ -43,12 +49,15 @@ __all__ = [
     "EXACT_OUTPUT_COVERAGE_BINDING_ID",
     "EXPLICIT_OUTPUT_COVERAGE_ID",
     "EventOutputBatch",
+    "ExecutionCoverageBindingError",
     "OutputCoverageLedger",
     "OutputCoverageOutcome",
     "OutputCoverageSummary",
     "OutputEnvelopeSlot",
     "OutputStatus",
     "ReasonCount",
+    "RECORDED_OUTPUT_COVERAGE_BINDING_ID",
+    "RecordedOutputCoverage",
     "ScaleCorrection",
     "TimestampAssociation",
     "TrajectoryAlignment",
@@ -59,6 +68,7 @@ __all__ = [
     "TranslationRmsePolicy",
     "TranslationRmseResult",
     "bind_output_coverage",
+    "bind_recorded_output_coverage",
     "exact_pair_translation_residuals",
     "exact_pair_translation_rmse",
     "summarize_output_coverage",

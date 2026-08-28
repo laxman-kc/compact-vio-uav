@@ -8,7 +8,7 @@ be observed and preserves reset and invalid events for downstream handling.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Generic, TypeVar
 
@@ -86,6 +86,10 @@ class CausalReplay(Generic[PayloadT]):
         for event in event_tuple:
             if type(event) is not ReplayEvent:
                 raise ReplayContractError("events must contain only ReplayEvent values")
+            try:
+                replace(event)
+            except Exception as error:
+                raise ReplayContractError(f"event violates ReplayEvent: {error}") from error
             if event.clock_id != clock_id:
                 raise ReplayContractError(
                     f"event {event.event_id!r} uses clock {event.clock_id!r}, expected {clock_id!r}"

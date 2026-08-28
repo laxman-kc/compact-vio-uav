@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from dataclasses import FrozenInstanceError, replace
+from dataclasses import FrozenInstanceError, fields, replace
 
 from compact_vio.estimator import EstimatorOutput, OutputConvention
 from compact_vio.evaluation import (
@@ -131,6 +131,17 @@ def _slot(
         event_sequence_index=event.sequence_index,
         output_ordinal=output_ordinal,
     )
+
+
+def _forged_record(source: object, **changes: object) -> object:
+    forged = object.__new__(type(source))
+    for field in fields(source):
+        object.__setattr__(
+            forged,
+            field.name,
+            changes.get(field.name, getattr(source, field.name)),
+        )
+    return forged
 
 
 class EventOutputBatchTests(unittest.TestCase):
@@ -527,6 +538,44 @@ class BindOutputCoverageTests(unittest.TestCase):
             bind_output_coverage(summary, batches=("batch",), slots=(slot,))
         with self.assertRaisesRegex(CoverageBindingError, "OutputEnvelopeSlot"):
             bind_output_coverage(summary, batches=(batch,), slots=("slot",))
+
+    def test_forged_exact_batch_internals_are_revalidated(self) -> None:
+        event = _event(1)
+        summary = _summary((_outcome("expected", OutputStatus.VALID),))
+        forged = object.__new__(EventOutputBatch)
+        object.__setattr__(forged, "event", event)
+        object.__setattr__(forged, "outputs", [_output()])
+
+        with self.assertRaisesRegex(CoverageBindingError, "exact tuple"):
+            bind_output_coverage(
+                summary,
+                batches=(forged,),
+                slots=(_slot("expected", event, 0),),
+            )
+
+    def test_forged_nested_output_convention_is_revalidated(self) -> None:
+        event = _event(1)
+        summary = _summary((_outcome("expected", OutputStatus.VALID),))
+        output = _output()
+        forged_convention = _forged_record(
+            output.convention,
+            convention_id="",
+        )
+        forged_output = _forged_record(
+            output,
+            convention=forged_convention,
+        )
+        forged_batch = _forged_record(
+            EventOutputBatch(event, (output,)),
+            outputs=(forged_output,),
+        )
+
+        with self.assertRaisesRegex(CoverageBindingError, "OutputConvention"):
+            bind_output_coverage(
+                summary,
+                batches=(forged_batch,),
+                slots=(_slot("expected", event, 0),),
+            )
 
 
 if __name__ == "__main__":

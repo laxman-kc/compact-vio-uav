@@ -1,15 +1,17 @@
 # System architecture
 
-Status: Local-VIO and training flow defined; detailed estimator, sensor, and deployment choices unresolved
+Status: Local-VIO boundary defined; proposed modular experiment and all concrete estimator choices unresolved
 Last reviewed: 2026-08-27
 
 ## Purpose
 
 The architecture separates durable project state from disposable computation
 and the common scientific substrate from estimator-specific implementations.
-The main research direction is causal metric-scale local VIO, with classical
-references and a physically anchored compact hybrid candidate. Mapping, loop
-closure, flight control, and target deployment are outside the current core.
+The accepted scope is causal metric-scale local VIO. ADR-0004 now proposes one
+modular complementary-visual estimator with controlled A/B/C/D configurations
+and deterministic reliability handling; that proposal is not accepted.
+Mapping, loop closure, flight control, and target deployment are outside the
+current core.
 
 ## Planes
 
@@ -43,7 +45,7 @@ until exported and verified.
 
 A classical implementation keeps its native dependency/runtime boundary even if
 it happens to execute on a GPU-capable worker; temporary worker placement does
-not give that lane a PyTorch dependency.
+not give that lane a learned-framework dependency.
 
 The previous A10 worker described in the
 [2026-08-26 Brev observation](../environments/a10/inventory-2026-08-26.md) was
@@ -59,91 +61,94 @@ worker.
 
 The artifact vault holds retained binary outputs. Reproducibility-critical or release artifacts require a second independently verified copy outside the worker. The vault provider and backup destination remain unresolved in [ADR-0005](adr/0005-artifact-storage.md).
 
-## Full research and model-training flow
+## Proposed research and conditional-training flow
 
 ```text
                        DEVELOPMENT AND CONTROL
 
                   local workstation -> GitHub
                                          |
-                                         | clean clone after owner approval
+                               authorized clean checkout
                                          v
-                           future temporary GPU worker
+                           disposable execution worker
 
-                       DATA AND EXPERIMENT SUBSTRATE
+                      APPROVED DATA AND SENSOR TRUTH
 
-approved dataset sources -> canonical timestamps/frames/calibration/validity
-                                         |
-                              frozen source-group splits
-                         |
-                         +-- train
-                         |     -> causal training samples
-                         |     -> direct learned / anchored hybrid trainers
-                         |        (proposed framework)
-                         |     -> candidate checkpoints
-                         |
-                         +-- validation
-                         |     -> causal replay
-                         |     -> native classical + checkpoint inference
-                         |     -> common evaluator
-                         |     -> freeze candidates under the protocol
-                         |
-                         +-- final test (sealed until protocol/candidates freeze)
-                               -> causal replay
-                               -> frozen classical/learned/hybrid candidates
-                               -> common evaluator
-                               -> accuracy / scale / failures / latency / memory
-                               -> scientific claim decision
-                                             |
-                 +-----------------------+-----------------------+
-                 |                                               |
-         classical winner                              learned/hybrid winner
-         native packaging                       checkpoint + conditional ONNX
-                 |                                               |
-                 +---------------- exact-target validation ------+
-                                         |
-                          conditional TensorRT / ROS 2 / PX4
+approved source -> one dataset adapter -> camera / IMU / calibration records
+                           |
+                           +---------------- evaluation reference / ground truth
+                           |                                  |
+                           v                                  |
+                     causal replay                            |
+                           |                                  |
+             +-------------+-------------------+              |
+             |                                 |              |
+      inertial propagation          visual configuration      |
+                                    A: motion observations    |
+                                    B: frozen landmarks       |
+                                    C: A+B+deduplication      |
+                                    D-monitor: C+monitor only |
+                                    D: C+protocol-declared action |
+             |                                 |              |
+             +-------------+-------------------+              |
+                           |                                  |
+                     shared backend                           |
+                           v                                  |
+                estimator envelope / recorder                 |
+                           |                                  |
+                           +------------> common evaluator <---+
+                                               |
+                                  discovery failure atlas
+                                               |
+                              targeted training decision
+                                /                    \
+                         no training          approved later branch
+                              |                       |
+                              |        approved training data/framework
+                              |                       |
+                              |               bounded training
+                              |                       |
+                              +-------> frozen candidate/checkpoint
+                                                 |
+                                         unchanged evaluator
+                                                 |
+                                later confirmatory-protocol freeze
 ```
 
-The validation branch applies the frozen checkpoint-selection rule. The
-final-test branch stays sealed until the protocol and candidates are frozen and
-is never a training or checkpoint-selection input. Classical systems do not
-pass through a neural training/export pipeline. If a hybrid candidate wins,
-only its neural component may require model export. If a classical system wins,
-deployment uses its native build and packaging path.
+Ground truth never crosses into causal estimator input or online reliability
+logic. A native classical reference also enters the common replay/evaluator,
+but retains its native backend/runtime and is reported separately from the
+same-backend A/B/C/D ablations.
 
-## Model-training design
+The proposed internal configurations are A (fast visual motion), B (one frozen
+rights-approved learned-landmark channel), C (both with explicit provenance and
+correlation/duplicate handling), D-monitor (C plus diagnostics but no action),
+and D (C plus one predeclared deterministic reliability action). The exact
+method behind every block remains unresolved. A/B/C/D fairness includes the
+same state, initialization, IMU path, factors, robust loss, numerical settings,
+output schedule, permitted inputs, preprocessing, resource/measurement budget,
+and evaluator.
 
-PyTorch is the proposed research-training framework for learned components,
-subject to ADR-0004 acceptance. The proposed training order is deliberately
-small:
+## Conditional model-training branch
 
-1. Reproduce one classical local-VIO reference through the common replay. This
-   establishes a non-neural accuracy, failure, and resource reference and has no
-   neural training step.
-2. Implement and run visual-only and IMU-only diagnostics only where they are
-   needed to verify modality contribution. Use PyTorch only when a particular
-   diagnostic is explicitly defined as learned.
-3. Train an always-on direct learned visual-inertial control under the frozen
-   data and compute budget.
-4. Train the primary working candidate: physical IMU propagation or
-   preintegration anchors metric time/scale, and a compact learned visual branch
-   predicts a correction or measurement.
-5. Compare all candidates through the same streaming inference adapter and
-   frozen evaluator. Only evidence selects the scientific candidate.
+ADR-0004 proposes that Version 1 performs no project-side training. A frozen
+pretrained visual component may enter B only after exact code/weight identity,
+rights, provenance, preprocessing, and evaluation-overlap review. Direct
+end-to-end VIO is optional external work, not a critical-path control.
 
-The exact encoder, recurrent state, parameter count, loss, optimizer, image
-resolution, sequence length, batch size, and training schedule remain
-experiment decisions. No CNN/GRU layout or parameter band is silently inherited
-from the reference proposal. Synthetic pretraining such as TartanAir, compute
-gating, robustness training, and learned uncertainty are later ablations, not
-required steps in the first working model.
+After A/B/C/D discovery runs, a failure atlas may justify one targeted training
+or fine-tuning branch. Opening that branch requires a separate decision naming
+the isolated learnable deficit, component, approved training data, framework,
+objective, selection rule, trials, and budget. No framework is selected now;
+PyTorch, MLflow, synthetic pretraining, learned reliability, and learned
+uncertainty remain conditional candidates rather than dependencies.
 
-MLflow is an optional temporary observer for curves and comparisons. It is not
-the model registry or source of truth. Every retained run is reconstructable
-from versioned configuration and manifests plus trajectories, metrics,
-environment records, and either the learned checkpoint or the classical
-source/build provenance. Checkpoints and large histories stay out of Git.
+If training is opened, training membership alone supplies fitting data,
+validation follows its declared selection role, and final test remains sealed.
+Every retained run remains reconstructable from versioned configuration,
+manifests, trajectories, metrics, environment records, and the exact checkpoint.
+Tracking services are optional views, never the authority. Checkpoints and large
+histories stay out of Git.
 
 ## Current implementation boundary
 
@@ -155,8 +160,9 @@ exact-pair signed translation-residual and translation-RMSE kernels, explicit
 output-coverage accounting and binding, and strict persisted calibration-profile
 plus separate assessment contracts. The committed fixture is synthetic and
 rejected; there is no accepted real sensor or dataset profile. Planned next:
-additional geometry/evaluator behavior, one rights-approved dataset adapter
-with its actual profile, and one classical baseline. No estimator algorithm,
+additional framework-neutral evaluator/lifecycle behavior, then—after explicit
+approval—one dataset adapter with its actual profile and a shared-backend
+feasibility spike. No estimator algorithm,
 complete evaluator, numerical backend, model, training loop, dataset files,
 approved split, dataset adapter, checkpoint, ONNX graph, TensorRT engine, ROS 2
 node, or PX4 bridge exists yet. A candidate-only dataset registry exists, but it
@@ -167,9 +173,10 @@ is not data-use approval.
 | Layer | Current implementation | Planned or conditional boundary |
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Numerical array/vision library for estimator work is unresolved. |
-| Common VIO substrate | Generic causal replay, estimator envelope with an explicit interface-declaration shape and initialization/reset validation, direct replay-to-session execution recording, typed camera/IMU records, translation trajectories, raw exact-pair signed translation residuals and translation RMSE, output-coverage accounting/binding, and strict persisted calibration profile/assessment contracts | Additional geometry/evaluator and lifecycle behavior, actual dataset profiles, and adapters are planned; exact state and policy identifiers, final metric protocols, sensor configuration, concrete conventions, thresholds, and numerical backend remain unresolved. |
-| Classical lane | Not implemented | Later rights-reviewed baseline uses its native build/runtime with no PyTorch or MLflow dependency. |
-| Learned/hybrid lane | Not implemented; no training framework is installed as a project dependency | A learned training/inference adapter is conditional on ADR-0004; PyTorch is proposed, while exact framework/version, topology, losses, optimizer, and schedule remain unresolved. |
+| Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, typed camera/IMU records, translation trajectories, raw residual/RMSE, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Additional geometry/evaluator and lifecycle behavior, actual dataset profiles, and adapters are planned; exact state/policy identifiers, final metric protocols, sensor configuration, conventions, thresholds, and numerical backend remain unresolved. |
+| Native reference | Not implemented | A later rights-reviewed classical reference retains its native build/backend/runtime and has no learned-framework or tracker dependency. |
+| Internal A/B/C/D system | Not implemented | Shared-backend feasibility precedes visual/inertial/fusion/health work. Exact backend, visual methods, learned component, deduplication, diagnostics, and D action remain unresolved. |
+| Conditional learning | Not implemented; no framework is installed as a project dependency | Version 1 no-project-training is proposed in ADR-0004. Framework, model, data, objective, and schedule remain unresolved unless failure-atlas evidence opens one targeted branch. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
 | GPU execution | Dated A10 implementation-smoke evidence exists | Present state and every later task require fresh inventory and owner confirmation. |
 | Export/deployment | Not implemented | ONNX is conditional; TensorRT, Jetson/other edge hardware, ROS 2, and PX4 scope are unresolved. |
@@ -200,34 +207,49 @@ compact-vio-uav/
 │   ├── preflight.py                       [current]
 │   ├── repository_policy.py               [current]
 │   ├── contracts/                         [current: sensor payload/calibration-identity runtime records]
-│   ├── data/                              [planned: approved dataset adapters]
+│   ├── data/                              [planned at first approved dataset adapter]
 │   ├── geometry/                          [current: translation trajectory records]
-│   ├── evaluation/                        [current: translation residuals/RMSE, coverage, replay/output binding]
-│   ├── baselines/                         [planned: native classical adapters]
-│   ├── learning/                          [conditional on ADR-0004]
-│   │   ├── models/                        [conditional: direct and hybrid learned parts]
+│   ├── evaluation/                        [current: residual/RMSE, coverage, replay/output binding]
+│   ├── backend/                           [planned at shared-backend feasibility spike]
+│   ├── baselines/                         [planned at native classical reference]
+│   ├── inertial/                          [planned with accepted propagation contract]
+│   ├── vision/                            [planned with first selected A/B behavior]
+│   ├── fusion/                            [planned with C correlation/deduplication behavior]
+│   ├── health/                            [planned with D-monitor/D contract]
+│   ├── estimators/                        [planned for tested estimator compositions; estimator.py remains the contract]
+│   ├── learning/                          [conditional on post-failure-atlas decision]
+│   │   ├── models/                        [conditional: one selected learnable component]
 │   │   ├── training/                      [conditional: selected-framework train/checkpoint path]
 │   │   └── inference/                     [conditional: frozen-checkpoint adapter]
 ├── tests/                                 [current; expands one slice at a time]
-├── reports/                               [planned: small reviewed results only]
+├── reports/                               [current: output policy/README; reviewed result files future]
 └── deployment/                            [conditional: export/target/ROS 2/PX4]
 ```
 
-The names above define ownership boundaries, not empty scaffolding that must be
-created immediately. Each planned path appears only when its first focused,
-tested behavior is implemented.
+The names above define capability ownership, not empty scaffolding or a request
+to move current files. `estimator.py` remains the framework-neutral contract;
+a future `estimators/` path owns tested compositions only. Existing replay,
+estimator, execution, contracts,
+geometry, evaluation, and evidence code stays in place. Each planned path is
+created only with its first focused, tested behavior.
 
 ## Shared contracts
 
-All candidates must share:
+All comparable configurations must share:
 
-- A canonical sensor record with image exposure time, individual IMU timestamps, calibration, frames, units, validity, reset markers, provenance, and optional ground truth.
+- A canonical sensor record with image exposure time, individual IMU timestamps,
+  calibration, frames, units, validity, reset markers, and provenance. Ground
+  truth is a separate evaluation reference and is never estimator input.
 - A replay contract that exposes no future samples and reproduces streaming state, warm-up, reset, dropout, and stale-data behavior.
 - A framework-neutral estimator boundary. Every selected profile must provide
   the declaration identifiers required by the shared contract; native
   classical adapters consume the project contract directly, while learned
   adapters perform tensor conversion inside their own boundary.
-- A frozen evaluator that reports trajectory error, metric scale, initialization, coverage, failures, and end-to-end timing.
+- A frozen evaluator that reports trajectory error, metric scale,
+  initialization, coverage, failures, and end-to-end timing.
+- For internal A/B/C/D comparisons, one backend/state/init/IMU/factor/numerical/
+  output contract and explicit visual-observation provenance. Native external
+  references remain separate rather than being mislabeled same-backend controls.
 - An experiment manifest conforming to `experiments/schemas/run-manifest.schema.json`.
 - Dataset and artifact governance independent of the chosen estimator.
 
@@ -292,6 +314,14 @@ yet. This proves only the recorder-observed envelope path: it does not prove
 adapter-internal sample use
 or reset behavior, define output opportunities, classify missing/failure causes,
 or establish scientific run success.
+
+The terminal execution-coverage bridge binds a caller-declared coverage ledger
+to that full recorder snapshot. Produced outcomes must identify every output in
+every successful batch exactly once. Missing outcomes may identify the failed
+event or the unattempted planned suffix, so a surviving prefix cannot silently
+be presented as the whole execution. The bridge still does not invent expected
+opportunities, reason codes, failure taxonomy, thresholds, completion, or run
+success.
 
 ## Deployment boundary
 

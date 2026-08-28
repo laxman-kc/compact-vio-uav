@@ -13,9 +13,9 @@ by an implementation.
 |---|---|---|
 | R-RI-001 | Every claim-supporting run MUST identify an immutable Git commit, resolved configuration, environment, hardware, data manifests, seeds, outputs, and checksums. | Validate the run manifest and restore its retained bundle. |
 | R-RI-002 | Candidate selection MUST use a protocol frozen before final-test evaluation. | Protocol revision predates final-test results. |
-| R-RI-003 | Classical, hybrid, and learned candidates MUST receive equivalent permitted sensor inputs, causality, split membership, loop-closure policy, and evaluation. | Cross-candidate manifest audit. |
+| R-RI-003 | Comparable configurations MUST receive equivalent permitted sensor inputs, causality, split membership, preprocessing, loop-closure policy, evaluation, and declared resource budget. Internal mechanism ablations MUST also hold backend state, initialization, IMU path, factor policy, robust loss, numerical settings, and output schedule fixed unless the protocol names that item as the independent variable. A native external reference MAY retain its own backend but MUST be reported separately. | Cross-configuration manifest and protocol audit. |
 | R-RI-004 | Failed, partial, reset, and non-initializing runs MUST be reported; metrics MUST NOT cover only surviving prefixes without disclosure. | Coverage/failure fields and output audit. |
-| R-RI-005 | The primary contribution MUST be selected before novel-candidate comparison. | Accepted ADR-0004. |
+| R-RI-005 | The primary contribution MUST be selected before claim-supporting mechanism comparison. | Accepted ADR-0004. |
 
 ## Data and causality
 
@@ -24,18 +24,18 @@ by an implementation.
 | R-DATA-001 | A dataset MUST NOT be used until its source, version, rights, modalities, sensor suite, calibration status, size, checksum, and approved role are recorded. | Dataset registry and acquisition-manifest review. |
 | R-DATA-002 | Train, validation, and final-test membership MUST be assigned by source group before windowing, rendering, corruption, or augmentation. | Split leakage audit. |
 | R-DATA-003 | Normalization and learned preprocessing statistics MUST be derived from training membership only. | Configuration and fitted-artifact provenance. |
-| R-DATA-004 | Evaluation replay MUST NOT expose sensor information newer than the estimator output timestamp. | Causality tests and replay trace. |
+| R-DATA-004 | Evaluation replay MUST NOT expose sensor information newer than the estimator output timestamp. Evaluation ground truth MUST stay outside estimator input, online reliability logic, and final-test tuning. A later approved training protocol MAY expose labels only from training membership. | Causality, data-flow, and split-access audit. |
 | R-DATA-005 | Dataset files MUST NOT be committed to Git unless an explicit rights and repository-size exception is recorded. | Repository scan. |
 
 ## Training and model selection
 
 | ID | Requirement | Verification |
 |---|---|---|
-| R-TRAIN-001 | If learned/hybrid training is accepted in ADR-0004, its framework MUST be explicitly selected and its exact version, accelerator/runtime stack, determinism settings, and environment MUST be pinned per run. PyTorch is the current proposal, not an accepted requirement. | Accepted ADR-0004, environment lock, and run manifest. |
+| R-TRAIN-001 | Any owner-authorized project-side training MUST explicitly select its framework and pin the exact version, accelerator/runtime stack, determinism settings, and environment per run. If the accepted research protocol requires prior failure-atlas evidence, that gate MUST also pass. No training framework is currently selected. | Accepted training decision, applicable protocol-gate evidence, environment lock, and run manifest. |
 | R-TRAIN-002 | Classical VIO baselines MUST execute through their native implementation and common replay adapter; they MUST NOT be routed through a learned-training framework merely to make the diagram uniform. | Baseline build/run record and dependency audit. |
-| R-TRAIN-003 | The direct learned control and physically anchored hybrid comparison MUST use equivalent permitted inputs, source-group splits, preprocessing policy, tuning policy, declared training/compute budget, seeds/trials, and frozen evaluator. | Cross-run manifest and protocol audit. |
+| R-TRAIN-003 | Every imported frozen learned component MUST record exact code and weight versions/hashes, rights, pretraining sources, preprocessing, inference policy, and known evaluation-data overlap. It MUST NOT be tuned on final-test data. | Dependency/weight provenance, rights review, and final-test access audit. |
 | R-TRAIN-004 | Training MUST use training membership only; validation MAY be used only for declared tuning, and final-test records MUST NOT be used for fitting, architecture selection, early stopping, normalization, or hyperparameter choice. | Split-access and run-log audit. |
-| R-TRAIN-005 | Synthetic pretraining, robustness training, modality gating, and uncertainty learning MUST be separate declared ablations rather than silent prerequisites or unequal advantages for one candidate. | Configuration and ablation matrix. |
+| R-TRAIN-005 | Targeted training, fine-tuning, synthetic pretraining, learned reliability, modality gating, and uncertainty learning MUST be separately declared ablations justified by the evidence required by the accepted research protocol. None is a silent Version 1 prerequisite or an unequal advantage for one candidate. | Applicable evidence and decision, configuration, and ablation matrix. |
 | R-TRAIN-006 | A tracker such as MLflow MAY mirror run metrics, but it MUST NOT be the sole model registry or evidence store; retained evidence MUST remain reconstructable from versioned configuration/manifests and externally retained hashed artifacts. | Tracker-independent bundle restoration. |
 | R-TRAIN-007 | Checkpoints, optimizer state, training histories, and exported model binaries MUST stay out of normal Git history and follow the artifact-retention policy. | Repository and artifact-manifest audit. |
 | R-TRAIN-008 | ONNX/export work MUST occur only for an evidence-selected learned component; TensorRT or another target-specific engine MUST remain conditional on the exact target decision and parity testing. | Selection record, export-parity report, and accepted deployment scope. |
@@ -109,13 +109,19 @@ The following must be decided through ADRs before dependent implementation:
 - Estimated state, output rate, initialization mode, latency definitions, and
   latency ceiling: **TBD**; the interface requires explicit identifiers but
   supplies no project defaults.
-- Proposed training framework for learned/hybrid candidates: **PyTorch**;
-  framework selection and exact version, model architecture, objective,
-  optimizer, hyperparameters, and schedule: **TBD through ADR-0004**.
-- Primary working direction: **physically anchored compact learned visual
-  correction compared with an equal-budget direct learned control and a fast
-  classical reference**; confirmatory endpoint, thresholds, trials, and compute
-  budget: **TBD through ADR-0004**.
+- Proposed research direction: **one modular local-VIO system with internal
+  A/B/C/D-monitor/D configurations and a separate native classical reference**;
+  acceptance of deterministic reliability-aware handling as the primary
+  contribution: **TBD through ADR-0004**.
+- Version 1 no-project-training boundary: **proposed, not accepted**. Exact
+  dataset unit/role, backend, visual-motion method, learned component/weights,
+  track correlation policy, reliability signals/action/thresholds, framework,
+  model architecture, training objective, optimizer, hyperparameters, and
+  schedule: **TBD**.
+- Research-scope freeze: **TBD through ADR-0004**. Exact confirmatory run set
+  from already sealed final-test membership, numerical endpoints/thresholds,
+  trials, compute budget, aggregation, and stopping rule: **TBD through the
+  later protocol freeze before final-test access**.
 - Dataset roles and exact source-group splits: **TBD**.
 - Raw exact-pair translation RMSE kernel: **implemented without interpolation,
   alignment, or scale correction**; final ATE/RPE association/alignment
@@ -133,14 +139,17 @@ The following must be decided through ADRs before dependent implementation:
 - Exact replay/output coverage binding: **implemented**, requiring one-to-one
   expected-opportunity and observed-envelope accounting by trigger-event
   identity and tuple ordinal.
+- Terminal recorder-plan coverage binding: **implemented**, retaining the exact
+  complete terminal snapshot, requiring every successful output envelope once,
+  and permitting caller-declared missing slots for the failed event and
+  unattempted suffix without inventing reasons or success semantics.
 - Direct causal execution recording: **implemented for one internally
   constructed, fresh, clock-matched replay/session pair**, with one-event
   release, no retained partially validated batch, first-failure retention,
   later-suffix preservation, and structurally frozen in-memory plan/watermark/
   count snapshots with delivery/reset progress. Persistent full-run traces,
-  expected-opportunity creation, failed-trigger coverage integration, complete
-  lifecycle/failure policy, adapter-internal proof, and scientific success
-  criteria: **TBD**.
+  expected-opportunity creation, complete lifecycle/failure policy,
+  adapter-internal proof, and scientific success criteria: **TBD**.
 - Artifact vault, independent backup, retention capacity, and spending ceiling: **TBD**.
 - Control boundary: **PX4 retains stabilization, failsafes, and motor control**;
   edge hardware, runtime, precision, ROS 2 transport, simulator, and physical

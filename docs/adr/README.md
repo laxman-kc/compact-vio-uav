@@ -17,7 +17,7 @@ An ADR is authoritative only when its status is `Accepted`. `Proposed` and `Unre
 | [0001](0001-project-and-release-scope.md) | Non-commercial research scope | Accepted | Exact licence still gates external reuse/distribution |
 | [0002](0002-estimator-scope.md) | Local-VIO estimator scope | Accepted | Detailed M3 interface still gates estimator compliance |
 | [0003](0003-sensor-contract.md) | Camera/IMU configuration and timing envelope | Unresolved | Dataset roles, preprocessing, calibration, target selection |
-| [0004](0004-primary-research-contribution.md) | Physically anchored hybrid hypothesis | Unresolved | Confirmatory thresholds, ablations, and candidate selection |
+| [0004](0004-primary-research-contribution.md) | Reliability-aware modular local-VIO proposal | Proposed | Owner scope decision, A/B/C/D claim work, confirmatory freeze |
 | [0005](0005-artifact-storage.md) | Artifact vault, backup, retention, and spend | Unresolved | Important GPU experiments and worker teardown |
 | [0006](0006-deployment-scope.md) | PX4 boundary, edge, and flight scope | Unresolved | Export, target runtime, integration and physical testing |
 

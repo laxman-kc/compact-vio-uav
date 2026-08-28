@@ -63,60 +63,66 @@ phases:
 ## Accepted scope and proposed research direction
 
 ADR-0001 and ADR-0002 record the accepted public non-commercial research lane,
-causal local-VIO scope, and PX4 control boundary. The physically anchored hybrid
-below is the proposed research hypothesis in unresolved ADR-0004, not a selected
-winner. Exact state interfaces, sensor profiles, thresholds, datasets, and
-deployment choices remain milestone work:
+causal metric-scale local-VIO scope, no-loop-closure comparison, and PX4 control
+boundary. ADR-0004 is now a review-ready proposal, not an accepted claim:
 
-1. Build causal, metric-scale local odometry; mapping, relocalization, and loop
-   closure are outside the primary comparison.
-2. Use a calibrated physical IMU propagation/preintegration path to anchor
-   metric scale and time, then evaluate a compact learned visual correction or
-   measurement as the primary hybrid candidate.
-3. Compare that candidate against one stable filter-based classical baseline,
-   an always-on learned visual–inertial control with the same data budget, and
-   visual-only/IMU-only diagnostic controls.
-4. Defer visual-compute gating until an always-on causal reference works. A
-   post-encoder gate is reliability fusion, not compute skipping.
-5. Treat uncertainty as secondary unless ADR-0004 explicitly selects calibrated
-   uncertainty as the single primary contribution.
-6. PX4 retains stabilization, failsafes, pilot override, and motor control. VIO
-   is only a future health-gated odometry measurement source.
-7. Do not select mono versus stereo from dataset convenience. Decide it from
-   mission, payload, synchronization, robustness, bandwidth, and exact-target
-   measurements.
+1. Organize one modular estimator around physical IMU propagation,
+   complementary visual evidence, one shared backend, and explicit health.
+2. Use internal A/B/C/D-monitor/D configurations to isolate visual-channel and
+   deterministic reliability effects. Hold backend state, initialization, IMU
+   path, factors, robust loss, numerics, output schedule, inputs, preprocessing,
+   resource/measurement budget, and evaluator fixed.
+3. Keep one rights-compatible native classical implementation as an external
+   reference in its own backend/runtime, reported separately.
+4. Make D versus C the proposed primary comparison and D-monitor the monitoring-
+   overhead control. The owner must still accept or reject that proposal.
+5. Defer direct end-to-end VIO to optional external work. Version 1 no-project-
+   training is proposed; frozen learned weights require rights/provenance review.
+6. Open targeted training only after a discovery failure atlas isolates a
+   declared plausibly learnable deficit and a new decision approves the data,
+   component, framework, objective, selection rule, and budget.
+7. Keep ground truth separate from causal replay/estimator input, online
+   reliability logic, and final-test tuning. Version 1 uses it only for
+   evaluation; a later approved supervised branch may use training-membership
+   labels only.
+8. Keep uncertainty/covariance, compute gating, compression, and deployment as
+   separate conditional questions rather than co-primary claims.
+9. PX4 retains stabilization, failsafes, pilot override, and motor control.
+10. Do not select mono/stereo, dataset, backend, visual method, learned model,
+    reliability action/threshold, framework, or target from convenience.
 
-This direction keeps the research physically grounded and the comparison
-falsifiable without locking hardware or final-test outcomes prematurely.
+### Two freezes
 
-### Simple model-training sequence
+- **Research-scope freeze:** accept one contribution, comparator, endpoint
+  family, target phenomenon/population, independent experimental unit, and
+  fairness contract. This is ADR-0004 work.
+- **Confirmatory-protocol freeze:** after representative ingestion, evaluator,
+  backend feasibility, and discovery evidence, select the exact confirmatory
+  run set only from source groups already assigned to sealed final-test
+  membership before use; then fix numerical metrics/thresholds, trials, budgets,
+  aggregation, stopping rules, and D action before final-test access.
 
-If ADR-0004 accepts a learned/hybrid comparison, the model-training path begins
-only after the common data/evaluator substrate and one classical reference work.
-PyTorch is the current framework proposal, not an accepted dependency:
+### Conditional training path
 
-1. Prepare approved training samples from the frozen training split. Validation
-   is used for declared tuning; final-test sequences stay sealed.
-2. Implement and run only the visual-only and IMU-only diagnostics needed to
-   validate modality contribution. Use the selected framework only if a
-   diagnostic is explicitly learned.
-3. Train one always-on direct learned visual-inertial control in the selected
-   framework.
-4. Train one physically anchored hybrid in the selected framework: physical IMU
-   propagation/preintegration provides the metric motion path and the learned
-   visual component provides a correction or measurement.
-5. Replay the classical reference and every frozen learned candidate through the
-   same evaluator. Select from accuracy, scale, coverage/failures, and measured
-   resource evidence—not training loss alone.
-6. Export only an evidence-selected learned component. ONNX is conditional;
-   TensorRT, Jetson, ROS 2, and PX4 remain later exact-target decisions.
+There is no scheduled model-training phase in Version 1 and no selected
+framework. If failure-atlas evidence later opens one targeted branch:
 
-Classical VIO bypasses any neural training framework. MLflow is optional run
-visualization and never the authoritative model registry. TartanAir or other
-synthetic pretraining, compute gating, robustness training, and uncertainty are
-optional ablations after the direct and hybrid reference models work. No exact
-neural architecture, parameter count, optimizer, loss, resolution, batch size,
-or training duration is selected by this roadmap.
+1. Name the isolated deficit and why it is learnable rather than information
+   loss, sensor/exposure failure, timing/calibration error, backend behavior, or
+   domain shift.
+2. Approve the exact component, framework, training membership, objective,
+   preprocessing, seeds/trials, compute budget, stopping rule, and checkpoint
+   selection rule.
+3. Run a tiny deterministic CPU sample/forward/backward/save/load/inference
+   smoke before requesting GPU capacity.
+4. Train one bounded configuration, evaluate it through the unchanged causal
+   replay/evaluator, and retain all failures.
+5. Export only an evidence-selected learned component. ONNX and every target-
+   specific runtime remain conditional.
+
+A tracking service may mirror metrics but is never the authority. No exact
+model architecture, parameter count, framework, optimizer, loss, resolution,
+batch size, or training duration is selected by this roadmap.
 
 ## Milestone overview
 
@@ -128,12 +134,12 @@ or training duration is selected by this roadmap.
 | M3 | Scientific question and estimator contract | In progress | M1; local-VIO direction fixed, details remain |
 | M4 | Replay sensor, time, frame, and calibration contract | Complete | Causal replay, typed sensor records, and calibration profile/assessment fixtures |
 | M5 | Reproducible execution environments | In progress | Local path active; worker tasks require fresh inventory and authorization |
-| M6 | Dataset approval and representative ingestion | Blocked | Remaining M3 details, the M4 contract, and per-dataset rights review |
+| M6 | Dataset approval and representative ingestion | Blocked | Accepted research scope, sufficient M3/M4 detail, project-owner dataset-scope approval, and per-dataset rights review |
 | M7 | Common causal replay and evaluator | In progress | Synthetic replay unblocked; real-data exit depends on M6 |
-| M8 | Classical baseline reproduction | Blocked | M5–M7 and license review |
-| M9 | Conditional novel-candidate experiments | Conditional; blocked | M7, M8, and accepted estimator/contribution scope |
-| M10 | Optional uncertainty and health study | Conditional; blocked | Accepted estimator/contribution scope |
-| M11 | Scientific selection and deployment shortlist | Blocked | Applicable M8–M10 evidence and frozen thresholds |
+| M8 | Shared-backend feasibility and native reference | Blocked | M5–M7, accepted scope, and dependency rights review |
+| M9 | Conditional A/B/C/D-monitor/D experiments | Conditional; blocked | M8, accepted ADR-0004 scope, and a future Accepted backend-selection ADR |
+| M10 | Discovery failure atlas and conditional targeted learning | Conditional; blocked | Applicable M9 evidence and a frozen discovery protocol |
+| M11 | Confirmatory final-test execution and scientific selection | Blocked | Applicable M8–M10 evidence, sealed final-test membership, and frozen confirmatory protocol |
 | M12 | Conditional export, exact-target benchmark, and deployable selection | Blocked | M11; authorized provisional sensor/target choices |
 | M13 | Conditional ROS 2/PX4 and staged safety validation | Blocked | M12; accepted integration scope |
 | M14 | Release evidence and conditional final worker disposition | Blocked | All applicable prior milestones |
@@ -268,8 +274,11 @@ entry dependencies.
 
 Required decisions/evidence:
 
-- Select one primary question, contribution, comparator, target population,
-  metrics, thresholds, trials/seeds, and rejection rule before final testing.
+- First accept one primary question, contribution, comparator, target
+  phenomenon/population, endpoint family, independent experimental unit, and
+  fairness contract as the research-scope freeze.
+- Later freeze exact metrics, thresholds, trials/seeds, compute budget,
+  aggregation, stopping rule, and rejection rule before final testing.
 - Freeze state variables, transform direction, frames, metric-scale mechanism,
   initialization, reset, recurrence warm-up, output timestamp, output rate, and
   latency definition. Local VIO and no loop closure are already fixed.
@@ -289,7 +298,8 @@ Implemented interface-control slice (not M3 exit evidence by itself):
   wrapper-observable checks, not proof of adapter-internal reset behavior. The
   prior undeclared envelope is compatibility-only.
 - The primary question, concrete declaration values, sample-level lineage,
-  evaluator thresholds, and ADR-0004 remain unresolved; M3 stays in progress.
+  endpoint family, evaluator thresholds, and ADR-0004 acceptance remain
+  unresolved; M3 stays in progress.
 
 Prohibited work:
 
@@ -301,7 +311,8 @@ Prohibited work:
 Exit evidence:
 
 - Accepted ADR-0002 and ADR-0004.
-- Frozen research protocol revision and estimator interface-control draft.
+- Frozen research-scope protocol revision and estimator interface-control
+  draft. The confirmatory numerical protocol remains a later freeze.
 - Claim-to-evidence and negative-control matrix.
 
 M7–M11 produce the ADRs' follow-up empirical evidence. Material contradiction
@@ -375,9 +386,10 @@ Permitted work:
 - Maintain an isolated native environment for each selected classical baseline;
   no learned-training framework is a dependency of the common core or classical
   lane.
-- Add a separate learned-training environment only after ADR-0004 accepts that
-  work and M9 starts. PyTorch is the current proposal. Add CUDA bindings only
-  for a freshly inventoried worker that benefits from them.
+- Add a separate learned-training environment only after post-failure-atlas
+  evidence and an accepted targeted-training decision select that work and its
+  framework. Add CUDA bindings only for a freshly inventoried worker that
+  benefits from them.
 - Keep MLflow as an optional extra. A valid run must work with tracking disabled.
 - Maintain separate local-development, future GPU-execution, and future target
   environment definitions.
@@ -402,9 +414,9 @@ Exit evidence:
 
 Status: Blocked.
 
-Dependencies: sufficient M3/M4 interface detail for the chosen adapter,
-`R-DATA-*`, and per-dataset rights review. Full or important paid-worker
-acquisition additionally depends on M2/M5.
+Dependencies: accepted research-scope freeze, sufficient M3/M4 interface detail
+for the chosen adapter, `R-DATA-*`, and per-dataset rights review. Full or
+important paid-worker acquisition additionally depends on M2/M5.
 
 Required work:
 
@@ -414,6 +426,10 @@ and [candidate registry](../governance/datasets/registry.yaml).
 - For each candidate, verify official rights, exact source/version, modalities,
   sensors, calibration, timestamps, ground-truth coverage, byte estimate, and
   checksum strategy before download.
+- Require the project owner to approve the exact dataset, release, unit,
+  modalities, role, split membership, and acquisition location. Keep the
+  dataset-file rights review as a separate required record; technical evidence
+  collection cannot self-approve either scope or rights.
 - Assign a declared role and source-group ID; freeze train/validation/final-test
   membership before windows, normalization, corruption, or augmentation.
 - Acquire one rights-checked representative sequence first and validate frames,
@@ -429,9 +445,11 @@ Prohibited work:
 
 Exit evidence:
 
-- Approved registry entries, acquisition manifests, immutable split manifest,
-  validated representative replay profile, representative-ingestion report, and
-  timestamp/frame/calibration negative-test report on the acquired sequence.
+- Project-owner dataset-scope approval, separate dataset-file rights review,
+  approved registry entries, acquisition manifests, immutable split manifest,
+  validated representative replay profile, representative-ingestion report,
+  and timestamp/frame/calibration negative-test report on the acquired
+  sequence.
 
 ## M7 — Common causal replay and evaluator
 
@@ -443,8 +461,8 @@ exit evidence depends on representative M6 data.
 
 Required work:
 
-- Implement canonical image/IMU/ground-truth/calibration records and conversion
-  adapters that retain source provenance.
+- Implement canonical image/IMU/calibration records plus a separate evaluation-
+  reference record and conversion adapters that retain source provenance.
 - Implement online-equivalent causal replay, warm-up/reset/dropout/stale-state
   behavior, and explicit output availability time.
 - Keep canonical records, estimator outputs, replay, and evaluator
@@ -496,6 +514,11 @@ Implemented evaluator slice (not M7 exit evidence by itself):
   scientific run success. Persistent full-run traces and complete
   lifecycle/failure-policy evidence remain open; generic payload objects are not
   deep-copied by the in-memory snapshot.
+- A terminal execution-coverage bridge now binds caller-declared outcomes to the
+  complete recorder plan. Every successfully recorded output ordinal is bound
+  exactly once; explicit missing slots may reference the failed event and
+  unattempted suffix. It rejects active snapshots and does not create expected
+  opportunities, reasons, failure labels, thresholds, or a success decision.
 - These kernels are not aligned ATE, RPE, metric-scale evidence, coverage or
   completion evidence, frame-correctness proof, run-level failure accounting,
   or a complete evaluator. M7 remains in progress.
@@ -510,139 +533,146 @@ Exit evidence:
 - All adapters pass the same golden replay/geometry fixtures.
 - Deliberately corrupted controls fail for the expected reason.
 
-## M8 — Classical baseline reproduction
+## M8 — Shared-backend feasibility and native reference
 
 Status: Blocked.
 
-Dependencies: M5–M7 and per-dependency licence review for the non-commercial
-research lane.
-
-Recommended comparison set to evaluate, not preselected dependencies:
-
-- OpenVINS as the covariance-aware filter reference.
-- One optimization or efficient local-odometry reference whose license and
-  maintenance envelope fit the selected lane.
-- Loop closure disabled for a local-odometry table; VI-SLAM results reported in
-  a separate table if that scope is accepted.
+Dependencies: M5–M7, accepted research scope, representative ingestion,
+evaluator/lifecycle semantics, and per-dependency rights review.
 
 Required work:
 
-- Pin upstream commit/license/dependencies and isolate each build.
-- Build and run the selected classical implementation through its native
-  toolchain and expose it only through the common estimator adapter. Do not wrap
-  it in a learned-framework module or require a learned framework/MLflow for
-  installation, replay, or evaluation.
-- Map identical permitted inputs and calibration to the common replay.
-- Reproduce trajectories, failures, coverage, timing, CPU/GPU/RAM, and repeated
-  run variation on the same platform.
-- Explain deviations from published results without tuning on final-test data.
+- Freeze a backend-facing observation contract: measurement time, camera,
+  track identity, pixel/bearing value, channel provenance, geometric validity,
+  optional measurement-noise representation, and rejection reason.
+- Freeze backend state, initialization, reset, causality, output, and feasibility
+  resource criteria without selecting values from paper results.
+- Time-box a shortlist spike. Prove whether one candidate can accept synthetic
+  visual-motion, learned-landmark, and dual-channel observations through the
+  same interface and can expose reset/failure behavior with loop closure off.
+- Record an evidence-based backend recommendation or an explicit no-selection
+  result. No backend is selected by this roadmap.
+- After the spike, propose a backend-selection ADR from the evidence and require
+  the project owner to mark it `Accepted` with a decision date before M9. If no
+  candidate passes or no ADR is accepted, stop; a recommendation alone does not
+  authorize A/B/C/D work.
+- Separately pin, build, and reproduce one rights-compatible native classical
+  reference through the common replay/evaluator. Retain its native backend and
+  runtime; do not force it through a learned framework or call it a same-backend
+  internal control.
 
 Exit evidence:
 
-- At least one stable, understood classical reference and a frozen baseline
-  scorecard before novel-model selection.
-- A smoke check proves that the classical path imports and runs with every
-  learned-training framework and MLflow absent.
-- Recorded ADR-0002 follow-up feasibility/failure evidence; reopen the ADR before
-  proceeding if the accepted estimator contract is invalidated.
+- One shared-backend candidate passes the frozen feasibility criteria and is
+  selected by a future `Accepted` backend-selection ADR, or work stops with an
+  explicit no-selection report and revised scope/contract.
+- One stable native classical reference has pinned source/rights/dependencies,
+  reproducible build/run evidence, complete trajectory/failure/resource output,
+  and no learned-framework/tracker dependency.
+- Recorded ADR-0002 follow-up evidence; material contradiction reopens the
+  affected scope before A/B/C/D work.
 
-## M9 — Conditional novel-candidate experiments
+## M9 — Conditional A/B/C/D-monitor/D experiments
 
 Status: Conditional; blocked.
 
-Dependencies: M7, M8, frozen M3 protocol and M6 splits, plus accepted
-ADR-0002/ADR-0004 decisions that require a novel learned, hybrid, or other
-candidate. If the accepted scope is classical-only, record this milestone as
-not applicable and proceed without manufacturing learned work.
+Dependencies: accepted ADR-0004 research scope, M6/M7 data/evaluator evidence,
+M8 shared-backend/native-reference evidence, a future `Accepted` backend-
+selection ADR, frozen configuration definitions, and rights review for every
+imported component.
 
 Procedure authority: [Research protocol](protocols/research-protocol.md).
 
-Required work is defined only after ADR-0002/ADR-0004 acceptance. The experiment
-matrix must include the controls and ablations required by the selected
-hypothesis while holding the frozen data, causality, evaluator, and declared
-resource/training budgets constant.
+Required order when ADR-0004 is accepted:
 
-For the current working direction, the smallest permitted training matrix is:
+1. A — one selected fast visual-motion channel plus IMU/shared backend.
+2. B — one rights-approved frozen learned-landmark channel plus IMU/shared
+   backend; Version 1 performs no project-side training.
+3. C — A+B with explicit track provenance and correlated/duplicate-measurement
+   policy.
+4. D-monitor — C plus the exact D diagnostics, with no fusion action.
+5. D — C plus one predeclared deterministic reliability action.
 
-- visual-only and IMU-only diagnostics where needed;
-- one always-on direct learned visual-inertial control;
-- one physically anchored hybrid candidate; and
-- only the ablation needed to isolate the learned correction from the physical
-  propagation path.
-
-If ADR-0004 accepts the proposed PyTorch path, the exact framework/runtime is
-pinned in each run. The direct control and hybrid share the permitted inputs,
-split, preprocessing, tuning policy, training/compute budget, seeds, and evaluator.
-MLflow may mirror metrics locally, but retained evidence comes from the frozen
-run bundle. Synthetic pretraining is a separate declared ablation and cannot be
-silently folded into only one candidate.
-
-Before requesting GPU capacity, each learned path must pass a tiny deterministic
-CPU smoke covering sample construction, forward/backward execution, checkpoint
-save/load, recurrent/reset state when present, and causal inference. Training
-then uses only the approved train split; the frozen validation rule selects the
-checkpoint; the selected checkpoint is evaluated through the same replay and
-evaluator as M8 whether or not MLflow is enabled.
+Every internal configuration freezes backend/state/init/IMU/factors/robust
+loss/numerics/output schedule, permitted inputs, preprocessing, accepted
+measurement/resource budget, and evaluator. B must demonstrate unique channel
+evidence under that fairness policy before C/D claims proceed. D must meet the
+primary endpoint plus nominal-accuracy, coverage, and resource guardrails.
 
 Prohibited work:
 
-- No learned/hybrid model implementation or training before ADR-0004 accepts
-  the primary contribution and framework choice. Framework-neutral records,
-  replay, evaluation, and classical baseline work continue independently.
-- No final-test tuning, overlapping windows across source groups, normalization
-  fitted on held-out trajectories, bidirectional recurrence, or future frames.
-- No compute-saving claim from parameter count/FLOPs alone or from a gate that
-  runs after the expensive visual encoder.
-- No checkpoint may exist only on temporary worker storage, and no MLflow server
-  may be required to reconstruct a run.
+- No A/B/C/D implementation before ADR-0004 acceptance and M8 feasibility.
+- No assumption that optical flow, a named learned model, a backend, a health
+  signal, weighting, gating, or any threshold has been selected.
+- No final-test tuning, overlapping source groups, future inputs, hidden
+  candidate preprocessing, or silent duplicate/correlated measurements.
+- No project-side training, synthetic pretraining, learned reliability, or
+  direct learned VIO on the critical path.
 
 Exit evidence:
 
-- Complete run bundles for every declared trial, including failures.
-- The selected primary hypothesis is accepted or rejected under its predeclared
-  controls and frozen evaluator; claims outside the accepted scope are not
-  implied.
-- Recorded ADR-0004 follow-up evidence whether the hypothesis passes or fails.
+- Complete run bundles for every declared configuration/trial, including
+  failures and D-monitor overhead.
+- Mechanism-isolation report for A/B/C/D-monitor/D plus the separately reported
+  native reference.
+- Recorded ADR-0004 follow-up evidence; claims outside the accepted scope remain
+  exploratory.
 
-## M10 — Optional uncertainty and health study
+## M10 — Discovery failure atlas and conditional targeted learning
 
 Status: Conditional; blocked.
 
-Dependencies: applicable M8/M9 evidence and an accepted ADR-0002/ADR-0004
-decision that makes uncertainty or health part of the scientific estimator
-contract or contribution. Otherwise record this milestone as not applicable.
-
-Deployment-specific uncertainty/health use under ADR-0006 is not an M10 entry
-dependency; its exact-target and integration validation belongs to M12/M13.
+Dependencies: applicable M9 evidence and a discovery protocol frozen without
+final-test access.
 
 Required work:
 
-- Keep probabilistic state uncertainty separate from estimator health.
-- Define state/frame/tangent/covariance representation and positive-semidefinite
-  construction where covariance is produced.
-- Evaluate likelihood, empirical coverage, sharpness, consistency where valid,
-  risk–coverage, failure false negatives, OOD/corruption behavior, and
-  accumulation semantics.
+- Run nominal data, one declared visual fault family, and one timing/IMU control
+  family first; add conditions only through protocol revision.
+- Retain channel diagnostics, estimator/lifecycle outcomes, coverage, failures,
+  recovery, runtime, and negative results without converting them into an
+  unaccepted taxonomy.
+- Diagnose whether a deficit is information loss, sensor/exposure failure,
+  timing/calibration error, backend behavior, domain shift, or plausibly
+  learnable.
+- Open one targeted training/fine-tuning branch only after a separate decision
+  selects the learnable component, data, framework, objective, trials, budget,
+  stopping rule, and checkpoint selection. Otherwise record training as not
+  applicable.
+- Keep probabilistic covariance/uncertainty separate from deterministic health.
+  Any uncertainty study requires its own accepted state/frame/propagation and
+  calibration protocol.
 
 Prohibited work:
 
-- Do not label an arbitrary confidence score as covariance.
-- Do not feed learned uncertainty into PX4 before calibration and consistency
-  evidence passes.
+- Do not call a condition learnable merely because both visual channels fail.
+- Do not label a health score as covariance or feed it to PX4.
+- Do not use final-test results to choose fault severity, thresholds, training
+  data, or model configuration.
 
 Exit evidence:
 
-- Accepted uncertainty/health interface and nominal/OOD calibration report.
+- Discovery atlas with complete condition/channel/failure/coverage evidence.
+- Explicit no-training decision or an accepted, bounded targeted-training plan
+  and its tracker-independent run bundles.
+- A frozen candidate/configuration set ready for the later confirmatory freeze.
 
-## M11 — Scientific selection and deployment shortlist
+## M11 — Confirmatory final-test execution and scientific selection
 
 Status: Blocked.
 
-Dependencies: M8 and every applicable M9/M10 milestone, with predeclared
-thresholds.
+Dependencies: M8 and every applicable M9/M10 milestone, a frozen candidate set,
+source groups assigned to sealed final-test membership before any use, and an
+owner-approved confirmatory protocol.
 
 Required work:
 
+- Freeze the exact confirmatory run set only from already sealed final-test
+  membership, together with metric semantics, thresholds, trials, budgets,
+  aggregation, stopping rules, and the single D action. Never reassign a seen
+  development, discovery, or stress group to final test.
+- Execute the complete sealed final-test matrix for every frozen candidate and
+  preserve partial, failed, reset, and non-initializing runs.
 - Select the scientific winner, if supported, and a deployment shortlist across
   accuracy, scale, failure/coverage, robustness, uncertainty when applicable,
   runtime, memory, rights, reproducibility, and target relevance.
@@ -654,8 +684,10 @@ Required work:
 
 Exit evidence:
 
-- Accepted scientific-selection/deployment-shortlist record with unchanged
-  final-test thresholds and independently restorable evidence bundles.
+- Immutable confirmatory-protocol and sealed-run-set identities, complete
+  final-test run bundles, and an accepted scientific-selection/deployment-
+  shortlist record with unchanged thresholds and independently restorable
+  evidence bundles.
 
 ## M12 — Conditional export, exact-target benchmark, and deployable selection
 
@@ -771,27 +803,37 @@ Exit evidence:
 
 Execute these as separate small slices; do not combine them into one long phase:
 
-1. Select and freeze the concrete values for the declared local-VIO
-   state/frame/time/reset interface and the M3 research question.
-2. Extend trajectory geometry and evaluation one explicitly declared operation
-   or metric at a time, each followed by its negative control. Raw exact-pair
-   translation RMSE is the first completed kernel.
-3. Rights-check and ingest one representative sequence only, including its
-   actual calibration profile and review evidence.
-4. Reproduce one stable classical baseline through the common replay.
-5. If an optional GPU worker is freshly approved and available, run one bounded
-   environment/data smoke.
-6. After ADR-0004 acceptance, implement the direct learned-control API with
-   focused tests.
-7. Run its tiny CPU train/checkpoint/inference smoke.
-8. Run and review one bounded direct-control training configuration.
-9. Implement the anchored-hybrid correction API with focused tests.
-10. Run its tiny CPU train/checkpoint/inference smoke.
-11. Run and review one bounded anchored-hybrid training configuration.
-12. Perform common evaluation and select; export only if the selected candidate
-   has a neural component and deployment scope is later approved.
+1. Record ADR-0004 as a review-ready proposal and align requirements,
+   architecture, protocol, and roadmap without accepting its unresolved owner
+   choices. **Completed by this documentation slice; ADR remains Proposed.**
+2. Continue one framework-neutral M7 evaluator/lifecycle behavior at a time.
+   Terminal recorder-plan to explicit coverage binding is now implemented;
+   proceed only to the next separately declared behavior
+   with caller-declared policy identity and focused negative controls. Do not
+   invent final thresholds, schedule, failure taxonomy, or dataset semantics.
+3. After the research-scope freeze is accepted, obtain owner approval for
+   exactly one dataset release/unit/modality/role and acquisition location
+   after official rights/modality/calibration/GT/size review. EuRoC remains only
+   a candidate until that record exists.
+4. Download only the approved unit and implement one adapter under `data/`,
+   including actual calibration assessment, provenance, and negative controls.
+5. Complete evaluator/lifecycle semantics supported by that data, then run the
+   time-bounded shared-backend feasibility spike under `backend/`.
+6. Reproduce one native classical reference under `baselines/` and report it
+   separately.
+7. After ADR-0004 and M8 pass, add A, then B, then C, then D-monitor, then D;
+   create `inertial/`, `vision/`, `fusion/`, `health/`, and `estimators/` only
+   with their first tested behavior.
+8. Build the discovery failure atlas. Open `learning/` only if a later accepted
+   decision authorizes one targeted branch.
+9. Freeze the confirmatory protocol and execute it without moving thresholds or
+   accessing final test early.
+10. Export only an evidence-selected learned component and only if deployment
+    scope is later approved.
 
-The exact source licence, mono/stereo decision, model architecture,
-hyperparameters, dataset roles/splits, thresholds, artifact stores, and target
-hardware remain their existing decision gates. Worker deletion remains a
-separate destructive action requiring explicit approval.
+The exact source licence, mono/stereo decision, dataset, backend, visual method,
+learned component/weights, correlation policy, reliability signal/action,
+framework, model architecture, hyperparameters, roles/splits, thresholds,
+artifact stores, and target hardware remain their existing decision gates.
+No task in this queue assumes Brev/A10 use. Worker deletion remains a separate
+destructive action requiring explicit approval.

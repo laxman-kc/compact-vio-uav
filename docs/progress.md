@@ -594,6 +594,67 @@ result, and explicit remaining blockers.
   algorithm or model training, and created no checkpoint or retained experiment
   artifact. No Brev stop, reboot, deletion, or termination action was taken.
 
+## 2026-08-27 — Modular refactor proposed and terminal execution coverage added
+
+- Working-tree evidence only at this review: the changes are not yet committed,
+  pushed, or backed by a new remote CI run.
+- Replaced the obsolete training-first ADR-0004 working direction with a
+  review-ready reliability-aware modular local-VIO proposal. Its status is
+  `Proposed`, not `Accepted`; ADR-0002 remains authoritative until explicit
+  owner acceptance.
+- Aligned README, architecture, roadmap, research protocol, requirements, and
+  ADR index around a separate native reference and internal
+  A/B/C/D-monitor/D configurations. Added explicit research-scope versus later
+  confirmatory freezes, ground-truth separation with Version 1 evaluation use
+  and a conditional training-membership-label exception, same-backend fairness,
+  Version 1 no-project-training proposal, discovery failure atlas, and
+  conditional targeted training.
+- Preserved the existing repository structure. No empty `data/`, `backend/`,
+  `inertial/`, `vision/`, `fusion/`, `health/`, `estimators/`, or `learning/`
+  scaffold was created; those paths appear only with their first accepted,
+  tested behavior.
+- Added `compact_vio.evaluation.bind_recorded_output_coverage`. It accepts an
+  exact terminal recorder snapshot plus caller-declared coverage/slots, binds
+  every successful output envelope exactly once, and allows explicit missing
+  slots for the failed event and unattempted suffix. It creates no opportunity,
+  reason, failure taxonomy, threshold, completion, or success decision.
+- Revalidated nested replay events, failures, output conventions, coverage
+  ledgers/outcomes/reason counts, and event/output batches so forged inner
+  records cannot bypass either coverage-binding boundary.
+- Local verification: all 207 standard-library tests passed; repository policy
+  passed for 80 files; the pinned schema harness passed 9 schemas and 7
+  templates; compileall, Ruff lint/format, and `git diff --check` passed. One
+  behavior-preserving `isinstance` union-style update was applied to the
+  existing sensor contract so repository-wide Ruff 0.12.12 remains clean.
+- Exact local validation commands:
+
+  ```bash
+  PYTHONPATH=src python3 -m unittest discover -s tests -q
+  PYTHONPATH=src python3 -m compact_vio.repository_policy .
+  uv run --no-project --with 'jsonschema[format-nongpl]==4.26.0' python scripts/validate_schemas.py
+  PYTHONPATH=src python3 -m compileall -q src tests
+  uv run --no-project --with ruff==0.12.12 ruff check .
+  uv run --no-project --with ruff==0.12.12 ruff format --check .
+  git diff --check
+  ```
+
+- Remaining milestone blockers: M3 still needs owner acceptance of the
+  research-scope proposal and concrete estimator-interface values; M6 still
+  needs that accepted scope plus one exact rights-approved dataset unit/role;
+  M7 still needs the remaining lifecycle/evaluator semantics and real-data
+  validation; M8 still needs M5–M7 evidence, frozen feasibility criteria, and
+  dependency-rights review, followed by a future Accepted backend-selection ADR
+  before M9 can begin.
+- Protocol deviation: none. This slice changed only the proposed documentation
+  direction and framework-neutral evidence contracts; it did not execute a
+  dataset-, backend-, model-, training-, deployment-, or worker-specific step.
+- No dataset or sequence was approved or downloaded. No mono/stereo choice,
+  backend, visual method, learned component/weights, framework, health signal,
+  reliability action/threshold, numerical confirmation threshold, training,
+  checkpoint, export, deployment target, or licence was selected.
+- No Brev/A10 command, paid-worker action, model training, stop, deletion, or
+  termination occurred.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

@@ -113,7 +113,7 @@ class Vector3Measurement:
         if not isinstance(self.values, tuple) or len(self.values) != 3:
             raise SensorRecordError("values must be a tuple of exactly three components")
         for value in self.values:
-            if isinstance(value, bool) or not isinstance(value, (int, float)):
+            if isinstance(value, bool) or not isinstance(value, int | float):
                 raise SensorRecordError("values must contain only finite real numbers")
             if isinstance(value, float) and not math.isfinite(value):
                 raise SensorRecordError("values must contain only finite real numbers")

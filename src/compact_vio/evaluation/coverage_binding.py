@@ -7,7 +7,7 @@ its original order, then binds every declared opportunity explicitly.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from compact_vio.estimator import EstimatorOutput
 from compact_vio.evaluation.coverage import (
@@ -49,11 +49,19 @@ class EventOutputBatch:
     def __post_init__(self) -> None:
         if type(self.event) is not ReplayEvent:
             raise CoverageBindingError("event must be a ReplayEvent")
+        try:
+            replace(self.event)
+        except Exception as error:
+            raise CoverageBindingError(f"event violates ReplayEvent: {error}") from error
         if type(self.outputs) is not tuple:
             raise CoverageBindingError("outputs must be an exact tuple")
         for output in self.outputs:
             if type(output) is not EstimatorOutput:
                 raise CoverageBindingError("outputs must contain only EstimatorOutput values")
+            try:
+                replace(output)
+            except Exception as error:
+                raise CoverageBindingError(f"output violates EstimatorOutput: {error}") from error
             if output.clock_id != self.event.clock_id:
                 raise CoverageBindingError("output clock_id must match its triggering event")
             if output.available_time_ns < self.event.available_time_ns:
@@ -92,6 +100,17 @@ def _validate_and_count(
 ) -> int:
     if type(summary) is not OutputCoverageSummary:
         raise CoverageBindingError("coverage_summary must be an OutputCoverageSummary")
+    try:
+        replace(summary)
+        replace(summary.ledger)
+        for outcome in summary.ledger.outcomes:
+            replace(outcome)
+        for reason_count in summary.reason_counts:
+            replace(reason_count)
+    except Exception as error:
+        raise CoverageBindingError(
+            f"coverage_summary violates its retained records: {error}"
+        ) from error
     if summarize_output_coverage(summary.ledger) != summary:
         raise CoverageBindingError("coverage_summary must match its retained ledger")
     if type(batches) is not tuple or not batches:
@@ -102,6 +121,15 @@ def _validate_and_count(
         raise CoverageBindingError("slots must be a tuple")
     if not all(type(slot) is OutputEnvelopeSlot for slot in slots):
         raise CoverageBindingError("slots must contain only OutputEnvelopeSlot values")
+    try:
+        for batch in batches:
+            replace(batch)
+        for slot in slots:
+            replace(slot)
+    except Exception as error:
+        raise CoverageBindingError(
+            f"binding evidence violates its retained record contract: {error}"
+        ) from error
 
     expected_ids = summary.ledger.expected_opportunity_ids
     slot_ids = tuple(slot.opportunity_id for slot in slots)

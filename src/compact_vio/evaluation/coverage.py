@@ -8,7 +8,7 @@ associate timestamps, infer failures, or decide whether a run passed.
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 
 EXPLICIT_OUTPUT_COVERAGE_ID = "output-coverage/explicit-opportunities/v1"
@@ -19,12 +19,12 @@ class CoverageContractError(ValueError):
 
 
 def _require_non_empty_text(value: object, *, field: str) -> None:
-    if not isinstance(value, str) or not value.strip():
+    if type(value) is not str or not value.strip():
         raise CoverageContractError(f"{field} must be a non-empty string")
 
 
 def _require_non_negative_integer(value: object, *, field: str) -> None:
-    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+    if type(value) is not int or value < 0:
         raise CoverageContractError(f"{field} must be a non-negative integer")
 
 
@@ -48,13 +48,13 @@ class OutputCoverageOutcome:
 
     def __post_init__(self) -> None:
         _require_non_empty_text(self.opportunity_id, field="opportunity_id")
-        if not isinstance(self.output_status, OutputStatus):
+        if type(self.output_status) is not OutputStatus:
             raise CoverageContractError("output_status must be an OutputStatus")
-        if not isinstance(self.reference_available, bool):
+        if type(self.reference_available) is not bool:
             raise CoverageContractError("reference_available must be boolean")
-        if not isinstance(self.usable, bool):
+        if type(self.usable) is not bool:
             raise CoverageContractError("usable must be boolean")
-        if not isinstance(self.reason_codes, tuple):
+        if type(self.reason_codes) is not tuple:
             raise CoverageContractError("reason_codes must be a tuple")
         for reason_code in self.reason_codes:
             _require_non_empty_text(reason_code, field="reason_codes")
@@ -97,19 +97,23 @@ class OutputCoverageLedger:
             "reason_schema_id",
         ):
             _require_non_empty_text(getattr(self, field), field=field)
-        if (
-            not isinstance(self.expected_opportunity_ids, tuple)
-            or not self.expected_opportunity_ids
-        ):
+        if type(self.expected_opportunity_ids) is not tuple or not self.expected_opportunity_ids:
             raise CoverageContractError("expected_opportunity_ids must be a non-empty tuple")
         for opportunity_id in self.expected_opportunity_ids:
             _require_non_empty_text(opportunity_id, field="expected_opportunity_ids")
         if len(self.expected_opportunity_ids) != len(set(self.expected_opportunity_ids)):
             raise CoverageContractError("expected_opportunity_ids must not contain duplicates")
-        if not isinstance(self.outcomes, tuple):
+        if type(self.outcomes) is not tuple:
             raise CoverageContractError("outcomes must be a tuple")
-        if not all(isinstance(outcome, OutputCoverageOutcome) for outcome in self.outcomes):
+        if not all(type(outcome) is OutputCoverageOutcome for outcome in self.outcomes):
             raise CoverageContractError("outcomes must contain only OutputCoverageOutcome values")
+        try:
+            for outcome in self.outcomes:
+                replace(outcome)
+        except Exception as error:
+            raise CoverageContractError(
+                f"outcome violates OutputCoverageOutcome: {error}"
+            ) from error
         outcome_ids = tuple(outcome.opportunity_id for outcome in self.outcomes)
         if outcome_ids != self.expected_opportunity_ids:
             raise CoverageContractError(
@@ -177,8 +181,12 @@ class OutputCoverageSummary:
         _require_non_empty_text(self.summary_id, field="summary_id")
         if self.summary_id != EXPLICIT_OUTPUT_COVERAGE_ID:
             raise CoverageContractError(f"summary_id must equal {EXPLICIT_OUTPUT_COVERAGE_ID!r}")
-        if not isinstance(self.ledger, OutputCoverageLedger):
+        if type(self.ledger) is not OutputCoverageLedger:
             raise CoverageContractError("ledger must be an OutputCoverageLedger")
+        try:
+            replace(self.ledger)
+        except Exception as error:
+            raise CoverageContractError(f"ledger violates OutputCoverageLedger: {error}") from error
         for field in (
             "expected_count",
             "missing_count",
@@ -190,10 +198,15 @@ class OutputCoverageSummary:
             "non_usable_count",
         ):
             _require_non_negative_integer(getattr(self, field), field=field)
-        if not isinstance(self.reason_counts, tuple) or not all(
-            isinstance(reason_count, ReasonCount) for reason_count in self.reason_counts
+        if type(self.reason_counts) is not tuple or not all(
+            type(reason_count) is ReasonCount for reason_count in self.reason_counts
         ):
             raise CoverageContractError("reason_counts must contain only ReasonCount values")
+        try:
+            for reason_count in self.reason_counts:
+                replace(reason_count)
+        except Exception as error:
+            raise CoverageContractError(f"reason_count violates ReasonCount: {error}") from error
 
         expected = _aggregate(self.ledger)
         actual = (
@@ -240,8 +253,12 @@ class OutputCoverageSummary:
 def summarize_output_coverage(ledger: OutputCoverageLedger) -> OutputCoverageSummary:
     """Count one retained explicit-opportunity ledger without inferring semantics."""
 
-    if not isinstance(ledger, OutputCoverageLedger):
+    if type(ledger) is not OutputCoverageLedger:
         raise CoverageContractError("ledger must be an OutputCoverageLedger")
+    try:
+        replace(ledger)
+    except Exception as error:
+        raise CoverageContractError(f"ledger violates OutputCoverageLedger: {error}") from error
     (
         missing_count,
         invalid_count,

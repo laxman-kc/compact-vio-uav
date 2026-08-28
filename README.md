@@ -15,7 +15,8 @@ interface-declaration and initialization/reset contract, and typed camera/IMU
 payload records. It also contains immutable translation-trajectory records,
 raw exact-pair signed translation-residual and translation-RMSE primitives,
 explicit output-coverage accounting, exact replay/output binding, and a causal
-execution recorder. The recorder constructs a fresh replay/session pair,
+execution recorder plus terminal recorder-plan coverage binding. The recorder
+constructs a fresh replay/session pair,
 releases one event at a time, retains only fully validated output batches, and
 records the first failed event separately.
 The repository also contains a strict persisted calibration-profile contract
@@ -26,9 +27,9 @@ provenance, and calibration references without selecting project-wide values.
 It does not yet contain an estimator algorithm, a complete evaluator, an
 accepted real sensor or dataset calibration profile, a trained model, an
 approved dataset split, a deployable runtime, or a flight-ready system.
-PyTorch is the proposed framework for future learned-component work, pending
-ADR-0004; MLflow is an optional, currently absent observer. Neither is a current
-package dependency.
+ADR-0004 now records a reliability-aware modular A/B/C/D research proposal; it
+is `Proposed`, not accepted. No dataset, frontend method, learned component,
+backend, reliability action/threshold, training framework, or model is selected.
 
 A Brev A10 worker was observed `RUNNING`, `READY`, and `HEALTHY` on 2026-08-27
 and was authorized for that bounded implementation smoke only. This dated
@@ -46,34 +47,58 @@ The project follows these invariants:
 - Dataset rights, provenance, grouping, and split membership are recorded before use.
 - Offline results do not authorize ROS/PX4 integration or physical flight.
 
-## Planned research and training path
+## Proposed research and conditional-training path
 
 ```text
-local development -> GitHub -> future temporary GPU worker
+approved source -> one adapter -> canonical camera / IMU / calibration
                                       |
-approved datasets -> canonical data -> frozen source-group splits
+                                  causal replay
                                       |
-                  +-------------------+--------------------+
-                  |                   |                    |
-          classical VIO        direct learned VIO    anchored hybrid VIO
-          native execution    proposed framework    proposed framework
-                  |                   |                    |
-                  +-------------------+--------------------+
+                  +-------------------+-------------------+
+                  |                                       |
+             inertial path                    visual configuration under test
+                                              A: visual motion
+                                              B: frozen learned landmarks
+                                              C: A + B + deduplication
+                                              D-monitor: C + monitor only
+                                              D: C + one protocol-declared action
+                  |                                       |
+                  +-------------------+-------------------+
                                       |
-                    common causal replay and evaluator
+                          shared backend / estimator / recorder
                                       |
-                         scientific candidate selection
+separate evaluation ground truth -> common evaluator
                                       |
-             native package or checkpoint -> conditional export
+                            discovery failure atlas
+                                      |
+                       targeted training decision
+                         /                    \
+             no training                      approved later branch
+                 |                            |
+                 |             approved training data + framework
+                 |                            |
+                 |                    bounded training
+                 |                            |
+                 +----------> frozen candidate/checkpoint
+                                      |
+                              unchanged evaluator
+                                      |
+                         confirmatory-protocol freeze
 ```
 
-Classical VIO is built and evaluated natively; it does not pass through any
-neural training framework. PyTorch is the current proposal for learned and
-hybrid candidates, not an accepted dependency. MLflow may observe a run, but
-versioned configuration, run manifests, artifact hashes, trajectories, and
-reports remain the portable source of truth. ONNX, TensorRT, Jetson, ROS 2, and
-PX4 work begins only if the selected candidate and a later deployment decision
-require it.
+A native classical implementation is an external reference and retains its own
+backend/runtime; it is not mislabeled as an internal same-backend ablation.
+A/B/C/D are proposed internal controls that freeze the backend and every
+non-tested setting. Ground truth never enters estimator input or online
+reliability logic.
+
+ADR-0004 proposes no project-side training in Version 1. A frozen pretrained
+component can enter B only after code/weight identity, rights, provenance,
+preprocessing, and evaluation-overlap review. Project training opens only if a
+failure atlas isolates a declared learnable deficit and a later decision
+selects the component, data, framework, objective, and budget. Direct learned
+VIO is optional external work, not a critical-path prerequisite. ONNX,
+TensorRT, edge hardware, ROS 2, and PX4 remain later conditional work.
 
 ## Documentation map
 
@@ -106,7 +131,8 @@ causal replay primitive, framework-neutral estimator-envelope and declared
 interface validation, typed sensor records, strict calibration profile/review
 contracts with synthetic negative validation, exact translation-trajectory,
 raw signed-residual and RMSE validation, output-coverage accounting,
-replay/output binding, direct causal execution recording, bundle
+replay/output binding, terminal recorder-plan coverage binding, direct causal
+execution recording, bundle
 inventory/verification, two-copy content
 audit, repository policy check, and read-only durability preflight. The separate
 schema/record validator is development tooling and uses the repository's pinned
@@ -196,6 +222,13 @@ Produced outcomes name a zero-based tuple ordinal; missing outcomes explicitly
 name no ordinal. Every expected opportunity and every observed output envelope
 must be accounted for exactly once. The binding never matches by timestamp or
 assumes one output per event.
+
+`compact_vio.evaluation.bind_recorded_output_coverage` extends that exact
+binding to a terminal recorder snapshot. It retains the complete planned event
+tuple, allows caller-declared missing opportunities on the failed event and
+unattempted suffix, and requires every output in every successfully recorded
+batch to be bound exactly once. It does not create opportunities, reason codes,
+failure labels, thresholds, or a run-success decision.
 
 `compact_vio.execution.CausalEstimatorRecorder` constructs and privately retains
 one fresh, clock-matched `CausalReplay` and `EstimatorSession`. It releases one

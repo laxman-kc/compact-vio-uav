@@ -8,7 +8,7 @@ and records the first failed event separately without retrying it.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Generic, TypeVar
 
@@ -59,6 +59,10 @@ class RecorderFailure:
     def __post_init__(self) -> None:
         if type(self.event) is not ReplayEvent:
             raise ExecutionRecorderError("failure event must be a ReplayEvent")
+        try:
+            replace(self.event)
+        except Exception as error:
+            raise ExecutionRecorderError(f"failure event violates ReplayEvent: {error}") from error
         _require_non_empty_text(self.exception_type_id, field="exception_type_id")
         if type(self.session_delivery_recorded) is not bool:
             raise ExecutionRecorderError("session_delivery_recorded must be boolean")
@@ -111,8 +115,20 @@ class RecorderSnapshot:
             type(batch) is EventOutputBatch for batch in self.batches
         ):
             raise ExecutionRecorderError("batches must contain only EventOutputBatch values")
+        try:
+            for batch in self.batches:
+                replace(batch)
+        except Exception as error:
+            raise ExecutionRecorderError(f"batch violates EventOutputBatch: {error}") from error
         if self.failure is not None and type(self.failure) is not RecorderFailure:
             raise ExecutionRecorderError("failure must be a RecorderFailure or None")
+        if self.failure is not None:
+            try:
+                replace(self.failure)
+            except Exception as error:
+                raise ExecutionRecorderError(
+                    f"failure violates RecorderFailure: {error}"
+                ) from error
         for field in (
             "replay_consumed_count",
             "replay_remaining_count",

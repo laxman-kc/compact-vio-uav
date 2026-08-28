@@ -7,7 +7,7 @@ sensor configuration, numerical backend, and model architecture unspecified.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Generic, Protocol, TypeVar
 
 from compact_vio.replay import EventKind, ReplayEvent
@@ -146,6 +146,12 @@ class EstimatorOutput(Generic[OutputT]):
     def __post_init__(self) -> None:
         if type(self.convention) is not OutputConvention:
             raise EstimatorContractError("convention must be an OutputConvention")
+        try:
+            replace(self.convention)
+        except Exception as error:
+            raise EstimatorContractError(
+                f"convention violates OutputConvention: {error}"
+            ) from error
         _require_non_empty_text(self.clock_id, field="clock_id")
         _require_non_negative_integer(self.estimate_time_ns, field="estimate_time_ns")
         _require_non_negative_integer(self.available_time_ns, field="available_time_ns")
