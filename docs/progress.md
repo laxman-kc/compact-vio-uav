@@ -762,6 +762,20 @@ result, and explicit remaining blockers.
 - Protocol deviation: none. No dataset download, Brev/A10 command, paid-worker
   action, training, checkpoint, worker stop, deletion, or termination occurred.
 
+## 2026-08-27 — ADR-0004 decision brief verified remotely
+
+- Owner-review package commit
+  `946381caea7f3d2b5a6d0fa5558a53a6b13cb6c4` was pushed to `origin/main`.
+- GitHub Actions CI passed for Python 3.10 and 3.12 in
+  [run 33138277337](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33138277337).
+- An independent adversarial documentation review reported no remaining
+  P0/P1/P2 finding after verifying the degraded primary population, separate
+  nominal guardrail population, acquisition-level inferential unit,
+  A/B/C/D-monitor/D fairness contract, source limits, and `Proposed` authority
+  boundary.
+- No owner decision was inferred from the passing checks. No dataset, training,
+  GPU, paid-worker, or lifecycle action was part of this evidence slice.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
