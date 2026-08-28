@@ -92,6 +92,12 @@ after results are inspected.
 - Define the fairness/resource-policy fields that must be identical across
   A/B/C/D.
 
+The non-authoritative [ADR-0004 decision brief](evidence/0004-decision-brief.md)
+supplies one literature-backed recommendation for these unresolved choices,
+including claim-to-evidence and negative-control matrices. It is review input,
+not approval; this ADR remains `Proposed` until the project owner records the
+decision and date here.
+
 ## Not selected by this proposal
 
 This proposal does not select a dataset or sequence, mono or stereo, a physical
@@ -116,6 +122,12 @@ only.
 - Same-backend fairness contract for A/B/C/D.
 - D-monitor control and a rule that one primary D action is frozen later.
 - Explicit Version 1 and conditional-training boundaries.
+
+Prepared review evidence:
+
+- [Decision brief](evidence/0004-decision-brief.md): recommended phenomenon/population,
+  endpoint family, independent unit, fairness contract, falsification rule,
+  source limits, and the required matrices.
 
 ## Follow-up evidence
 

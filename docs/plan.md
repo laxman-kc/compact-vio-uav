@@ -826,7 +826,9 @@ Execute these as separate small slices; do not combine them into one long phase:
 
 1. Record ADR-0004 as a review-ready proposal and align requirements,
    architecture, protocol, and roadmap without accepting its unresolved owner
-   choices. **Completed by this documentation slice; ADR remains Proposed.**
+   choices. **The aligned proposal and literature-backed
+   [decision brief](adr/evidence/0004-decision-brief.md) are complete; ADR
+   remains Proposed pending the dated owner decision.**
 2. Continue one framework-neutral M7 evaluator/lifecycle behavior at a time.
    Terminal recorder-plan to explicit coverage binding is now implemented;
    a terminal payload-omitted recorder-envelope projection is also implemented.

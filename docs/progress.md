@@ -725,6 +725,43 @@ result, and explicit remaining blockers.
   commit when these remote results were recorded. No dataset, training, GPU, or
   lifecycle action was part of either CI run.
 
+## 2026-08-27 — ADR-0004 owner-review decision brief prepared
+
+- Added a non-authoritative, source-backed decision brief under
+  `docs/adr/evidence/`. It recommends one bounded target phenomenon/population,
+  a full-run failure-aware endpoint family, parent acquisition groups as the
+  inferential unit, paired C/D/D-monitor comparisons, a same-backend fairness
+  contract, falsification rule, and claim/control matrices.
+- Linked the brief from ADR-0004, the ADR index, and the immediate execution
+  queue. ADR-0004 remains `Proposed`; the brief is review input and records no
+  owner approval or decision date.
+- The brief selects no dataset or sequence, mono/stereo setup, backend, visual
+  method, learned component, action, reliability signal, numerical threshold,
+  trial count, statistical test, training framework, compute budget,
+  deployment target, or flight scope.
+- Local verification: all 218 standard-library tests passed; repository policy
+  passed for 84 files; the pinned schema harness passed 10 schemas and 7
+  templates; compileall, Ruff 0.12.12 lint/format, and `git diff --check`
+  passed.
+- Exact local validation commands:
+
+  ```bash
+  PYTHONPATH=src python3 -m unittest discover -s tests -q
+  PYTHONPATH=src python3 -m compact_vio.repository_policy .
+  uv run --no-project --with 'jsonschema[format-nongpl]==4.26.0' python scripts/validate_schemas.py
+  PYTHONPATH=src python3 -m compileall -q src tests
+  uv run --no-project --with ruff==0.12.12 ruff check .
+  uv run --no-project --with ruff==0.12.12 ruff format --check .
+  git diff --check
+  ```
+
+- Remaining authority gate: the project owner must accept or reject the seven
+  ADR-0004 checklist items and record the date. M6 then still requires separate
+  owner approval of one exact dataset scope and a rights review; M7/M8 retain
+  their documented evaluator and feasibility gates.
+- Protocol deviation: none. No dataset download, Brev/A10 command, paid-worker
+  action, training, checkpoint, worker stop, deletion, or termination occurred.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

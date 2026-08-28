@@ -21,6 +21,11 @@ An ADR is authoritative only when its status is `Accepted`. `Proposed` and `Unre
 | [0005](0005-artifact-storage.md) | Artifact vault, backup, retention, and spend | Unresolved | Important GPU experiments and worker teardown |
 | [0006](0006-deployment-scope.md) | PX4 boundary, edge, and flight scope | Unresolved | Export, target runtime, integration and physical testing |
 
+ADR-0004 has a non-authoritative
+[owner-review decision brief](evidence/0004-decision-brief.md). It supplies
+source-backed recommendations and control matrices without changing the ADR's
+`Proposed` status.
+
 ## ADR completion rule
 
 An accepted ADR must name the decision owner, approval date, evidence, selected option, rejected alternatives, consequences, and follow-up verification. Silence, an implementation default, an available dependency, or a value copied from feedback is not a decision.
