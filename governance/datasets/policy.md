@@ -1,7 +1,7 @@
 # Dataset governance policy
 
 Status: Foundation policy
-Last reviewed: 2026-08-26
+Last reviewed: 2026-08-27
 
 ## Principles
 
@@ -10,6 +10,9 @@ Last reviewed: 2026-08-26
 - Dataset permission does not establish model safety, product suitability, or permission for every downstream use.
 - Candidate status is not approval for download, training, evaluation, redistribution, or publication.
 - Dataset files remain outside Git unless an explicit reviewed exception exists.
+
+The [representative dataset-unit candidate brief](evidence/representative-unit-candidate-brief.md)
+is supporting evidence for later review. It does not approve acquisition or use.
 
 ## Approval record
 

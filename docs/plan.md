@@ -838,7 +838,9 @@ Execute these as separate small slices; do not combine them into one long phase:
 3. After the research-scope freeze is accepted, obtain owner approval for
    exactly one dataset release/unit/modality/role and acquisition location
    after official rights/modality/calibration/GT/size review. EuRoC remains only
-   a candidate until that record exists.
+   a candidate until that record exists. The non-authoritative
+   [candidate brief](../governance/datasets/evidence/representative-unit-candidate-brief.md)
+   narrows the later evidence review without approving a dataset or download.
 4. Download only the approved unit and implement one adapter under `data/`,
    including actual calibration assessment, provenance, and negative controls.
 5. Complete evaluator/lifecycle semantics supported by that data, then run the

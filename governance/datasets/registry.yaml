@@ -1,6 +1,7 @@
 schema_version: "1.0"
-last_reviewed: "2026-08-26"
+last_reviewed: "2026-08-27"
 policy: governance/datasets/policy.md
+evidence_brief: governance/datasets/evidence/representative-unit-candidate-brief.md
 
 # Every entry is a candidate only. No role, download, split, or redistribution is
 # approved by this registry. Acquisition manifests will record exact versions,

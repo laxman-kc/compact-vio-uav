@@ -776,6 +776,52 @@ result, and explicit remaining blockers.
 - No owner decision was inferred from the passing checks. No dataset, training,
   GPU, paid-worker, or lifecycle action was part of this evidence slice.
 
+## 2026-08-27 — Representative dataset candidates screened from official sources
+
+- Added the non-authoritative
+  `governance/datasets/evidence/representative-unit-candidate-brief.md` and
+  linked it from the dataset policy, candidate registry, and immediate execution
+  queue. Every registry entry remains `candidate` with an unresolved project
+  role; ADR-0004 remains `Proposed`; M6 remains blocked.
+- The brief records EuRoC as the provisional technical review lead for one
+  future real-MAV integration-unit review, UZH-FPV as the provisional
+  high-motion stress review lead, TUM VI as handheld calibration/evaluator
+  support, and TartanAir/Mid-Air as synthetic discovery candidates. These are
+  evidence-screening descriptions, not selections or approved project roles.
+- Blackbird remains on hold because its repository software license does not
+  establish dataset-file rights. The ETH illumination dataset remains on hold
+  because its advertised DOI resolved to an unrelated record and no
+  authenticated archive/rights record was established. VIODE was screened out
+  as a non-candidate for the proposed blur/illumination scope.
+- Two independent adversarial reviews reported no remaining P0/P1/P2 findings
+  after checking official-source claims, rights labels, ground-truth coverage,
+  domain distinctions, leakage grouping, links, and approval boundaries.
+- Local verification: all 218 standard-library tests passed; repository policy
+  passed for 85 files; the pinned schema harness passed 10 schemas and 7
+  templates; registry YAML parsing, compileall, Ruff 0.12.12 lint/format, and
+  `git diff --check` passed.
+- Exact local validation commands:
+
+  ```bash
+  PYTHONPATH=src python3 -m unittest discover -s tests -q
+  PYTHONPATH=src python3 -m compact_vio.repository_policy .
+  uv run --no-project --with 'jsonschema[format-nongpl]==4.26.0' python scripts/validate_schemas.py
+  ruby -e 'require "yaml"; YAML.safe_load_file("governance/datasets/registry.yaml", permitted_classes: [], aliases: false); puts "registry YAML: PASS"'
+  PYTHONPATH=src python3 -m compileall -q src tests
+  uv run --no-project --with ruff==0.12.12 ruff check .
+  uv run --no-project --with ruff==0.12.12 ruff format --check .
+  git diff --check
+  ```
+
+- Remaining authority gates: a dated owner decision on ADR-0004; then separate
+  project-owner approval of one exact dataset release/unit/modalities/role/split
+  and acquisition location plus dataset-file rights review, exact size/hash,
+  calibration/timestamp/GT evidence, and storage authority.
+- Protocol deviation: none. No dataset byte was downloaded or inspected; no
+  sequence, modality, role, split, location, backend, model, framework,
+  threshold, or training action was selected. No Brev/A10, paid-worker,
+  lifecycle, deletion, or termination action occurred.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
