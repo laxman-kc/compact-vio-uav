@@ -713,6 +713,18 @@ result, and explicit remaining blockers.
   meaning was selected. No Brev/A10, paid-worker, download, training, stop,
   deletion, or termination action occurred.
 
+## 2026-08-27 — M7 lifecycle and envelope commits verified remotely
+
+- Typed lifecycle-policy implementation commit
+  `76c2061bf716fbf0eefd0ca986d12353b6a074d0` passed GitHub Actions CI in
+  [run 33136293781](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33136293781).
+- Terminal recorder-envelope implementation commit
+  `76ffd7da08448cd1588421f2aa00e2342d1c617f` passed GitHub Actions CI in
+  [run 33137181405](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33137181405).
+- `origin/main` and the local branch both resolved to the envelope implementation
+  commit when these remote results were recorded. No dataset, training, GPU, or
+  lifecycle action was part of either CI run.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
