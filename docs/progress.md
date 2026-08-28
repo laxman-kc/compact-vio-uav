@@ -680,6 +680,39 @@ result, and explicit remaining blockers.
   target, or estimator policy meaning was selected. No Brev/A10 command or
   lifecycle action occurred.
 
+## 2026-08-27 — M7 terminal recorder-envelope representation implemented
+
+- Lifecycle-policy implementation evidence commit `76c2061` was pushed to
+  `origin/main`. It retained the immutable typed lifecycle declaration and all
+  210 tests passed before this envelope slice began.
+- Added `compact_vio.execution_trace`, a one-way terminal snapshot projection
+  with a strict structural Draft 2020-12 schema. It emits deterministic sorted
+  UTF-8 JSON containing the full planned-event envelope order, successful
+  output-envelope order, lifecycle-policy IDs, progress counts, and
+  first-failure metadata.
+- Event and estimator payloads are selected out manually. The encoder derives no
+  field by traversing, representing, typing, hashing, or serializing them;
+  cyclic, secret-bearing, and representation-raising payload controls pass.
+  Different payloads with equal envelope metadata intentionally produce equal
+  bytes.
+- This is not a full trace or serialized `RecorderSnapshot`. There is no
+  deserializer, filesystem writer, or run-manifest integration, and the envelope
+  does not establish payload identity, reconstruction, replayability, dataset
+  provenance, adapter lineage, coverage semantics, lifecycle success, or
+  scientific acceptance. M7 remains in progress.
+- Schema validity alone does not authenticate recorder origin or prove every
+  cross-array count/reference in arbitrary external JSON. The trusted path is
+  encoder output from a validated terminal snapshot.
+- Working-tree verification: all 218 standard-library tests passed; repository
+  policy passed for 83 files; the pinned schema harness passed 10 schemas and 7
+  templates; generated-envelope positive and payload/state negative schema
+  controls passed; compileall, Ruff 0.12.12 lint/format, and `git diff --check`
+  passed.
+- No dataset/sequence, backend, estimator algorithm, model/weights, framework,
+  threshold, training job, checkpoint, deployment target, or lifecycle-policy
+  meaning was selected. No Brev/A10, paid-worker, download, training, stop,
+  deletion, or termination action occurred.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

@@ -525,6 +525,21 @@ Implemented evaluator slice (not M7 exit evidence by itself):
   exactly once; explicit missing slots may reference the failed event and
   unattempted suffix. It rejects active snapshots and does not create expected
   opportunities, reasons, failure labels, thresholds, or a success decision.
+- A terminal-only, payload-omitted recorder-envelope encoder now projects the
+  complete planned-event metadata, successful output envelopes,
+  lifecycle-policy declaration, counts, and first-failure metadata into
+  deterministic JSON governed by a strict structural schema. It has no
+  deserializer or filesystem writer and derives no field by reading,
+  representing, typing, or hashing payloads.
+- The recorder envelope is not a full execution trace. The encoder adds no
+  dedicated representation, type, hash, or cryptographic commitment for omitted
+  payloads, so the envelope alone cannot prove their identity. It also does not
+  prove replayability, dataset provenance, adapter lineage, coverage, lifecycle
+  success, or scientific acceptance. Payload-complete trace/run-manifest
+  integration remains open.
+- Schema validity alone does not authenticate recorder origin or prove all
+  cross-array counts/references in arbitrary external JSON. A trusted envelope
+  must be produced by the encoder from a validated terminal snapshot.
 - These kernels are not aligned ATE, RPE, metric-scale evidence, coverage or
   completion evidence, frame-correctness proof, run-level failure accounting,
   or a complete evaluator. M7 remains in progress.
@@ -814,7 +829,8 @@ Execute these as separate small slices; do not combine them into one long phase:
    choices. **Completed by this documentation slice; ADR remains Proposed.**
 2. Continue one framework-neutral M7 evaluator/lifecycle behavior at a time.
    Terminal recorder-plan to explicit coverage binding is now implemented;
-   proceed only to the next separately declared behavior
+   a terminal payload-omitted recorder-envelope projection is also implemented.
+   Proceed only to the next separately declared behavior
    with caller-declared policy identity and focused negative controls. Do not
    invent final thresholds, schedule, failure taxonomy, or dataset semantics.
 3. After the research-scope freeze is accepted, obtain owner approval for

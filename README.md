@@ -15,7 +15,8 @@ interface-declaration and initialization/reset contract, and typed camera/IMU
 payload records. It also contains immutable translation-trajectory records,
 raw exact-pair signed translation-residual and translation-RMSE primitives,
 explicit output-coverage accounting, exact replay/output binding, and a causal
-execution recorder plus terminal recorder-plan coverage binding. The recorder
+execution recorder plus terminal recorder-plan coverage binding and a one-way,
+payload-omitted terminal recorder-envelope encoder. The recorder
 constructs a fresh replay/session pair,
 releases one event at a time, retains only fully validated output batches, and
 records the first failed event separately.
@@ -121,6 +122,7 @@ TensorRT, edge hardware, ROS 2, and PX4 remain later conditional work.
 - [Run-manifest JSON Schema](experiments/schemas/run-manifest.schema.json)
 - [Bundle-inventory JSON Schema](experiments/schemas/artifact-manifest.schema.json)
 - [Post-export artifact-storage evidence schema](experiments/schemas/artifact-storage-evidence.schema.json)
+- [Recorder snapshot envelope schema](experiments/schemas/recorder-snapshot-envelope.schema.json)
 - [Sensor calibration-profile schema](configs/schemas/calibration-profile.schema.json)
 - [Calibration review/revalidation schema](configs/schemas/calibration-assessment.schema.json)
 
@@ -132,7 +134,7 @@ interface validation, typed sensor records, strict calibration profile/review
 contracts with synthetic negative validation, exact translation-trajectory,
 raw signed-residual and RMSE validation, output-coverage accounting,
 replay/output binding, terminal recorder-plan coverage binding, direct causal
-execution recording, bundle
+execution recording, terminal payload-omitted recorder-envelope encoding, bundle
 inventory/verification, two-copy content
 audit, repository policy check, and read-only durability preflight. The separate
 schema/record validator is development tooling and uses the repository's pinned
@@ -245,6 +247,21 @@ failure taxonomy, threshold, output schedule, or scientific-success rule.
 Generic payload objects are not deep-copied, and the snapshot is not persistent
 run evidence. The recorder does not infer expected output opportunities,
 missing-output reasons, estimator success, or scientific run acceptance.
+
+`compact_vio.execution_trace.recorder_snapshot_envelope_to_json_bytes` projects
+an exact terminal snapshot into deterministic UTF-8 JSON with a strict
+structural schema at
+`experiments/schemas/recorder-snapshot-envelope.schema.json`. It preserves the
+ordered event plan, successful output-envelope metadata, lifecycle-policy IDs,
+counts, and first-failure metadata while manually omitting every event and
+estimator payload. It supplies neither a deserializer nor a filesystem writer.
+The envelope is not a full trace: the encoder adds no dedicated representation,
+type, hash, or cryptographic commitment for omitted payloads, so the envelope
+alone cannot prove their identity. It also does not prove replayability, dataset
+provenance, adapter lineage, coverage, lifecycle success, or scientific acceptance.
+Schema validity alone does not authenticate recorder origin or prove count and
+batch-to-plan relationships in arbitrary external JSON; trusted envelopes must
+come from this encoder's validated `RecorderSnapshot` input.
 
 ## State ownership
 

@@ -152,6 +152,14 @@ The following must be decided through ADRs before dependent implementation:
   behavior. Persistent full-run traces, accepted meanings for those policy IDs,
   expected-opportunity creation, complete failure classification,
   adapter-internal proof, and scientific success criteria: **TBD**.
+- Terminal recorder-envelope representation: **implemented as a deterministic,
+  one-way, payload-omitted JSON projection** with a strict structural schema. It
+  preserves structural execution metadata only. Schema validity does not
+  authenticate recorder origin or all cross-array relationships; trusted
+  envelopes originate from the encoder's validated terminal snapshot input.
+  Payload identity, reconstruction,
+  replayability, data provenance, complete run-manifest integration, coverage,
+  lifecycle success, and scientific acceptance: **TBD**.
 - Artifact vault, independent backup, retention capacity, and spending ceiling: **TBD**.
 - Control boundary: **PX4 retains stabilization, failsafes, and motor control**;
   edge hardware, runtime, precision, ROS 2 transport, simulator, and physical

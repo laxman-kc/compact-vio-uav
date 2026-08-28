@@ -157,8 +157,9 @@ primitive, a framework-neutral estimator envelope with a required declaration
 shape and initialization/reset validation, a direct causal execution recorder,
 typed camera/IMU payload records, immutable translation-trajectory records, raw
 exact-pair signed translation-residual and translation-RMSE kernels, explicit
-output-coverage accounting and binding, and strict persisted calibration-profile
-plus separate assessment contracts. The committed fixture is synthetic and
+output-coverage accounting and binding, a deterministic payload-omitted terminal
+recorder-envelope projection, and strict persisted calibration-profile plus
+separate assessment contracts. The committed fixture is synthetic and
 rejected; there is no accepted real sensor or dataset profile. Planned next:
 additional framework-neutral evaluator/lifecycle behavior, then—after explicit
 approval—one dataset adapter with its actual profile and a shared-backend
@@ -173,7 +174,7 @@ is not data-use approval.
 | Layer | Current implementation | Planned or conditional boundary |
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Numerical array/vision library for estimator work is unresolved. |
-| Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, typed camera/IMU records, translation trajectories, raw residual/RMSE, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Additional geometry/evaluator and lifecycle behavior, actual dataset profiles, and adapters are planned; exact state/policy identifiers, final metric protocols, sensor configuration, conventions, thresholds, and numerical backend remain unresolved. |
+| Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces, additional geometry/evaluator and lifecycle behavior, actual dataset profiles, and adapters are planned; exact state/policy identifiers, final metric protocols, sensor configuration, conventions, thresholds, and numerical backend remain unresolved. |
 | Native reference | Not implemented | A later rights-reviewed classical reference retains its native build/backend/runtime and has no learned-framework or tracker dependency. |
 | Internal A/B/C/D system | Not implemented | Shared-backend feasibility precedes visual/inertial/fusion/health work. Exact backend, visual methods, learned component, deduplication, diagnostics, and D action remain unresolved. |
 | Conditional learning | Not implemented; no framework is installed as a project dependency | Version 1 no-project-training is proposed in ADR-0004. Framework, model, data, objective, and schedule remain unresolved unless failure-atlas evidence opens one targeted branch. |
@@ -195,13 +196,14 @@ compact-vio-uav/
 ├── governance/                            [current: policies/schemas/draft templates; zero authoritative records]
 ├── environments/                          [current: dated A10 inventories]
 ├── experiments/
-│   ├── schemas/                           [current: run/artifact/evidence schemas]
+│   ├── schemas/                           [current: run/artifact/evidence/recorder-envelope schemas]
 │   └── configs/                           [planned: frozen experiment configs]
 ├── configs/                               [current: calibration schemas/rejected synthetic fixtures; other configs planned]
 ├── src/compact_vio/
 │   ├── replay.py                          [current]
 │   ├── estimator.py                       [current: estimator envelope/interface declaration]
 │   ├── execution.py                       [current: causal replay-to-estimator recorder]
+│   ├── execution_trace.py                 [current: terminal payload-omitted envelope encoder]
 │   ├── artifacts/                         [current]
 │   ├── copy_audit.py                      [current]
 │   ├── preflight.py                       [current]
@@ -313,8 +315,8 @@ plus an immutable lifecycle-policy declaration. That declaration contains only
 required opaque IDs for the recorder's existing replay-exhaustion, processing-
 exception, process-control-exception, and unattempted-suffix behavior; it does
 not select a taxonomy, threshold, schedule, or success rule. Generic payloads
-are not deep-copied and no persistent trace format exists yet. This proves only
-the recorder-observed envelope path: it does not prove adapter-internal sample use
+are not deep-copied, and no payload-complete trace format exists yet. This proves
+only the recorder-observed envelope path: it does not prove adapter-internal sample use
 or reset behavior, define output opportunities, classify missing/failure causes,
 or establish scientific run success.
 
@@ -325,6 +327,22 @@ event or the unattempted planned suffix, so a surviving prefix cannot silently
 be presented as the whole execution. The bridge still does not invent expected
 opportunities, reason codes, failure taxonomy, thresholds, completion, or run
 success.
+
+The one-way execution-envelope projection converts a structurally valid terminal
+recorder snapshot into deterministic JSON metadata. It retains the complete
+planned-event envelope order, successful output-envelope order, lifecycle-policy
+IDs, progress counts, and first-failure metadata, but manually excludes all
+event/output payloads and exposes no deserializer. It is intentionally not a
+payload-complete execution trace: equal envelopes can come from different input
+or output payloads, and the encoder adds no dedicated representation, type,
+hash, or cryptographic commitment for those omitted payloads. The envelope alone
+therefore cannot prove their identity. It also does not establish replayability,
+provenance, adapter-internal lineage,
+coverage semantics, lifecycle success, or scientific acceptance.
+The JSON Schema enforces structure and local terminal/exhaustion conditionals,
+but cannot authenticate recorder origin or prove every cross-array count and
+reference. A schema-valid external document is not recorder evidence by itself;
+the trusted path is the one-way encoder applied to a validated snapshot.
 
 ## Deployment boundary
 

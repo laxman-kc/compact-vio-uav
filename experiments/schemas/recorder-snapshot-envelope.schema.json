@@ -1,0 +1,418 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/laxman-kc/compact-vio-uav/experiments/schemas/recorder-snapshot-envelope.schema.json",
+  "title": "compact-vio-uav recorder snapshot envelope",
+  "description": "Structural schema for the terminal recorder-envelope metadata projection. No field is derived from an event or estimator payload. Schema validity does not authenticate recorder origin or prove cross-field identity/count relationships; trusted records must be produced from a validated RecorderSnapshot by the project encoder. This record is not a replay-complete trace or payload identity.",
+  "$comment": "JSON Schema enforces shape and local terminal/exhaustion conditionals. It cannot prove batch-to-plan references or count arithmetic across arrays; schema-valid external JSON is not recorder evidence by itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "payload_policy_id",
+    "trace_id",
+    "execution_policy",
+    "clock_id",
+    "state",
+    "watermark_ns",
+    "replay",
+    "session",
+    "planned_events",
+    "successful_batches",
+    "failure"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "record_type": {
+      "const": "recorder_snapshot_envelope"
+    },
+    "payload_policy_id": {
+      "const": "payloads-omitted-no-representation-no-hash/v1"
+    },
+    "trace_id": {
+      "$ref": "#/$defs/nonblank_text"
+    },
+    "execution_policy": {
+      "$ref": "#/$defs/execution_policy"
+    },
+    "clock_id": {
+      "$ref": "#/$defs/nonblank_text"
+    },
+    "state": {
+      "enum": ["completed", "failed"]
+    },
+    "watermark_ns": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "replay": {
+      "$ref": "#/$defs/replay_progress"
+    },
+    "session": {
+      "$ref": "#/$defs/session_progress"
+    },
+    "planned_events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/planned_event"
+      }
+    },
+    "successful_batches": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/successful_batch"
+      }
+    },
+    "failure": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/failure"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "completed"
+          }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "properties": {
+          "replay": {
+            "properties": {
+              "remaining_count": {
+                "const": 0
+              },
+              "exhausted": {
+                "const": true
+              }
+            }
+          },
+          "failure": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "failure": {
+            "$ref": "#/$defs/failure"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonblank_text": {
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "nonnegative_integer": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "execution_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_id",
+        "replay_exhaustion_semantics_id",
+        "processing_exception_semantics_id",
+        "process_control_exception_semantics_id",
+        "unattempted_suffix_semantics_id"
+      ],
+      "properties": {
+        "policy_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "replay_exhaustion_semantics_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "processing_exception_semantics_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "process_control_exception_semantics_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "unattempted_suffix_semantics_id": {
+          "$ref": "#/$defs/nonblank_text"
+        }
+      }
+    },
+    "replay_progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumed_count", "remaining_count", "exhausted"],
+      "properties": {
+        "consumed_count": {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        "remaining_count": {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        "exhausted": {
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "exhausted": {
+                "const": true
+              }
+            },
+            "required": ["exhausted"]
+          },
+          "then": {
+            "properties": {
+              "remaining_count": {
+                "const": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "remaining_count": {
+                "minimum": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "session_progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["delivered_event_count", "reset_generation"],
+      "properties": {
+        "delivered_event_count": {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        "reset_generation": {
+          "$ref": "#/$defs/nonnegative_integer"
+        }
+      }
+    },
+    "planned_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "sequence_index",
+        "stream_id",
+        "kind",
+        "clock_id",
+        "measurement_time_ns",
+        "available_time_ns",
+        "valid"
+      ],
+      "properties": {
+        "event_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "sequence_index": {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        "stream_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "kind": {
+          "enum": ["camera", "imu", "reset"]
+        },
+        "clock_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "measurement_time_ns": {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        "available_time_ns": {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        "valid": {
+          "type": "boolean"
+        }
+      }
+    },
+    "output_convention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "convention_id",
+        "reference_frame_id",
+        "tracked_frame_id",
+        "transform_direction",
+        "translation_unit",
+        "rotation_representation",
+        "rotation_unit",
+        "health_schema_id"
+      ],
+      "properties": {
+        "convention_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "reference_frame_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "tracked_frame_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "transform_direction": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "translation_unit": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "rotation_representation": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "rotation_unit": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "health_schema_id": {
+          "$ref": "#/$defs/nonblank_text"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "convention",
+        "clock_id",
+        "estimate_time_ns",
+        "available_time_ns",
+        "reset_generation",
+        "health_code",
+        "valid",
+        "interface_id",
+        "initialized"
+      ],
+      "properties": {
+        "convention": {
+          "$ref": "#/$defs/output_convention"
+        },
+        "clock_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "estimate_time_ns": {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        "available_time_ns": {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        "reset_generation": {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        "health_code": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "valid": {
+          "type": "boolean"
+        },
+        "interface_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/nonblank_text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "initialized": {
+          "type": ["boolean", "null"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "interface_id": {
+                "type": "null"
+              }
+            },
+            "required": ["interface_id"]
+          },
+          "then": {
+            "properties": {
+              "initialized": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "initialized": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "successful_batch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "event_sequence_index", "outputs"],
+      "properties": {
+        "event_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "event_sequence_index": {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/output"
+          }
+        }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "event_sequence_index",
+        "exception_type_id",
+        "session_delivery_recorded",
+        "reset_transition_applied"
+      ],
+      "properties": {
+        "event_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "event_sequence_index": {
+          "$ref": "#/$defs/nonnegative_integer"
+        },
+        "exception_type_id": {
+          "$ref": "#/$defs/nonblank_text"
+        },
+        "session_delivery_recorded": {
+          "type": "boolean"
+        },
+        "reset_transition_applied": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
