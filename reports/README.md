@@ -11,5 +11,6 @@ measured results from literature values and from engineering projections.
 
 ## Reviewed reports
 
+- [EuRoC compact VIO v4 translation-state exploratory result](euroc-compact-vio-v4-translation-state-exploratory-2026-08-28.md)
 - [EuRoC compact VIO v3 stateful exploratory result](euroc-compact-vio-v3-stateful-exploratory-2026-08-28.md)
 - [EuRoC compact VIO v2 exploratory result](euroc-compact-vio-v2-exploratory-2026-08-28.md)

@@ -975,6 +975,64 @@ result, and explicit remaining blockers.
   flight-readiness claim. M7 and M9 remain in progress. The worker remains
   running; no stop, deletion, or termination action was taken.
 
+## 2026-08-28 — Exploratory translation-state v4 run completed on the A10
+
+- Commit `94d834a82bddb2e6185fb70ec289fd45017c325c` introduced one
+  controlled routing change to v3: translation retained the carried recurrent
+  fusion state, while rotation used a zero-initialized current-pair fusion
+  state. Parameter shapes, data and split, optimizer, seed, loss, strides,
+  unroll, evaluation state-carry policy, and 30-epoch schedule were retained.
+  The training-config SHA-256 was
+  `ca8d95e9502383897e78b81274dc375b219a7b29cad0e42c71ac8c5bdc0ce85a`.
+  GitHub Actions
+  [run 33147863994](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33147863994)
+  succeeded, and all 282 tests passed on the A10 with PyTorch installed.
+- The full deterministic AMP run completed 30 epochs in 489.976979739 seconds,
+  used 12,431 training pairs and 4,185 validation pairs, and selected epoch 30.
+  Its selected validation result was 0.05176842235 m translation RMSE,
+  0.007315933953 rad rotation RMSE, and 0.0004555820835 total loss.
+- Native stride-1 evaluation produced all 1,889 of 1,889 eligible, selected,
+  and produced `V2_03_difficult` pairs. It carried state only across contiguous
+  same-chain chunks and recorded one reset for the complete sequence.
+- Pair RMSE was 0.04750855571 m translation and 0.006040955812 rad rotation.
+  Raw exact-pair, no-alignment evaluation reported 4.008623564 m translation
+  ATE, 4.499084473 m final translation drift, and 43.910657836 m predicted path
+  length versus 85.989330474 m reference path length, a ratio of 0.5106523983.
+- Relative to v3, v4 reduced overall pair translation RMSE by 3.134357%, pair
+  rotation RMSE by 36.536758%, raw ATE by 20.404570%, and final drift by
+  24.996352%. Its path ratio nevertheless moved farther from 1.0, from
+  0.553645 to 0.510652. For the 1,482 approximately 0.05-second pairs,
+  translation improved by 4.618060% and rotation by 37.118336%; for the 407
+  exact 0.10-second pairs, translation improved by 1.841451% and rotation by
+  35.977304%.
+- The frozen replacement rule required lower pair translation RMSE and lower
+  raw ATE than v3, plus pair rotation RMSE no worse than v2. V4 passed the
+  translation and ATE gates but failed rotation: its rotation RMSE was
+  16.868309% worse than v2. It was therefore rejected as the replacement
+  candidate. Zero motion also remained better on raw ATE and final drift.
+- The declared inference scope was
+  `predict-sequence-batch-model-placement-eval-host-to-device-forward-and-device-to-host`.
+  Across 15 batches it reported 1,058.729410 pairs/s, 1.784214155 seconds
+  total, batch-latency p50/p95 of 114.579536/200.278403 ms, and CUDA peak
+  allocated/reserved memory of 456,700,928/543,162,368 bytes. No dedicated
+  warmup batch was run; this remains an A10 worker measurement, not an
+  embedded-target benchmark.
+- The retained checkpoint SHA-256 is
+  `e775adb16aa4f9522aa577a32704a54db5c82c53685b0e97fb8d149402bf159d`.
+  The artifact-manifest SHA-256 is
+  `d28aca790a5c70b6e2763583f9098427e09c967a0774dd49fe07bbca4858489f`,
+  independently identical for worker path
+  `/home/ubuntu/compact-vio-runs/euroc-compact-vio-v4-translation-state-full-94d834a`
+  and ignored local path
+  `outputs/euroc-compact-vio-v4-translation-state-full-94d834a`.
+- Earlier `V2_03_difficult` evidence motivated this controlled change, so it is
+  exploratory development evidence rather than fresh held-out confirmation.
+  It makes no superiority, generalization, deployment, onboard-resource,
+  safety, or flight-readiness claim. `V2_03_difficult` is closed to any further
+  model or hyperparameter selection; the next quality decision requires a
+  fresh, predeclared evaluation unit. M7 and M9 remain in progress. The worker
+  remains running; no stop, deletion, or termination action was taken.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

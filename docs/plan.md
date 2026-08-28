@@ -34,10 +34,13 @@ commit `9199d1507a2a76c522ca265afd8527ef9bd07225` and the exploratory
 stride-augmented follow-up at commit
 `92aa3294002a9da5861961a314fe74e2bb1ada05`. A second exploratory follow-up at
 commit `336e88c7e80f6841c7d25b7da311172b40f5a3ba` added causal recurrent unroll.
-All three runs executed on 2026-08-28. Their records, checkpoints, and outputs
-were copied and checksum-verified; the worker was intentionally left running.
-That dated state and authorization do not carry forward. A future paid-worker
-run still requires current inventory and its own bounded record.
+A third exploratory follow-up at commit
+`94d834a82bddb2e6185fb70ec289fd45017c325c` isolated recurrent state to the
+translation output. All four runs executed on 2026-08-28. Their records,
+checkpoints, and outputs were copied and checksum-verified; the worker was
+intentionally left running. That dated state and authorization do not carry
+forward. A future paid-worker run still requires current inventory and its own
+bounded record.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -138,7 +141,7 @@ configuration and must not be invented in documentation.
 | M5 | Reproducible execution environments | In progress | Local path active; worker tasks require fresh inventory and authorization |
 | M6 | EuRoC development ingestion and split | Complete | Versioned split/acquisition plan, official archive identity, extracted-source hashes, and focused tests |
 | M7 | Common causal replay and evaluator | In progress | Raw real-data SE(3) slice executed; common lifecycle/coverage exit remains |
-| M8 | Compact model and bounded training | Complete | A10 smoke, three bounded 30-epoch runs, and checksum-verified checkpoints |
+| M8 | Compact model and bounded training | Complete | A10 smoke, four bounded 30-epoch runs, and checksum-verified checkpoints |
 | M9 | Held-out prototype inference and evaluation | In progress | Exploratory baseline/runtime/coverage evidence exists; fresh evaluation and model quality remain |
 | M10 | Later baselines, reliability ablations, and failure atlas | Conditional | Reproducible M9 prototype evidence and a separately frozen ablation protocol |
 | M11 | Confirmatory final-test execution and scientific selection | Blocked | Reproducible candidate set, sealed untouched membership, and frozen confirmatory protocol |
@@ -633,6 +636,21 @@ The independently matching worker/local artifact-manifest SHA-256 is
 Because earlier `V2_03_difficult` outcomes motivated this change, it remains
 development evidence rather than fresh held-out confirmation.
 
+Translation-state exploratory follow-up evidence: commit
+`94d834a82bddb2e6185fb70ec289fd45017c325c` retained the v3 data, parameter
+shapes, optimizer, seed, loss, unroll, state-carry policy, and 30-epoch
+schedule, but fed recurrent state only to translation and used a
+zero-initialized current-pair fusion state for rotation. All 282 tests passed on
+the A10. The run used 12,431 training and 4,185 validation pairs, completed in
+489.976979739 seconds, and selected epoch 30 with validation RMSE of
+0.0517684224 m translation and 0.00731593395 rad rotation. The retained
+checkpoint SHA-256 is
+`e775adb16aa4f9522aa577a32704a54db5c82c53685b0e97fb8d149402bf159d`;
+the independently matching worker/local artifact-manifest SHA-256 is
+`d28aca790a5c70b6e2763583f9098427e09c967a0774dd49fe07bbca4858489f`.
+Because prior `V2_03_difficult` results motivated the change, this is
+exploratory development evidence rather than fresh confirmation.
+
 ## M9 — Held-out prototype inference and evaluation
 
 Status: In progress.
@@ -666,6 +684,20 @@ decreased by 20.539% to 5.03625 m, and final drift decreased by 3.745% to
 and the predicted/reference path ratio moved farther from 1.0, from 0.638679
 to 0.553645. Zero motion still had lower raw ATE and drift. The result is mixed
 and does not close M9 or support a superiority/generalization claim.
+
+The translation-state exploratory repeat produced all 1,889 eligible,
+selected, and produced pairs with one state reset. Relative to v3, it reduced
+pair translation RMSE by 3.134% to 0.0475086 m, pair rotation RMSE by 36.537%
+to 0.00604096 rad, raw ATE by 20.405% to 4.00862 m, and final drift by 24.996%
+to 4.49908 m. The path ratio worsened from 0.553645 to 0.510652, raw ATE and
+drift remained worse than zero motion, and rotation remained 16.868% worse
+than v2. Under the frozen three-gate rule it passed translation and ATE but
+failed rotation, so v4 is rejected as the replacement candidate and does not
+close M9.
+
+`V2_03_difficult` is now closed to further architecture or hyperparameter
+selection. The next model-quality decision must use a fresh evaluation unit
+whose role and acceptance rule are declared before its predictions are read.
 
 Required work:
 

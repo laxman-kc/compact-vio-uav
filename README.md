@@ -53,9 +53,21 @@ Its 5.03625 m raw ATE still remained worse than the 2.05572 m zero-motion
 reference. This is mixed exploratory evidence, not a superiority,
 generalization, deployment, or flight-readiness result.
 
-All three A10 result bundles were copied to ignored local paths and
+The next controlled exploratory follow-up at commit
+`94d834a82bddb2e6185fb70ec289fd45017c325c` kept recurrent state for the
+translation output while deriving rotation from a zero-initialized,
+current-pair fusion state. Relative to v3, it lowered pair translation RMSE by
+3.134%, pair rotation RMSE by 36.537%, raw ATE by 20.405%, and final drift by
+24.996%. Its predicted/reference path ratio nevertheless fell from 0.553645 to
+0.510652, raw ATE remained worse than zero motion, and rotation RMSE remained
+16.868% worse than v2. It therefore passed the frozen translation and ATE gates
+but failed the rotation gate and was rejected as a replacement candidate.
+No further model or hyperparameter selection will use `V2_03_difficult`; the
+next quality decision requires a fresh, predeclared evaluation unit.
+
+All four A10 result bundles were copied to ignored local paths and
 checksum-verified against the worker copies, including
-`outputs/euroc-compact-vio-v3-stateful-full-336e88c`. The worker remains
+`outputs/euroc-compact-vio-v4-translation-state-full-94d834a`. The worker remains
 running by explicit choice and has not been stopped or terminated. Worker
 storage is never treated as durable.
 
