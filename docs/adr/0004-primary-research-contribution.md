@@ -1,148 +1,145 @@
-# ADR-0004: Primary research contribution
+# ADR-0004: Training-first compact VIO development slice
 
-- Status: Proposed
+- Status: Accepted
 - Decision owner: Project owner
-- Decision date: TBD
+- Decision date: 2026-08-28
 
 ## Context
 
-Compactness, complementary perception, deterministic reliability handling,
-learned uncertainty, robustness training, and deployment compression are
-different research claims. Treating them as co-primary would make the result
-movable and hide which mechanism caused an improvement.
+The repository foundation is substantially ahead of the estimator itself: it
+has causal replay, sensor and calibration contracts, execution recording, and
+evaluation primitives, but no real-data adapter, learned estimator, training
+loop, checkpoint, or held-out result. The project owner explicitly directed the
+project to stop treating documentation and an A/B/C/D reliability study as the
+critical path and to execute the real dataset, calibration, model-training, and
+evaluation workflow.
 
-The previous working direction compared a direct learned VIO control with a
-physically anchored learned correction. The reviewed refactor removes that
-training-first comparison from the critical path. It keeps causal metric-scale
-local VIO, physical IMU propagation, common replay/evaluation, and native
-classical references, but organizes the internal experiment around observable
-flight failure modes and one modular estimator.
+The earlier proposal made deterministic reliability-aware C-versus-D testing
+the Version 1 contribution and deferred all project-side training until after a
+failure atlas. That order is rejected for the development prototype. It remains
+useful as later research work after the trained vertical slice is reproducible.
 
-## Proposed decision
+## Decision
 
-The proposed primary contribution is **deterministic reliability-aware handling
-of complementary visual measurements in a causal metric-scale local-VIO
-system**.
+Version 1 is a **training-first compact learned VIO development prototype** with
+this end-to-end boundary:
 
-The proposed primary mechanism comparison is:
+1. Use the EuRoC MAV Vicon Room family as the initial development dataset.
+2. Consume monocular `cam0` images, the six-axis IMU stream, and the official
+   camera/IMU calibration. Ground truth is available only as a training label
+   for training membership and as an evaluator reference for validation/test
+   membership; it is never an inference input.
+3. Validate the official calibration, timestamp relationships, coordinate
+   conventions, units, file continuity, and source identity before constructing
+   examples. The project consumes dataset calibration; it does not claim to
+   have recalibrated EuRoC hardware.
+4. Assign complete source sequences to disjoint train, validation, and held-out
+   test membership before windowing or normalization. Derived windows from one
+   sequence cannot cross those boundaries.
+5. Implement a compact PyTorch model with an image-pair CNN encoder, a temporal
+   IMU encoder using a declared GRU or Conv1D implementation, zero-initialized
+   gated frame-pair fusion, and relative translation plus relative rotation
+   outputs. The exact
+   layer sizes and encoder variant belong in the versioned development
+   configuration, not in this ADR.
+6. Prove the pipeline with data inspection and a tiny overfit/forward-backward-
+   checkpoint smoke, then run one bounded training configuration. Retain the
+   resolved configuration, split manifest, environment, seed, history, and
+   selected `checkpoint.pt` outside normal Git history.
+7. Run inference on held-out development sequences and report trajectory
+   coverage, ATE, RPE, rotation error, latency, and memory under explicitly
+   versioned metric semantics. Report failures and partial trajectories.
 
-- **C — dual visual channels:** fast visual-motion observations and
-  rights-approved frozen learned-landmark observations enter one shared track
-  manager and one shared backend under fixed measurement handling.
-- **D — reliability-aware dual visual:** the identical C system adds one
-  predeclared deterministic reliability action policy.
+Exact sequence membership, download URLs, archive/file hashes, sizes,
+preprocessing values, model dimensions, loss weights, optimizer settings,
+batch size, epochs, checkpoint rule, and numerical evaluation policies are
+development configuration and manifest values. They must be recorded before
+the applicable operation, but changing them during honest development does not
+rewrite this architectural decision or silently create a scientific final test.
 
-The primary comparison is D versus C. A **D-monitor** control runs the same
-diagnostics and records the same health signals as D but takes no fusion action;
-it separates monitoring overhead from the effect of the protocol-declared
-action policy.
-Weighting and hard gating are not interchangeable labels: the confirmatory
-protocol must select one as D's primary action, and any alternative is a
-separate ablation.
+## Research boundary
 
-The broader internal matrix is:
+The first successful output is a **trained development prototype**. It proves
+only that the declared data-to-checkpoint-to-held-out-evaluation path executes
+reproducibly on the recorded development split. It is not, by itself:
 
-- **A:** fast visual-motion channel plus IMU and the shared backend.
-- **B:** rights-approved frozen learned-landmark channel plus IMU and the shared
-  backend.
-- **C:** both visual channels plus explicit provenance, correlation, and
-  duplicate-measurement handling, with fixed measurement handling.
-- **D-monitor:** C plus diagnostics that do not alter fusion.
-- **D:** C plus the deterministic reliability action declared by the applicable
-  development or confirmatory protocol.
+- a publishable superiority claim;
+- a statistically confirmed UAV-population result;
+- an onboard latency, power, or thermal claim;
+- an ONNX/TensorRT parity result; or
+- authorization for ROS 2, PX4, motor control, or physical flight.
 
-One native classical implementation remains an external reference in its own
-runtime and backend. It is not represented as an A/B/C/D internal ablation.
-"Same backend" for A/B/C/D also requires the same state, initialization, IMU
-path, factor policy, robust loss, numerical settings, output schedule, accepted
-measurement/resource budget, permitted inputs, preprocessing, and evaluator.
+A publishable claim requires a separately frozen confirmatory protocol and
+untouched test membership. Deployment and flight readiness remain governed by
+ADR-0006 and the staged safety gates.
 
-If accepted, Version 1 performs no project-side model training. Configuration B
-may use a frozen pretrained component only after its exact code, weights,
-licence, provenance, preprocessing, and evaluation-data overlap are reviewed.
-Direct end-to-end learned VIO becomes an optional external comparator, not a
-prerequisite. A project training branch opens only after a discovery failure
-atlas isolates a declared, plausibly learnable failure and a separate training
-plan is approved.
+## Later research ablations
 
-## Two freeze points
+The earlier A/B/C/D-monitor/D design is retained as optional follow-up research,
+not as a prerequisite for the training-first slice:
 
-Acceptance of this ADR is the **research-scope freeze**. It selects the primary
-contribution, comparator, endpoint family, target phenomenon/population, and
-independent experimental unit so bounded engineering may proceed.
+- A: fast visual-motion measurements plus IMU;
+- B: learned visual measurements plus IMU;
+- C: complementary visual channels under fixed fusion;
+- D-monitor: C plus diagnostics without intervention; and
+- D: C plus one predeclared reliability intervention.
 
-A later **confirmatory-protocol freeze**, before untouched final-test access,
-selects the exact confirmatory run set from source groups already assigned to
-sealed final-test membership before any use. It also selects numerical
-thresholds, trials, budgets, aggregation, stopping rules, and the single
-deterministic D action. It never retroactively reassigns a seen development or
-discovery group to final test, and it does not permit numerical values to move
-after results are inspected.
+Those comparisons require their own shared-backend fairness configuration,
+rights review, native classical reference, controls, and confirmatory freeze.
+They must not be inferred from the learned prototype's metrics.
 
-## Decisions still required before acceptance
+## Rejected alternatives
 
-- Accept or reject reliability-aware handling as the single primary
-  contribution.
-- Accept or reject D versus C as the primary comparison and D-monitor as a
-  required control.
-- Name the target failure phenomenon/population, primary endpoint family, and
-  independent experimental unit.
-- Accept or reject removal of direct learned VIO from the critical path.
-- Accept or reject the Version 1 no-project-training rule.
-- Define the fairness/resource-policy fields that must be identical across
-  A/B/C/D.
+- **A/B/C/D before any training:** rejected because it delays the explicitly
+  required real learned-estimator workflow.
+- **No project-side Version 1 training:** rejected by the project owner's
+  2026-08-28 direction.
+- **Train on window-random splits:** rejected because sequence leakage would
+  invalidate held-out evidence.
+- **Build deployment and flight integration in the same slice:** rejected
+  because offline training does not establish target or safety fitness.
 
-The non-authoritative [ADR-0004 decision brief](evidence/0004-decision-brief.md)
-supplies one literature-backed recommendation for these unresolved choices,
-including claim-to-evidence and negative-control matrices. It is review input,
-not approval; this ADR remains `Proposed` until the project owner records the
-decision and date here.
+## Consequences
 
-## Not selected by this proposal
+- Dataset ingestion, calibration validation, model code, training, checkpoint
+  loading, and held-out evaluation are now the implementation critical path.
+- PyTorch is selected for this learned-development lane. Exact dependency and
+  CUDA versions remain environment/run-manifest facts.
+- Existing framework-neutral replay, contracts, recorder, artifact policy, and
+  evaluation primitives remain reusable; they do not need to be expanded before
+  the first smallest end-to-end training slice unless the slice exposes a
+  concrete missing behavior.
+- A native classical baseline, reliability handling, learned uncertainty,
+  compression, ONNX, and target deployment are later evidence-driven work.
+- Failed training or weak accuracy is a valid development result and must not be
+  hidden by changing test membership.
 
-This proposal does not select a dataset or sequence, mono or stereo, a physical
-sensor, optical-flow method, learned detector or matcher, backend, track-merging
-rule, reliability signal, action, threshold, state vector, optimizer, numerical
-library, training framework, model architecture, compute budget, deployment
-target, or flight scope. EuRoC, KLT, SuperPoint, LightGlue, Ceres, VINS-Fusion,
-OpenVINS, Basalt, and PyTorch remain candidates or examples until their
-applicable evidence and decision gates pass.
+## Evidence
 
-Ground truth is separate from causal replay input, estimator input, online
-reliability logic, and final-test tuning. Version 1 uses it only in evaluation;
-a later approved supervised branch may expose labels from training membership
-only.
+Required implementation evidence:
 
-## Evidence required before acceptance
+- Official-source and rights record plus acquisition identity for every used
+  EuRoC unit.
+- Validated EuRoC `cam0`/IMU/calibration adapter and source-sequence split
+  manifest.
+- Dataset/sample inspection and overfit smoke evidence.
+- Versioned PyTorch environment and resolved train configuration.
+- Restorable checkpoint with provenance and checksum.
+- Held-out trajectories, coverage/failure accounting, metric report, and
+  resource measurements.
 
-- Named decision owner and date.
-- One primary contribution, comparator, endpoint family, target population, and
-  independent experimental unit.
-- Claim-to-evidence and negative-control matrices.
-- Same-backend fairness contract for A/B/C/D.
-- D-monitor control and a rule that one primary D action is frozen later.
-- Explicit Version 1 and conditional-training boundaries.
+The existing [decision brief](evidence/0004-decision-brief.md) remains a
+historical, non-authoritative analysis of the superseded reliability-first
+proposal. It is not evidence that the training-first implementation has run.
 
-Prepared review evidence:
+## Follow-up
 
-- [Decision brief](evidence/0004-decision-brief.md): recommended phenomenon/population,
-  endpoint family, independent unit, fairness contract, falsification rule,
-  source limits, and the required matrices.
+- Complete the M6–M9 data, training, checkpoint, and held-out-evaluation path.
+- Decide M10 baselines or reliability ablations only from observed prototype
+  evidence.
+- Freeze a separate untouched protocol before any publishable comparison.
 
-## Follow-up evidence
-
-- Dataset and evaluator feasibility from M6/M7.
-- Shared-backend feasibility and one native reference from M8.
-- Controlled A/B/C/D-monitor/D and negative-control evidence from M9 when the
-  proposal is accepted and applicable.
-- Discovery failure-atlas evidence before any targeted training request.
-- Frozen-threshold claim decision from M11. A failed hypothesis is a valid
-  result and does not authorize changing the primary claim after inspection.
-
-If this ADR is later accepted, it supersedes only ADR-0002 Decision bullet 4,
-which describes the scientific comparison. ADR-0002's accepted local-VIO,
-no-loop-closure, PX4, common-replay, and no-Sim(3) boundaries remain unchanged.
-Until acceptance, ADR-0002 remains authoritative in full.
-
-Reopen or supersede this ADR only when its protocol is invalidated, not merely
-because the selected hypothesis fails.
+Reopen or supersede this ADR if the development dataset cannot support the
+declared inputs/labels, the model boundary materially changes, or the project
+owner changes the primary development objective. Ordinary configuration tuning
+does not reopen it.

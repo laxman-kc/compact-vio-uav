@@ -1,11 +1,12 @@
 schema_version: "1.0"
-last_reviewed: "2026-08-27"
+last_reviewed: "2026-08-28"
 policy: governance/datasets/policy.md
 evidence_brief: governance/datasets/evidence/representative-unit-candidate-brief.md
 
-# Every entry is a candidate only. No role, download, split, or redistribution is
-# approved by this registry. Acquisition manifests will record exact versions,
-# files, checksums, sensor suites, and source-group membership.
+# EuRoC is selected for the accepted training-first development prototype.
+# Every other entry remains a candidate. Exact EuRoC archives, checksums,
+# modalities, and sequence-disjoint development membership are recorded in the
+# linked acquisition plan rather than duplicated here.
 datasets:
   - id: tartanair-v2
     name: TartanAir V2
@@ -22,16 +23,18 @@ datasets:
 
   - id: euroc-mav
     name: EuRoC MAV Dataset
-    decision_status: candidate
-    project_role: unresolved
+    decision_status: selected_for_development
+    project_role: training_validation_held_out_prototype_evaluation
     official_url: https://projects.asl.ethz.ch/datasets/euroc-mav/
+    acquisition_plan: configs/data/euroc_vicon_v1.json
     rights:
       status: recorded_from_official_archive
       label: In Copyright - Non-Commercial Use Permitted
       url: https://www.research-collection.ethz.ch/entities/researchdata/bcaf173e-5dac-484b-bc37-faf97a594f1f
     cautions:
-      - Benchmark-only and adaptation use are mutually distinct protocols and remain undecided.
-      - Sequence/environment generalization claims require an explicit grouping definition.
+      - Selection is for non-commercial open research and does not imply redistribution rights.
+      - The checked-in split is a development prototype split, not a publication confirmatory protocol.
+      - Physical sequences, not derived frame pairs, are the split and evaluation units.
 
   - id: uzh-fpv
     name: UZH FPV Drone Racing Dataset

@@ -1,5 +1,10 @@
 # ADR-0004 decision brief
 
+Historical status: Superseded as decision input by the training-first
+`Accepted` ADR-0004 on 2026-08-28. This brief is retained as provenance for the
+optional later A/B/C/D reliability-ablation branch; it is not the current
+Version 1 execution plan.
+
 Status: Recommendation for project-owner review; non-authoritative
 
 This brief supplies the literature-backed scope, claim-to-evidence matrix, and

@@ -4,8 +4,9 @@
 compact visual-inertial odometry (VIO) on UAVs. The primary scope is causal,
 metric-scale local odometry: mapping and loop closure are outside the main
 comparison, and PX4 retains stabilization, failsafe, and motor control. Exact
-sensor hardware, datasets and splits, numerical thresholds, deployment target,
-and source licence remain decisions for the milestones that need them.
+physical sensor hardware, exact development sequence splits, numerical
+thresholds, deployment target, and source licence remain decisions for the
+milestones that need them.
 
 ## Current status
 
@@ -25,18 +26,21 @@ and a separate assessment contract, with a visibly synthetic rejected fixture.
 These boundaries require explicit frames, transform direction, units, time
 semantics, validity, reset, initialization, health, state/policy identifiers,
 provenance, and calibration references without selecting project-wide values.
-It does not yet contain an estimator algorithm, a complete evaluator, an
-accepted real sensor or dataset calibration profile, a trained model, an
-approved dataset split, a deployable runtime, or a flight-ready system.
-ADR-0004 now records a reliability-aware modular A/B/C/D research proposal; it
-is `Proposed`, not accepted. No dataset, frontend method, learned component,
-backend, reliability action/threshold, training framework, or model is selected.
+It does not yet claim a completed estimator, a trained checkpoint, held-out
+model results, a deployable runtime, or a flight-ready system. ADR-0004 now
+accepts a training-first development slice: EuRoC Vicon Room, monocular `cam0`,
+six-axis IMU, official calibration validation, source-sequence-disjoint splits,
+and a compact PyTorch relative-motion model. Exact sequence membership,
+download identity, preprocessing, model dimensions, loss weights, optimizer,
+and run schedule must be recorded in development configuration/manifests before
+use; no result is claimed merely because the architecture is accepted.
 
 A Brev A10 worker was observed `RUNNING`, `READY`, and `HEALTHY` on 2026-08-27
 and was authorized for that bounded implementation smoke only. This dated
 observation establishes neither its present lifecycle state nor authorization
-for another task. Dataset acquisition, model training, and any later worker use
-require fresh owner confirmation; worker storage is never treated as durable.
+for another paid-worker run. ADR-0004 authorizes the training-first source and
+local workflow; actual worker execution still requires a current inventory and
+bounded run record. Worker storage is never treated as durable.
 
 The project follows these invariants:
 
@@ -48,58 +52,81 @@ The project follows these invariants:
 - Dataset rights, provenance, grouping, and split membership are recorded before use.
 - Offline results do not authorize ROS/PX4 integration or physical flight.
 
-## Proposed research and conditional-training path
+## Training-first development path
 
 ```text
-approved source -> one adapter -> canonical camera / IMU / calibration
-                                      |
-                                  causal replay
-                                      |
-                  +-------------------+-------------------+
-                  |                                       |
-             inertial path                    visual configuration under test
-                                              A: visual motion
-                                              B: frozen learned landmarks
-                                              C: A + B + deduplication
-                                              D-monitor: C + monitor only
-                                              D: C + one protocol-declared action
-                  |                                       |
-                  +-------------------+-------------------+
-                                      |
-                          shared backend / estimator / recorder
-                                      |
-separate evaluation ground truth -> common evaluator
-                                      |
-                            discovery failure atlas
-                                      |
-                       targeted training decision
-                         /                    \
-             no training                      approved later branch
-                 |                            |
-                 |             approved training data + framework
-                 |                            |
-                 |                    bounded training
-                 |                            |
-                 +----------> frozen candidate/checkpoint
-                                      |
-                              unchanged evaluator
-                                      |
-                         confirmatory-protocol freeze
+EuRoC Vicon Room source sequences
+                  |
+          identity/rights record
+                  |
+         official calibration validation
+                  |
+       sequence-disjoint split manifest
+                  |
+       cam0 frame pair + causal IMU window
+           |                    |
+     compact CNN         GRU/Conv1D encoder
+           +--------- gated frame-pair fusion
+                          |
+             relative translation + rotation
+                          |
+              PyTorch smoke -> bounded train
+                          |
+                     checkpoint.pt
+                          |
+        held-out inference + trajectory integration
+                          |
+        ATE / RPE / rotation / coverage / resources
 ```
 
-A native classical implementation is an external reference and retains its own
-backend/runtime; it is not mislabeled as an internal same-backend ablation.
-A/B/C/D are proposed internal controls that freeze the backend and every
-non-tested setting. Ground truth never enters estimator input or online
-reliability logic.
+Ground truth is a label only for training membership and evaluator-only for
+validation/test membership; it is never an inference input. The first output is
+a trained development prototype, not a publishable superiority claim or a
+flight-ready estimator. A/B/C/D reliability experiments and a native classical
+reference remain later research ablations. ONNX, TensorRT, edge hardware,
+ROS 2, and PX4 remain later conditional work.
 
-ADR-0004 proposes no project-side training in Version 1. A frozen pretrained
-component can enter B only after code/weight identity, rights, provenance,
-preprocessing, and evaluation-overlap review. Project training opens only if a
-failure atlas isolates a declared learnable deficit and a later decision
-selects the component, data, framework, objective, and budget. Direct learned
-VIO is optional external work, not a critical-path prerequisite. ONNX,
-TensorRT, edge hardware, ROS 2, and PX4 remain later conditional work.
+## EuRoC training quickstart
+
+Install the real-data/training dependencies, acquire only the selected Vicon
+Room archives, and run the bounded smoke before the full configuration:
+
+```bash
+python3 -m pip install -e '.[train]'
+
+compact-vio-euroc \
+  --plan configs/data/euroc_vicon_v1.json \
+  --archive vicon_room1 \
+  --raw-dir /data/euroc/raw \
+  --data-dir /data/euroc/sequences \
+  --sequence V1_01_easy --sequence V1_02_medium --sequence V1_03_difficult
+
+compact-vio-euroc \
+  --plan configs/data/euroc_vicon_v1.json \
+  --archive vicon_room2 \
+  --raw-dir /data/euroc/raw \
+  --data-dir /data/euroc/sequences \
+  --sequence V2_01_easy --sequence V2_02_medium --sequence V2_03_difficult
+
+compact-vio-train \
+  --config configs/training/euroc_compact_vio_v1.json \
+  --data-root /data/euroc/sequences \
+  --output-dir /runs/euroc-compact-vio-v1-smoke \
+  --device cuda --smoke
+
+compact-vio-train \
+  --config configs/training/euroc_compact_vio_v1.json \
+  --data-root /data/euroc/sequences \
+  --output-dir /runs/euroc-compact-vio-v1 \
+  --device cuda
+```
+
+Both acquisition commands verify the committed byte length, official MD5, and
+locally recorded SHA-256 before extraction. The trainer refuses a nonempty
+output directory, binds checkpoints to the Git revision, configuration, split,
+calibration, and extracted source hashes, and writes held-out predictions plus
+raw, unaligned SE(3) metrics. A worker output is temporary until copied away
+and verified.
 
 ## Documentation map
 
@@ -276,8 +303,9 @@ The artifact destination, recovery copy, retention budget, and cost ceiling are
 unresolved. A dated read-only observation on 2026-08-27 found
 `compact-vio-uav-gpu` `RUNNING`, `READY`, and `HEALTHY`, and the owner authorized
 that bounded clean-checkout implementation smoke only. The record proves
-neither current state nor authority for a later task. Dataset acquisition and
-model training require fresh approval. Important or extended GPU experiments
+neither current state nor authority for a later paid-worker run. The accepted
+ADR authorizes implementation of the development workflow; important or
+extended GPU experiments
 that can create irreplaceable results must wait for the storage restore gate in the
 [artifact policy](governance/artifacts/policy.md). Every paid task still has a
 short run plan, time/cost bound, export destination, and teardown owner.

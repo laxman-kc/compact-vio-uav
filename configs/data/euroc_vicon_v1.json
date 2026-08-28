@@ -1,0 +1,44 @@
+{
+  "record_type": "euroc_acquisition_plan",
+  "schema_version": "1.0.0",
+  "dataset": {
+    "title": "The EuRoC micro aerial vehicle datasets",
+    "doi": "10.3929/ethz-b-000690084",
+    "landing_page": "https://www.research-collection.ethz.ch/entities/researchdata/bcaf173e-5dac-484b-bc37-faf97a594f1f",
+    "rights_statement": "In Copyright - Non-Commercial Use Permitted",
+    "publisher": "ETH Zurich"
+  },
+  "archives": [
+    {
+      "archive_id": "vicon_room1",
+      "filename": "vicon_room1.zip",
+      "url": "https://www.research-collection.ethz.ch/server/api/core/bitstreams/02ecda9a-298f-498b-970c-b7c44334d880/content",
+      "size_bytes": 6042263426,
+      "md5": "5ce06b405827e453a82523d3ca9c2fd0",
+      "sha256": "fe73c27be6dc8ac00493b78b750d36b144daf49eea7fdf3163e934527c1b5297",
+      "sequences": ["V1_01_easy", "V1_02_medium", "V1_03_difficult"]
+    },
+    {
+      "archive_id": "vicon_room2",
+      "filename": "vicon_room2.zip",
+      "url": "https://www.research-collection.ethz.ch/server/api/core/bitstreams/ea12bc01-3677-4b4c-853d-87c7870b8c44/content",
+      "size_bytes": 6013384949,
+      "md5": "c6347f4e0476aaa9a43a919c163c49c5",
+      "sha256": "6daf2cbc2de9a6bc4e02866c99ed01c29a5c7c164756f06c4f72656192977cfc",
+      "sequences": ["V2_01_easy", "V2_02_medium", "V2_03_difficult"]
+    }
+  ],
+  "development_split": {
+    "integration_only": ["V1_01_easy"],
+    "train": ["V1_02_medium", "V2_01_easy", "V2_02_medium"],
+    "validation": ["V1_03_difficult"],
+    "test": ["V2_03_difficult"]
+  },
+  "modalities": ["cam0_grayscale", "imu0_gyroscope", "imu0_accelerometer"],
+  "label_source": "state_groundtruth_estimate0",
+  "notes": [
+    "This is a development/prototype split, not a publication claim protocol.",
+    "V1_01_easy is excluded from supervised optimization because published downstream documentation reports an orientation-ground-truth concern.",
+    "The MD5 and byte size are published by ETH; SHA-256 values were computed from the matching official archive bytes on 2026-08-28."
+  ]
+}

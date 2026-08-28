@@ -2,7 +2,7 @@
 
 Status: Navigation and source traceability only — non-normative
 
-Last reviewed: 2026-08-27
+Last reviewed: 2026-08-28
 
 The sole normative requirements source is
 [Project requirements](requirements/project-requirements.md). This index does
@@ -32,7 +32,7 @@ cannot change a requirement.
 |---|---|---|
 | Research integrity | `R-RI-*` | Frozen protocol, run manifests, claim-to-evidence review |
 | Data and causality | `R-DATA-*` | Dataset/split manifests, causal replay tests |
-| Training and model selection | `R-TRAIN-*` | Imported-component provenance/rights; if training is later opened, pinned runs, tracker-independent bundles, and selection records |
+| Training and model selection | `R-TRAIN-*` | Pinned PyTorch environment, source-sequence split, deterministic run configuration, tracker-independent checkpoint bundle, and held-out selection record |
 | Estimator contract | `R-EST-*` | Accepted estimator/sensor ADRs and interface tests |
 | Calibration and synchronization | `R-CAL-*` | Versioned calibration profile, reports, residual/timing review |
 | Artifact and infrastructure safety | `R-INFRA-*` | Static preflight and copy audit as supporting fragments; post-export storage evidence, restore drill, and cost/teardown records as gate evidence |
@@ -57,7 +57,7 @@ that uses them.
 | [OpenVINS sensor calibration](https://docs.openvins.com/gs-calibration.html) | `R-CAL-001` through `R-CAL-005`, `R-EST-001` | OpenVINS identifies spatial/temporal calibration, IMU stochastic parameters, diagnostics, and relative timestamp error as material to VIO behavior; the canonical calibration fields preserve that evidence. |
 | [Kalibr VI-sensor procedure](https://github.com/ethz-asl/kalibr/wiki/Calibrating-the-VI-Sensor), [camera–IMU calibration](https://github.com/ethz-asl/kalibr/wiki/camera-imu-calibration), and [IMU noise model](https://github.com/ethz-asl/kalibr/wiki/IMU-Noise-Model) | `R-CAL-001` through `R-CAL-005` | Kalibr documents motion excitation, timestamp-interval and residual diagnostics, and calibration report/configuration outputs; the canonical requirements make those reviewable artifacts rather than treating solver convergence as acceptance. |
 | [OpenVINS timing analysis](https://docs.openvins.com/eval-timing.html) | `R-EVAL-001`, `R-EVAL-003` | OpenVINS distinguishes same-platform comparison and timing distributions from cross-hardware claims; the evaluator requirements preserve that distinction. |
-| [PyTorch reproducibility](https://docs.pytorch.org/docs/stable/notes/randomness.html) and [saving/loading models](https://docs.pytorch.org/tutorials/beginner/saving_loading_models.html) | Conditional framework guidance for `R-TRAIN-001`, `R-TRAIN-004`, `R-TRAIN-007` | If a later decision selects PyTorch, its documentation says exact reproducibility is not guaranteed across releases or platforms, describes randomness/determinism controls, and distinguishes inference state from resume-capable checkpoints. The requirements therefore demand a pinned selected-framework environment and recorded checkpoint purpose; these sources do not select PyTorch or open training. |
+| [PyTorch reproducibility](https://docs.pytorch.org/docs/stable/notes/randomness.html) and [saving/loading models](https://docs.pytorch.org/tutorials/beginner/saving_loading_models.html) | `R-TRAIN-001`, `R-TRAIN-004`, `R-TRAIN-007` | ADR-0004 selects PyTorch for the learned-development lane. Its documentation says exact reproducibility is not guaranteed across releases/platforms, describes randomness/determinism controls, and distinguishes inference state from resume-capable checkpoints. Runs therefore pin the framework/runtime and record checkpoint purpose and identity. |
 | [NVIDIA TensorRT support matrix](https://docs.nvidia.com/deeplearning/tensorrt/latest/getting-started/support-matrix.html) and [engine compatibility](https://docs.nvidia.com/deeplearning/tensorrt/latest/inference-library/engine-compatibility.html) | `R-DEP-001` through `R-DEP-003` | NVIDIA documents platform/version/hardware compatibility limits. The deployment requirements therefore make export conditional and require exact-target provenance and regression evidence. |
 | [PX4 v1.17 VIO integration](https://docs.px4.io/v1.17/en/computer_vision/visual_inertial_odometry), [EKF2 external vision](https://docs.px4.io/v1.17/en/advanced_config/tuning_the_ecl_ekf), and [tagged VehicleOdometry source](https://github.com/PX4/PX4-Autopilot/blob/v1.17.0/msg/versioned/VehicleOdometry.msg) | `R-EST-001`, `R-EST-004`, `R-EST-005`, `R-SAFE-002`, `R-SAFE-003` | The stable-release documents expose frame, sample-time, delay, covariance/noise, reset, and estimator-loss contracts. The canonical requirements require a newly selected release to be pinned and reverified at integration time. |
 

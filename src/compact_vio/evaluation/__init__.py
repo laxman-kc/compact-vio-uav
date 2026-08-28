@@ -24,6 +24,13 @@ from compact_vio.evaluation.execution_coverage import (
     RecordedOutputCoverage,
     bind_recorded_output_coverage,
 )
+from compact_vio.evaluation.se3 import (
+    RelativePoseIncrement,
+    Se3EvaluationError,
+    SequencePoseMetrics,
+    evaluate_relative_pose_sequence,
+    rotation_vector_to_matrix,
+)
 from compact_vio.evaluation.translation import (
     EXACT_PAIR_TRANSLATION_RESIDUALS_ID,
     EXACT_PAIR_TRANSLATION_RMSE_ID,
@@ -57,8 +64,11 @@ __all__ = [
     "OutputStatus",
     "ReasonCount",
     "RECORDED_OUTPUT_COVERAGE_BINDING_ID",
+    "RelativePoseIncrement",
     "RecordedOutputCoverage",
     "ScaleCorrection",
+    "Se3EvaluationError",
+    "SequencePoseMetrics",
     "TimestampAssociation",
     "TrajectoryAlignment",
     "TrajectoryInterpolation",
@@ -71,5 +81,7 @@ __all__ = [
     "bind_recorded_output_coverage",
     "exact_pair_translation_residuals",
     "exact_pair_translation_rmse",
+    "evaluate_relative_pose_sequence",
+    "rotation_vector_to_matrix",
     "summarize_output_coverage",
 ]

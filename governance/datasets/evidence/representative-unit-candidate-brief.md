@@ -1,19 +1,17 @@
 # Representative dataset-unit candidate brief
 
-Status: Official-source evidence for later owner review; non-authoritative  
-Access reviewed: 2026-08-27
+Status: Historical candidate screening; EuRoC was selected on 2026-08-28
+Access reviewed: 2026-08-28
 
 ## Authority boundary
 
-This brief narrows later review work. It does not approve a dataset, release,
-sequence, modality, project role, split, acquisition location, download,
-training use, or final-test use. ADR-0004 remains `Proposed`; M6 remains
-blocked until the research scope is accepted and the project owner separately
-approves one exact dataset scope after a dataset-file rights review.
-
-No dataset bytes were downloaded or integrity-tested for this brief.
-"Reachable" below means that an official landing or listing page was reachable
-on the review date.
+This document preserves the candidate screening that preceded selection.
+ADR-0004 is now `Accepted`, and EuRoC Vicon Room was selected and acquired for
+the training-first development prototype. The authoritative archive identities,
+split, modalities, rights statement, and execution record are the
+[`euroc_vicon_v1.json`](../../../configs/data/euroc_vicon_v1.json) plan and the
+[2026-08-28 acquisition evidence](euroc-vicon-acquisition-2026-08-28.md).
+Other rows below remain candidate evidence only.
 
 ## Screening question
 
@@ -31,7 +29,7 @@ These are screening roles, not approved project roles.
 
 | Candidate | Official-source evidence | Provisional review use | Blocking gaps |
 |---|---|---|---|
-| EuRoC MAV | Real MAV; stereo monochrome cameras at 20 Hz, IMU at 200 Hz, calibration, and Vicon-room 6-DoF ground truth. Official notes also describe synchronization limits and difficult motion/illumination. Archive rights label is `In Copyright - Non-Commercial Use Permitted`. | **Provisional technical review lead** for one small real-MAV integration unit. This is not a selection. | Exact release/archive object, Vicon sequence, files/modalities, byte sizes, SHA-256, source group/split, GT synchronization assessment, acquisition location, owner approval, and separate rights review. Machine Hall Leica data is position-only and must not be treated as equivalent to full 6-DoF Vicon ground truth. |
+| EuRoC MAV | Real MAV; stereo monochrome cameras at 20 Hz, IMU at 200 Hz, calibration, and Vicon-room 6-DoF ground truth. Official notes also describe synchronization limits and difficult motion/illumination. Archive rights label is `In Copyright - Non-Commercial Use Permitted`. | **Selected on 2026-08-28** for the compact learned VIO development prototype using `cam0`, `imu0`, and Vicon Room ground truth. | Publication-grade confirmation, broader datasets, and deployment evidence remain later work. Machine Hall Leica data is position-only and is not used as equivalent full 6-DoF evidence. |
 | UZH-FPV | Real aggressive UAV flights with synchronized onboard frame-camera/IMU systems, calibration, sequence-level access, and public ground truth only for marked sequences. Dataset license is CC BY-NC-SA 3.0. | **Provisional high-motion stress review lead** after an exact public-GT unit is identified. | Exact sensor suite, public-GT sequence, post-2022 replacement-GT bytes/revision, hashes, clock alignment evidence, source group/split, and owner/rights approval. The pilot RGB camera is uncalibrated and unsynchronized; illumination is not a controlled conventional-frame factor. |
 | TUM VI | Hardware-synchronized stereo/IMU, strong geometric/photometric/time calibration, CC BY 4.0. Room sequences have full-trajectory 6-DoF ground truth; low-light slides have only start/end ground truth. | Calibration/evaluator support candidate or nominal/stress evidence. | Handheld capture is not UAV-domain confirmation. Exact unit/variant, full-run GT requirement, size/hash, source group/split, and owner approval remain open. Low-light slides cannot silently become full-run trajectory evidence. |
 | TartanAir V2 | Synthetic AirSim-rendered environments with image, pose, depth, flow, and generated IMU/perturbation tooling; CC BY 4.0. | Synthetic discovery or a later separately approved training lane. | Exact environment, trajectory, difficulty, camera/modalities, toolkit revision, version identity, byte sizes, checksums, source grouping, and owner approval. It cannot establish real-sensor timing, calibration, exposure, or noise robustness. |
@@ -54,15 +52,11 @@ the registry or assigned a role.
 
 ## Evidence-only review order
 
-If ADR-0004 is accepted without a material change to its target phenomenon,
-perform these later reviews as separate slices:
+After the completed EuRoC development selection, later dataset expansion is:
 
-1. Resolve one exact EuRoC Vicon-room unit for technical integration review,
-   including archive identity, files, sizes, SHA-256 plan, GT suitability,
-   source group, split, acquisition location, owner approval, and rights review.
-2. Independently resolve one exact UZH-FPV public-GT unit for high-motion stress
+1. Independently resolve one exact UZH-FPV public-GT unit for high-motion stress
    review, including the replacement-GT revision and hashes.
-3. Screen an authenticated real-sensor illumination dataset only after its
+2. Screen an authenticated real-sensor illumination dataset only after its
    identity, rights, access, sensor contract, and full-run GT coverage are
    established.
 

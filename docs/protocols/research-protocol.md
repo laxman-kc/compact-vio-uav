@@ -1,27 +1,19 @@
 # Research protocol
 
-Status: Draft; ADR-0004 proposal and numerical confirmatory protocol unresolved
-Last reviewed: 2026-08-27
+Status: Active development protocol; confirmatory protocol remains unresolved
+Last reviewed: 2026-08-28
 
 ## 1. Freeze points
 
 ### Research-scope freeze
 
-Before dataset-specific estimator or frontend work, accept a protocol revision
-that records:
-
-- One primary contribution and comparator.
-- Target phenomenon/population and independent experimental unit.
-- Primary endpoint family and required nominal/resource guardrail families.
-- Exact A/B/C/D-monitor/D definitions when that matrix is accepted.
-- Causal inputs, ground-truth separation, fairness controls, and allowed
-  exploratory outputs.
-- Version 1 and conditional-training boundaries.
-
-ADR-0004 currently proposes deterministic reliability-aware D versus fixed-
-handling C, but it is not accepted. Documentation, framework-neutral replay,
-and evaluator work may proceed; the proposal does not authorize dataset,
-frontend, backend, pretrained-model, threshold, or training choices.
+ADR-0004 is the accepted development-scope freeze. It selects the EuRoC Vicon
+Room `cam0` plus six-axis IMU vertical slice, source-sequence-disjoint
+development membership, compact PyTorch relative-motion training, checkpoint
+retention, and held-out evaluation. Versioned manifests/configuration own exact
+archive identity, sequence membership, preprocessing, model dimensions,
+optimization, and checkpoint selection. The development prototype is not a
+publishable superiority claim or a deployment/flight decision.
 
 ### Confirmatory-protocol freeze
 
@@ -85,48 +77,40 @@ cannot change the primary claim merely because discovery results are weak.
 
 ## 4. Staged configuration order
 
-Only the stages permitted by accepted decisions execute:
+Execute the accepted vertical slice in this order:
 
-1. Finish the common replay/evaluator and failure/lifecycle semantics.
-2. Approve and ingest one representative dataset unit.
-3. Run a time-bounded feasibility spike to determine whether one backend can
-   accept externally supplied visual-motion, learned-landmark, and dual-channel
-   observations under one state/init/reset/output contract.
-4. Reproduce one rights-compatible native classical reference through the
-   common replay/evaluator. Its native backend remains separate.
-5. Implement A: one selected fast visual-motion channel plus IMU/shared backend.
-6. Implement B: one rights-approved frozen learned-landmark channel plus
-   IMU/shared backend. No project-side training occurs in Version 1.
-7. Implement C: both channels with provenance and an explicit correlated/
-   duplicate-measurement policy.
-8. Implement D-monitor: C plus the exact D diagnostics, but no fusion action.
-9. Implement D: C plus one deterministic reliability action declared for that
-   protocol stage; the primary confirmatory action is frozen only at the later
-   confirmatory-protocol freeze.
-10. Build a discovery failure atlas, then decide whether any specific deficit
-    is plausibly learnable.
-11. Open one targeted training/fine-tuning branch only through a new decision
-    and protocol revision; otherwise record training as not applicable.
-12. Freeze and execute the confirmatory protocol.
+1. Acquire and verify the two official EuRoC Vicon Room archives.
+2. Extract `cam0`, `imu0`, official calibration, and Vicon reference states.
+3. Parse and validate every selected physical sequence without hidden repairs.
+4. Freeze the development split before producing frame pairs.
+5. Build consecutive-frame examples with exactly the IMU window in
+   `(previous_timestamp, current_timestamp]` and training-only targets.
+6. Pass a forward/backward/checkpoint smoke, then train the bounded compact
+   CNN + IMU GRU + fusion model on the A10.
+7. Select only by the declared validation loss and evaluate the selected
+   checkpoint once on held-out development membership.
+8. Export checkpoint, resolved configuration, data/calibration hashes,
+   training history, predictions, held-out metrics, latency/resources, and all
+   observed failures.
 
-No optical-flow algorithm, learned detector/matcher, weights, backend, health
-signal, threshold, action, framework, or dataset is selected by this order.
-Switching A/B/C/D changes the intended visual evidence or the protocol-declared
-D action, not the backend or evaluator.
+A/B/C/D reliability experiments, a native classical reference, failure-atlas
+work, deployment export, and flight integration are later branches. They do not
+block the real training prototype and are not inferred from its result.
 
-## 5. Imported learned components and conditional training
+## 5. Learned training and imported components
 
 Before configuration B incorporates a frozen component, record its source,
 commit/release, code and weight hashes, licence/redistribution terms, training
 data disclosure, preprocessing, inference settings, and known benchmark overlap.
 Paper performance is not incorporation evidence.
 
-If targeted training is later approved, record framework/version, accelerator
-stack, determinism controls, model/configuration ID, source-group split hashes,
-seeds, stopping rule, and checkpoint-selection rule. Run a tiny CPU smoke before
-requesting GPU capacity. Training uses only approved training membership,
-validation follows its declared purpose, and final-test data never selects a
-checkpoint. A tracking tool may mirror metrics but is not the authority.
+For the accepted learned prototype, record PyTorch/CUDA versions, accelerator,
+determinism controls, model/configuration ID, source-sequence split and archive
+hashes, calibration hashes, seed, stopping rule, and checkpoint-selection rule.
+Run a small forward/backward/save-load smoke before the bounded GPU run.
+Training uses only declared training membership; validation selects the
+checkpoint; held-out development test data never selects it. A tracking tool
+may mirror metrics but is not the authority.
 
 ## 6. Evaluation
 
