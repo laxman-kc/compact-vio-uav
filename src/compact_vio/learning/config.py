@@ -40,6 +40,7 @@ class ModelConfig:
     imu_hidden_dim: int = 96
     fusion_hidden_dim: int = 256
     dropout_probability: float = 0.1
+    rotation_state_source: str = "shared-recurrent-fusion-state/v1"
 
     def __post_init__(self) -> None:
         for field in (
@@ -53,6 +54,13 @@ class ModelConfig:
         _non_negative_float(self.dropout_probability, field="dropout_probability")
         if self.dropout_probability >= 1.0:
             raise LearningError("dropout_probability must be less than one")
+        if type(self.rotation_state_source) is not str or self.rotation_state_source not in {
+            "shared-recurrent-fusion-state/v1",
+            "current-pair-zero-initialized-fusion-state/v1",
+        }:
+            raise LearningError(
+                "rotation_state_source must identify a supported rotation-state policy"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +162,7 @@ class TrainingConfig:
             "imu_hidden_dim",
             "fusion_hidden_dim",
             "dropout_probability",
+            "rotation_state_source",
         }
         model_unknown = set(model_value) - model_allowed
         if model_unknown:
@@ -214,18 +223,23 @@ class TrainingConfig:
         image = _exact_mapping(
             value["image"], {"width_px", "height_px", "mean", "std"}, field="image"
         )
-        model = _exact_mapping(
-            value["model"],
-            {
-                "visual_feature_dim",
-                "imu_hidden_dim",
-                "fusion_hidden_dim",
-                "dropout",
-                "gyro_scale_rad_s",
-                "acceleration_scale_m_s2",
-            },
-            field="model",
-        )
+        model_fields = {
+            "visual_feature_dim",
+            "imu_hidden_dim",
+            "fusion_hidden_dim",
+            "dropout",
+            "gyro_scale_rad_s",
+            "acceleration_scale_m_s2",
+        }
+        model_value = value["model"]
+        if not isinstance(model_value, Mapping) or set(model_value) not in (
+            model_fields,
+            model_fields | {"rotation_state_source"},
+        ):
+            raise LearningError(
+                "model must contain the exact legacy fields and optional rotation_state_source"
+            )
+        model = model_value
         optimization = _exact_mapping(
             value["optimization"],
             {
@@ -282,6 +296,9 @@ class TrainingConfig:
                 imu_hidden_dim=model["imu_hidden_dim"],  # type: ignore[arg-type]
                 fusion_hidden_dim=model["fusion_hidden_dim"],  # type: ignore[arg-type]
                 dropout_probability=model["dropout"],  # type: ignore[arg-type]
+                rotation_state_source=model.get(
+                    "rotation_state_source", "shared-recurrent-fusion-state/v1"
+                ),  # type: ignore[arg-type]
             ),
             data=DataConfig(
                 image_mean=image["mean"],  # type: ignore[arg-type]

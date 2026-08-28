@@ -938,6 +938,7 @@ def _run(args: argparse.Namespace) -> int:
             f"split={spec.split_sha256}:"
             f"strides={','.join(str(stride) for stride in spec.training_frame_strides)}:"
             f"unroll={spec.training_unroll_pairs}:"
+            f"rotation-state-source={runtime_config.model.rotation_state_source}:"
             f"mode={'smoke' if args.smoke else 'full'}"
         ),
         train_sequence_ids=spec.splits.train,
@@ -1020,6 +1021,7 @@ def _run(args: argparse.Namespace) -> int:
         "execution_mode": "smoke" if args.smoke else "full",
         "training_frame_strides": list(spec.training_frame_strides),
         "training_unroll_pairs": spec.training_unroll_pairs,
+        "rotation_state_source": runtime_config.model.rotation_state_source,
         "fusion_state_policy": (
             "zero-per-independent-pair/v1"
             if spec.training_unroll_pairs == 1

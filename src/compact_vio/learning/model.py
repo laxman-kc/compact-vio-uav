@@ -242,6 +242,22 @@ class CompactVIO(nn.Module):
             torch.cat((visual_features, imu_hidden[-1], delta_time_s), dim=-1)
         )
 
+    def _predict_motion(self, fused: Tensor, recurrent_state: Tensor) -> Tensor:
+        """Apply the configured rotation-state policy without changing parameters."""
+
+        recurrent_motion = self.motion_head(recurrent_state)
+        if self.config.rotation_state_source == "shared-recurrent-fusion-state/v1":
+            return recurrent_motion
+        zero_initialized_state = self.fusion_recurrence(
+            fused,
+            torch.zeros_like(recurrent_state),
+        )
+        current_pair_motion = self.motion_head(zero_initialized_state)
+        return torch.cat(
+            (recurrent_motion[:, :3], current_pair_motion[:, 3:]),
+            dim=-1,
+        )
+
     def step(
         self,
         frame_pairs: Tensor,
@@ -259,7 +275,7 @@ class CompactVIO(nn.Module):
             device=frame_pairs.device,
         )
         next_state = self.fusion_recurrence(fused, previous_state)
-        motion = self.motion_head(next_state)
+        motion = self._predict_motion(fused, next_state)
         return (
             VIOOutput(
                 relative_translation_m=motion[:, :3],
@@ -387,7 +403,7 @@ class CompactVIO(nn.Module):
             candidate = self.fusion_recurrence(fused[:, step_index], state)
             active = step_mask[:, step_index].unsqueeze(-1)
             state = torch.where(active, candidate, state)
-            motion = self.motion_head(state)
+            motion = self._predict_motion(fused[:, step_index], state)
             motions.append(torch.where(active, motion, torch.zeros_like(motion)))
         motion_sequence = torch.stack(motions, dim=1)
         return VIOSequenceOutput(
