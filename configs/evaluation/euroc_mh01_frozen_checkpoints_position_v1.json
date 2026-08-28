@@ -1,0 +1,45 @@
+{
+  "record_type": "euroc_position_only_checkpoint_evaluation",
+  "schema_version": "1.0.0",
+  "evaluation_id": "euroc-mh01-frozen-checkpoints-position-v1",
+  "dataset": {
+    "doi": "10.3929/ethz-b-000690084",
+    "rights_statement": "In Copyright - Non-Commercial Use Permitted",
+    "sequence_id": "MH_01_easy",
+    "archive_filename": "machine_hall.zip",
+    "archive_size_bytes": 12683729426,
+    "archive_md5": "363f5c2502b469cdd97ef85997714806",
+    "archive_sha256": "5ed7d07903f8d19b6c8808e2ae8a0872b281f6e34ef5497023b8ac58c3de0f6f",
+    "sensor_sources_sha256": "10dd5e711a8c063c16b65d2fe69baa979e8b39299bcaaf5643c5683f27a6977f",
+    "sensor_calibration_sha256": "966b51d7ecd4086f0c7f8ccb6644d8d66447f5eb703c4398c3bf0bde10f16085",
+    "position_reference_sha256": "5ff4628faea7594c21668f6e31b9e92718ce844902da225b2727acc880742ee0"
+  },
+  "sampling": {
+    "frame_stride": 1,
+    "evaluation_unroll_pairs": 128,
+    "max_reference_bracket_interval_ns": 100000000,
+    "prediction_origin_id": "imu0",
+    "reference_origin_id": "leica0",
+    "sensor_origin_projection_policy_id": "imu-to-leica-origin/from-native-t-bs/r-il-equals-r-bi-transpose-times-p-bl-minus-p-bi/delta-l-equals-t-i-plus-r-rel-r-il-minus-r-il/v1",
+    "reference_association_policy_id": "linear-within-leica-coverage/max-bracket-100ms/all-native-pairs-both-endpoints-valid/no-extrapolation/v1"
+  },
+  "metric_policy_id": "sensor-point-displacement-magnitude/exact-preassociated-position-pairs/predicted-rotation-and-declared-lever-arm/no-reference-orientation/preassociated-input/no-internal-interpolation/no-alignment/no-scale-fitting/v1",
+  "decision_rule_id": "full-sensor-and-reference-coverage/beat-zero-pair-rmse/minimum-pair-displacement-magnitude-rmse/no-tie-break/v1",
+  "candidates": [
+    {
+      "candidate_id": "v2",
+      "checkpoint_sha256": "17698fbf70862bf1aae17925081b0baf536d2c5b84fa6dcaea7b69926e3c3605",
+      "inference_policy_id": "independent-zero-state-per-pair/v1"
+    },
+    {
+      "candidate_id": "v3",
+      "checkpoint_sha256": "40d18a9a3a04131d04e06a4ab313279613d1dc2339d1758f99777ecb70de8c37",
+      "inference_policy_id": "stateful-contiguous-native-pairs/v1"
+    },
+    {
+      "candidate_id": "v4",
+      "checkpoint_sha256": "e775adb16aa4f9522aa577a32704a54db5c82c53685b0e97fb8d149402bf159d",
+      "inference_policy_id": "stateful-contiguous-native-pairs/v1"
+    }
+  ]
+}

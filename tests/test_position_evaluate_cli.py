@@ -101,6 +101,27 @@ class PositionEvaluationCliTests(unittest.TestCase):
         self.assertEqual(len(protocol.source_sha256), 64)
         self.assertTrue(protocol.source_path.is_absolute())
 
+    def test_committed_machine_hall_protocol_binds_measured_sources_and_checkpoints(self) -> None:
+        path = (
+            Path(__file__).resolve().parent.parent
+            / "configs/evaluation/euroc_mh01_frozen_checkpoints_position_v1.json"
+        )
+        protocol = load_position_evaluation_protocol(path)
+
+        self.assertEqual(
+            protocol.dataset.sensor_sources_sha256,
+            "10dd5e711a8c063c16b65d2fe69baa979e8b39299bcaaf5643c5683f27a6977f",
+        )
+        self.assertEqual(protocol.sampling.max_reference_bracket_interval_ns, 100_000_000)
+        self.assertEqual(
+            tuple(candidate.checkpoint_sha256 for candidate in protocol.candidates),
+            (
+                "17698fbf70862bf1aae17925081b0baf536d2c5b84fa6dcaea7b69926e3c3605",
+                "40d18a9a3a04131d04e06a4ab313279613d1dc2339d1758f99777ecb70de8c37",
+                "e775adb16aa4f9522aa577a32704a54db5c82c53685b0e97fb8d149402bf159d",
+            ),
+        )
+
     def test_unknown_fields_bad_hash_duplicate_candidate_and_policy_fail(self) -> None:
         for mutate, message in (
             (lambda item: item.update({"unknown": 1}), "fields must equal"),
