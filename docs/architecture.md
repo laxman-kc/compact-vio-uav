@@ -193,7 +193,10 @@ history. It binds canonical metadata/model-state hashes, writes atomically
 without replacement, and remains transparent to `load_inference_model`. The
 result remains a PyTorch checkpoint, not the ONNX or target-engine work behind
 M12. Its acceptance is exact state identity plus deterministic output parity
-under the same declared runtime and input.
+under the same declared runtime and input. The outer `.pt` SHA binds one exact
+file for transport/copy integrity; it is not a cross-runtime model identity
+because PyTorch container bookkeeping can vary while canonical metadata,
+tensor bytes, and predictions remain identical.
 
 V5 is a loss ablation, not a new architecture. The only intended behavioral
 change is a penalty on the difference between predicted and reference
@@ -284,13 +287,19 @@ orientation or direction and the common lifecycle/full-pose exit evidence is
 not complete. ONNX, TensorRT, ROS 2, PX4, and flight integration remain outside
 the implemented slice.
 
-The current uncommitted worktree adds the controlled v5 loss/configuration and
-the strict optimizer-free inference-checkpoint export/load boundary. Focused
-tests and a temporary real-v2 export passed exact identity and bitwise
-prediction parity; the local artifact SHA-256 is
-`4e2281a97a071cd20c16b2e5329a750b681fa74aea53002f110662ebc7fba29e`.
-Immutable commit/CI and retained-package evidence remain pending. Until the v5
-smoke, bounded training, validation guardrail, and frozen fresh evaluation each
+Revision `5c54bb5fe3c67ff93ace9401beae3c06c13b81fa` adds the controlled v5
+loss/configuration and strict optimizer-free inference-checkpoint boundary.
+GitHub Actions run 33172588729 and all 351 A10 tests passed. The retained A10
+v2 export has exact-file SHA-256
+`521e9813fde80f68cb0734fd474a1cf08e8d4ef767fc8cd53bd2adf08ead2202`,
+canonical metadata SHA-256
+`63f632912862067c471020d4cda4f2e87772eda0f2d59a29f434fba71a8be321`,
+and canonical model-state SHA-256
+`f70693fc2c188773ef8e78779f6e5d1a01b22e14067204cd8cc18ba4691d650d`;
+its verified local artifact-manifest SHA-256 is
+`17a1b73abf1223fd8a010391d768849c30830c81914e2c30e7c383d61d095723`.
+Until the v5 smoke, bounded
+training, validation guardrail, and frozen fresh evaluation each
 complete, there is no v5 checkpoint, metric, selection, or quality claim.
 
 ## Technology stack by status
@@ -300,11 +309,11 @@ complete, there is no v5 checkpoint, metric, selection, or quality claim.
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
 | Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
 | Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified acquisition; versioned Vicon and Machine Hall identities, hashes, calibration, split, and endpoint configurations | Other datasets or physical sensors require separate rights, calibration, provenance, and role records. |
-| Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, deterministic checkpoints, four completed A10 runs, and a locally tested v5 loss/config slice | One controlled v5 training run is pending. Further tuning on seen units is closed; every new evaluation requires a separately frozen purpose and unit. |
+| Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, four completed A10 runs, and a locally tested v5 loss/config slice | One controlled v5 training run is pending. Further tuning on seen units is closed; every new evaluation requires a separately frozen purpose and unit. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
 | GPU execution | Dated A10 smoke, four bounded training runs, and one frozen checkpoint evaluation are recorded; the worker remained running at the last observation | Present state and every later task require fresh inventory and owner confirmation. |
-| Export/deployment | Optimizer-free PyTorch inference-checkpoint export/load is implemented locally; a temporary real-v2 artifact passed bitwise parity | Immutable-revision reproduction and durable retention remain. This is experiment hygiene, not deployment export. ONNX is conditional; TensorRT, Jetson/other edge hardware, ROS 2, and PX4 scope are unresolved. |
+| Export/deployment | Optimizer-free PyTorch inference-checkpoint export/load is implemented; the immutable A10 v2 file, canonical identity, prediction parity, local copy, and artifact manifest are verified | A v5 inference export is conditional on its training/validation gates. This is experiment hygiene, not target deployment export. ONNX is conditional; TensorRT, Jetson/other edge hardware, ROS 2, and PX4 scope are unresolved. |
 
 ## Repository structure: current and planned
 

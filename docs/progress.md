@@ -1212,6 +1212,34 @@ result, and explicit remaining blockers.
   performed. M8's original vertical-slice exit remains complete; M9 remains in
   progress and M12 remains blocked.
 
+## 2026-08-28 — Immutable v5 gate and retained v2 inference transport
+
+- Revision `5c54bb5fe3c67ff93ace9401beae3c06c13b81fa` was pushed to
+  `origin/main`; GitHub Actions run 33172588729 completed successfully.
+- The clean A10 checkout reproduced that exact revision and passed all 351
+  Torch-enabled tests from the checked-out `src` tree.
+- The selected v2 training checkpoint was exported on that checkout with
+  source SHA-256 `17698fbf70862bf1aae17925081b0baf536d2c5b84fa6dcaea7b69926e3c3605`.
+  The exact A10 inference file SHA-256 is
+  `521e9813fde80f68cb0734fd474a1cf08e8d4ef767fc8cd53bd2adf08ead2202`;
+  canonical metadata/model-state SHA-256 values are
+  `63f632912862067c471020d4cda4f2e87772eda0f2d59a29f434fba71a8be321`
+  and `f70693fc2c188773ef8e78779f6e5d1a01b22e14067204cd8cc18ba4691d650d`.
+  A separate-process A10 repeat produced the same exact file hash.
+- The A10 file was copied to ignored local evidence path
+  `outputs/inference-exports-5c54bb5/v2-inference.pt`; its one-file artifact
+  manifest verifies and has SHA-256
+  `17a1b73abf1223fd8a010391d768849c30830c81914e2c30e7c383d61d095723`.
+- Cross-runtime inspection proved that the local `4e2281a...` and A10
+  `521e9813...` files have the same 43 ZIP members except PyTorch's internal
+  `archive/.data/serialization_id`; canonical metadata, all tensor storages,
+  model-state identity, and predictions match. The contract therefore treats
+  the outer file SHA only as exact-file transport integrity and the canonical
+  metadata/model-state hashes as cross-runtime model identity.
+- No v5 smoke/full run or `MH_02_easy` extraction/prediction occurred in this
+  slice. The transport-scope correction must be committed and pass CI before
+  the paid run proceeds; there was no model, dataset, or decision-rule change.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

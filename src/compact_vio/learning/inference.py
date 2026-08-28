@@ -1,4 +1,4 @@
-"""Deterministic checkpoint loading and batched relative-motion inference."""
+"""Strict checkpoint loading and batched relative-motion inference."""
 
 from __future__ import annotations
 

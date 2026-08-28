@@ -202,12 +202,12 @@ class InferenceCheckpointTests(unittest.TestCase):
             model_state_sha256({"floating": changed, "view": noncontiguous}),
         )
 
-    def test_export_is_optimizer_free_and_pair_predictions_are_bitwise_identical(self) -> None:
+    def test_canonical_identity_and_parity_survive_container_byte_variation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "training.pt"
             destination = root / "inference.pt"
-            repeated_destination = root / "inference-repeat.pt"
+            alternate_container = root / "inference-alternate-container.pt"
             original = self._save_source(source)
             batch = self._batch()
             expected = predict_batch(original, batch).motion_vectors
@@ -218,19 +218,22 @@ class InferenceCheckpointTests(unittest.TestCase):
                 expected_source_sha256=_sha256(source),
                 inference_policy_id=INDEPENDENT_INFERENCE_POLICY_ID,
             )
-            repeated = export_inference_checkpoint(
-                source,
-                repeated_destination,
-                expected_source_sha256=_sha256(source),
-                inference_policy_id=INDEPENDENT_INFERENCE_POLICY_ID,
-            )
             payload = torch.load(destination, map_location="cpu", weights_only=True)
+            # The same semantic payload may have different outer bytes across
+            # Torch serializers/runtimes; only its canonical identity must match.
+            torch.save(payload, alternate_container, _use_new_zipfile_serialization=False)
             loaded = load_inference_checkpoint(
                 destination,
                 expected_artifact_sha256=_sha256(destination),
                 expected_inference_policy_id=INDEPENDENT_INFERENCE_POLICY_ID,
             )
+            alternate_loaded = load_inference_checkpoint(
+                alternate_container,
+                expected_artifact_sha256=_sha256(alternate_container),
+                expected_inference_policy_id=INDEPENDENT_INFERENCE_POLICY_ID,
+            )
             actual = predict_batch(loaded.model, batch).motion_vectors
+            alternate_actual = predict_batch(alternate_loaded.model, batch).motion_vectors
             transparent_model, transparent_metadata = load_inference_model(
                 destination,
                 expected_inference_policy_id=INDEPENDENT_INFERENCE_POLICY_ID,
@@ -270,9 +273,12 @@ class InferenceCheckpointTests(unittest.TestCase):
         ).encode("utf-8")
         self.assertEqual(payload["metadata_sha256"], hashlib.sha256(canonical).hexdigest())
         self.assertEqual(exported.artifact_sha256, loaded.artifact_sha256)
-        self.assertEqual(exported.artifact_sha256, repeated.artifact_sha256)
+        self.assertEqual(exported.artifact_transport_sha256, loaded.artifact_transport_sha256)
+        self.assertNotEqual(exported.artifact_sha256, alternate_loaded.artifact_sha256)
         self.assertEqual(exported.metadata_sha256, loaded.metadata_sha256)
-        self.assertEqual(exported.metadata_sha256, repeated.metadata_sha256)
+        self.assertEqual(exported.canonical_identity_sha256, loaded.canonical_identity_sha256)
+        self.assertEqual(exported.metadata_sha256, alternate_loaded.metadata_sha256)
+        self.assertEqual(loaded.identity, alternate_loaded.identity)
         self.assertEqual(loaded.identity.model_config, self.model_config)
         self.assertEqual(loaded.identity.data_config, self.data_config)
         self.assertEqual(loaded.identity.provenance, self.provenance)
@@ -294,8 +300,10 @@ class InferenceCheckpointTests(unittest.TestCase):
         self.assertEqual(transparent_metadata.metrics, loaded.identity.metrics)
         self.assertEqual(transparent_metadata.provenance, self.provenance)
         torch.testing.assert_close(expected, actual, rtol=0, atol=0)
+        torch.testing.assert_close(expected, alternate_actual, rtol=0, atol=0)
         torch.testing.assert_close(expected, transparent_actual, rtol=0, atol=0)
         self.assertTrue(torch.equal(expected, actual))
+        self.assertTrue(torch.equal(expected, alternate_actual))
         self.assertTrue(torch.equal(expected, transparent_actual))
 
     def test_v2_v3_and_v4_policy_identities_and_stateful_parity_are_preserved(self) -> None:

@@ -85,10 +85,20 @@ tuning loop. V2 remains the exact control. The new
 `compact-vio-export-inference` path produces an optimizer-free PyTorch
 checkpoint that retains canonical `TrainingConfig`, provenance, inference
 policy, and selected source epoch/metrics lineage, but not optimizer state or
-full training history. A local real-v2 export passed exact identity and bitwise
-prediction parity; its temporary artifact SHA-256 is
-`4e2281a97a071cd20c16b2e5329a750b681fa74aea53002f110662ebc7fba29e`.
-Immutable-revision reproduction and durable retention remain pending. V5 keeps
+full training history. Canonical metadata/model-state hashes and bitwise
+prediction parity define model identity. The outer PyTorch-file SHA is a
+transport-integrity identity for one exact file and can differ across runtimes
+because of container bookkeeping. A local verification export had file SHA-256
+`4e2281a97a071cd20c16b2e5329a750b681fa74aea53002f110662ebc7fba29e`;
+the immutable A10 export has file SHA-256
+`521e9813fde80f68cb0734fd474a1cf08e8d4ef767fc8cd53bd2adf08ead2202`.
+Both share canonical metadata SHA-256
+`63f632912862067c471020d4cda4f2e87772eda0f2d59a29f434fba71a8be321`
+and model-state SHA-256
+`f70693fc2c188773ef8e78779f6e5d1a01b22e14067204cd8cc18ba4691d650d`.
+The A10 file is retained locally with artifact-manifest SHA-256
+`17a1b73abf1223fd8a010391d768849c30830c81914e2c30e7c383d61d095723`.
+V5 keeps
 v2's architecture, data/split, frame
 strides, seed, optimizer, independent-pair state policy, checkpoint rule, and
 30-epoch schedule; its only intended behavioral change is an explicit

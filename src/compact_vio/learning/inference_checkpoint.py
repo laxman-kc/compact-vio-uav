@@ -42,6 +42,12 @@ INFERENCE_POLICY_IDS = frozenset({INDEPENDENT_INFERENCE_POLICY_ID, STATEFUL_INFE
 
 INFERENCE_CHECKPOINT_RECORD_TYPE = "compact_vio_inference_checkpoint"
 INFERENCE_CHECKPOINT_SCHEMA_VERSION = "1.0.0"
+ARTIFACT_TRANSPORT_SHA256_SCOPE_ID = (
+    "exact-produced-file-bytes/transport-integrity/not-cross-runtime-identity/v1"
+)
+METADATA_SHA256_SCOPE_ID = (
+    "canonical-metadata-including-canonical-model-state/cross-runtime-identity/v1"
+)
 _METADATA_RECORD_TYPE = "compact_vio_inference_checkpoint_metadata"
 _METADATA_SCHEMA_VERSION = "1.0.0"
 _MOTION_VECTOR_LAYOUT_ID = "translation-meters-xyz/rotation-vector-radians-xyz/v1"
@@ -364,22 +370,52 @@ class InferenceCheckpointIdentity:
 
 @dataclass(frozen=True, slots=True)
 class ExportedInferenceCheckpoint:
-    """Integrity identities returned after a successful exclusive export."""
+    """Integrity identities returned after a successful exclusive export.
+
+    ``artifact_sha256`` binds the exact produced file bytes for transport and
+    must not be treated as a cross-runtime model identity: ``torch.save`` may
+    vary container bookkeeping between PyTorch releases.  ``metadata_sha256``
+    is the canonical identity and transitively binds ``model_state_sha256``.
+    """
 
     path: Path
     artifact_sha256: str
     metadata_sha256: str
     identity: InferenceCheckpointIdentity
 
+    @property
+    def artifact_transport_sha256(self) -> str:
+        """Return the per-container exact-file digest used as a copy trust root."""
+
+        return self.artifact_sha256
+
+    @property
+    def canonical_identity_sha256(self) -> str:
+        """Return the runtime-independent identity binding metadata and weights."""
+
+        return self.metadata_sha256
+
 
 @dataclass(frozen=True, slots=True)
 class LoadedInferenceCheckpoint:
-    """Strictly restored production model and its verified identities."""
+    """Strictly restored model plus transport and canonical identities."""
 
     model: CompactVIO
     identity: InferenceCheckpointIdentity
     artifact_sha256: str
     metadata_sha256: str
+
+    @property
+    def artifact_transport_sha256(self) -> str:
+        """Return the verified per-container exact-file digest."""
+
+        return self.artifact_sha256
+
+    @property
+    def canonical_identity_sha256(self) -> str:
+        """Return the verified runtime-independent metadata/model identity."""
+
+        return self.metadata_sha256
 
 
 def _parse_identity(metadata: object) -> InferenceCheckpointIdentity:
@@ -623,6 +659,7 @@ def load_inference_checkpoint(
 
 
 __all__ = [
+    "ARTIFACT_TRANSPORT_SHA256_SCOPE_ID",
     "ExportedInferenceCheckpoint",
     "INFERENCE_CHECKPOINT_RECORD_TYPE",
     "INFERENCE_CHECKPOINT_SCHEMA_VERSION",
@@ -630,6 +667,7 @@ __all__ = [
     "INFERENCE_POLICY_IDS",
     "InferenceCheckpointIdentity",
     "LoadedInferenceCheckpoint",
+    "METADATA_SHA256_SCOPE_ID",
     "STATEFUL_INFERENCE_POLICY_ID",
     "export_inference_checkpoint",
     "load_inference_checkpoint",

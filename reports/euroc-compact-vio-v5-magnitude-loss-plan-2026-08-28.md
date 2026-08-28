@@ -45,6 +45,8 @@ the normal `load_inference_model` boundary. It is not ONNX, a target-specific
 engine, or deployment approval. Export acceptance requires exact retained
 parameter identity and deterministic prediction parity with the source
 checkpoint under the same declared framework, device, runtime, and test input.
+The outer artifact SHA identifies one exact file for transport/copy integrity;
+it is not a cross-runtime model identity.
 
 Local verification on the uncommitted implementation worktree exported the
 real selected v2 checkpoint and passed bitwise prediction parity. The temporary
@@ -59,9 +61,19 @@ artifact recorded:
   and
 - selected source epoch: 28.
 
-This is local implementation evidence, not the retained execution artifact. A
-clean immutable checkout must repeat the export, parity check, and artifact
-retention before the operational v2 package is accepted.
+This is local implementation evidence, not the retained execution artifact.
+
+Immutable revision `5c54bb5fe3c67ff93ace9401beae3c06c13b81fa` then passed
+GitHub Actions run 33172588729 and all 351 Torch-enabled A10 tests. Its retained
+A10 export has exact-file SHA-256
+`521e9813fde80f68cb0734fd474a1cf08e8d4ef767fc8cd53bd2adf08ead2202`,
+the same canonical metadata/model-state hashes above, and bitwise prediction
+parity. A repeated A10 export produced the same exact file SHA. The local and
+A10 containers have identical model payloads; only PyTorch's internal
+`archive/.data/serialization_id` differs across their runtimes. The A10 file is
+retained under `outputs/inference-exports-5c54bb5/` with verified
+artifact-manifest SHA-256
+`17a1b73abf1223fd8a010391d768849c30830c81914e2c30e7c383d61d095723`.
 
 ## Single-change hypothesis
 

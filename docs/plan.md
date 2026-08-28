@@ -762,7 +762,9 @@ be exported with `compact-vio-export-inference`. The checkpoint retains the
 canonical `TrainingConfig`, provenance, source SHA-256, inference policy, and
 selected source epoch/metrics lineage, but no optimizer state or full training
 history. Canonical metadata/model-state hashes, exclusive atomic write, exact
-parameter identity, and deterministic prediction parity are mandatory.
+parameter identity, and deterministic prediction parity are mandatory. The
+outer PyTorch-file SHA is scoped to transport/copy integrity for one exact
+container, not cross-runtime model identity.
 
 Before any `MH_02_easy` inference, the selected v5 checkpoint must have
 validation translation RMSE at most `0.058765891780989885` m and validation
@@ -994,13 +996,19 @@ Exit evidence:
 
 Execute these as separate small slices; do not combine them into one long phase:
 
-1. Freeze the locally tested inference-checkpoint, v5-loss/configuration, and
-   `MH_02_easy` role-record slices in one immutable revision. Run full local
-   checks, push it, and require green CI; no local pass is a quality result.
-2. From that clean checkout, repeat the real-v2 inference export, exact state
-   verification, and bitwise prediction parity. Retain the artifact and its
-   canonical metadata/model-state hashes outside the disposable worker. The
-   temporary local artifact proves behavior but is not the retained package.
+1. Completed at revision `5c54bb5fe3c67ff93ace9401beae3c06c13b81fa`:
+   freeze the inference-checkpoint, v5-loss/configuration, and `MH_02_easy`
+   role-record slices; pass 351 local/A10 tests, schema validation, repository
+   policy, pinned Ruff, compileall, diff checks, adversarial review, push, and
+   GitHub Actions run 33172588729.
+2. Completed for the frozen control: export selected v2 through the
+   optimizer-free path, verify parameter/prediction parity, and retain exact
+   source/file/canonical metadata/model-state hashes outside the worker. The
+   retained A10 `.pt` file SHA is
+   `521e9813fde80f68cb0734fd474a1cf08e8d4ef767fc8cd53bd2adf08ead2202`;
+   canonical metadata/state hashes are
+   `63f632912862067c471020d4cda4f2e87772eda0f2d59a29f434fba71a8be321` /
+   `f70693fc2c188773ef8e78779f6e5d1a01b22e14067204cd8cc18ba4691d650d`.
 3. Re-observe the worker, record the bounded authorization, and confirm a new
    v5 smoke/full output path plus export destinations before paid work.
 4. Execute exactly one deterministic v5 smoke on the execution worker. It must

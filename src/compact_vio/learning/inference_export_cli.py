@@ -46,7 +46,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         # Keep parser construction and ``--help`` available in installations
         # without the optional Torch training stack.
-        from compact_vio.learning.inference_checkpoint import export_inference_checkpoint
+        from compact_vio.learning.inference_checkpoint import (
+            ARTIFACT_TRANSPORT_SHA256_SCOPE_ID,
+            METADATA_SHA256_SCOPE_ID,
+            export_inference_checkpoint,
+        )
 
         result = export_inference_checkpoint(
             args.source_checkpoint,
@@ -71,6 +75,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         json.dumps(
             {
                 "artifact_sha256": result.artifact_sha256,
+                "artifact_transport_sha256": result.artifact_transport_sha256,
+                "artifact_transport_sha256_scope_id": ARTIFACT_TRANSPORT_SHA256_SCOPE_ID,
+                "canonical_identity_sha256": result.canonical_identity_sha256,
+                "canonical_identity_sha256_scope_id": METADATA_SHA256_SCOPE_ID,
                 "event": "inference_export_complete",
                 "execution_api_id": result.identity.execution_api_id,
                 "inference_policy_id": result.identity.inference_policy_id,
