@@ -29,11 +29,12 @@ a time/cost bound, and disposable outputs. M2 gates important or extended paid
 GPU work and irreplaceable retained artifacts; it is not a global
 implementation gate.
 
-An A10 was observed ready on 2026-08-27 and was authorized for that bounded
-implementation smoke only. The dated state and authorization do not carry
-forward. ADR-0004 authorizes source/local implementation of the training-first
-slice; an actual paid-worker run still requires current inventory and a bounded
-run record under the infrastructure requirements.
+An inventoried A10 was authorized for the bounded training-first run executed
+on 2026-08-28 from pushed commit
+`9199d1507a2a76c522ca265afd8527ef9bd07225`. The run record, checkpoint, and
+held-out outputs were copied and checksum-verified; the worker was intentionally
+left running. That dated state and authorization do not carry forward. A future
+paid-worker run still requires current inventory and its own bounded record.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -132,10 +133,10 @@ configuration and must not be invented in documentation.
 | M3 | Scientific question and estimator contract | In progress | M1; ADR-0004 training-first direction accepted, runtime details remain |
 | M4 | Replay sensor, time, frame, and calibration contract | Complete | Causal replay, typed sensor records, and calibration profile/assessment fixtures |
 | M5 | Reproducible execution environments | In progress | Local path active; worker tasks require fresh inventory and authorization |
-| M6 | EuRoC development ingestion and split | In progress | ADR-0004, sufficient M3/M4 detail, exact unit identity/rights/acquisition record |
-| M7 | Common causal replay and evaluator | In progress | Synthetic replay unblocked; real-data exit depends on M6 |
-| M8 | Compact model and bounded training | In progress | M5–M7 data/sample path and accepted ADR-0004 |
-| M9 | Held-out prototype inference and evaluation | Blocked | Restorable M8 checkpoint and complete M7 metric semantics |
+| M6 | EuRoC development ingestion and split | Complete | Versioned split/acquisition plan, official archive identity, extracted-source hashes, and focused tests |
+| M7 | Common causal replay and evaluator | In progress | Raw real-data SE(3) slice executed; common lifecycle/coverage exit remains |
+| M8 | Compact model and bounded training | Complete | A10 smoke, 30-epoch bounded run, and checksum-verified checkpoint |
+| M9 | Held-out prototype inference and evaluation | In progress | Held-out raw evaluation executed; baseline, runtime/coverage, and model-quality work remain |
 | M10 | Later baselines, reliability ablations, and failure atlas | Conditional | Reproducible M9 prototype evidence and a separately frozen ablation protocol |
 | M11 | Confirmatory final-test execution and scientific selection | Blocked | Reproducible candidate set, sealed untouched membership, and frozen confirmatory protocol |
 | M12 | Conditional export, exact-target benchmark, and deployable selection | Blocked | M11; authorized provisional sensor/target choices |
@@ -366,10 +367,12 @@ its records enter the evaluator.
 
 Status: In progress.
 
-Current durable execution state: local and GitHub. Dated A10
-implementation-smoke evidence exists, but current worker state and authority are
-not inferred from it. ADR-0004 authorizes the training-first implementation;
-each paid-worker run still requires current inventory and a bounded run record.
+Current durable execution state: local and GitHub. Dated A10 smoke and full-run
+evidence now exists, and the result bundle was copied to an ignored local path
+with matching checksums. The worker was intentionally left running at the end
+of that record, but later state and authority are not inferred from it. Each
+future paid-worker run still requires current inventory and a bounded run
+record; M2's independent recovery-copy requirement remains open.
 
 Dependencies: M1 for the local CPU environment. Important or extended future
 paid GPU work additionally depends on M2; estimator-specific environments depend
@@ -407,7 +410,7 @@ Exit evidence:
 
 ## M6 — EuRoC development ingestion and split
 
-Status: In progress.
+Status: Complete.
 
 Dependencies: accepted ADR-0004, sufficient M3/M4 interface detail for the
 adapter, `R-DATA-*`, and exact-unit rights/acquisition evidence. Full or
@@ -444,6 +447,15 @@ Exit evidence:
   source-sequence split manifest, validated representative replay profile,
   representative-ingestion report, and timestamp/frame/calibration negative-
   test report on the acquired sequence.
+
+Observed 2026-08-28 evidence: the official Vicon Room 1 and Room 2 archives were
+verified by byte count, ETH MD5, and locally computed SHA-256; only `cam0`,
+`imu0`, calibration, and ground truth were extracted. The immutable roles and
+source hashes are in `configs/data/euroc_vicon_v1.json`, with acquisition and
+rights evidence in
+`governance/datasets/evidence/euroc-vicon-acquisition-2026-08-28.md`. Focused
+parser, calibration, interpolation, causal-window, split, source-hash, and
+negative tests passed locally and on the A10.
 
 ## M7 — Common causal replay and evaluator
 
@@ -534,9 +546,13 @@ Implemented evaluator slice (not M7 exit evidence by itself):
 - Schema validity alone does not authenticate recorder origin or prove all
   cross-array counts/references in arbitrary external JSON. A trusted envelope
   must be produced by the encoder from a validated terminal snapshot.
-- These kernels are not aligned ATE, RPE, metric-scale evidence, coverage or
-  completion evidence, frame-correctness proof, run-level failure accounting,
-  or a complete evaluator. M7 remains in progress.
+- The learned prototype lane now also integrates exact-pair relative SE(3)
+  increments and reports raw translation ATE, relative translation/rotation
+  RMSE, path lengths, and final drift without association, alignment, or scale
+  fitting. It was exercised on held-out EuRoC data.
+- These slices still do not constitute common adapter coverage/completion
+  evidence, frame-correctness proof, runtime distributions, run-level failure
+  accounting, or a complete evaluator. M7 remains in progress.
 
 Prohibited work:
 
@@ -550,7 +566,7 @@ Exit evidence:
 
 ## M8 — Compact model and bounded training
 
-Status: In progress.
+Status: Complete.
 
 Dependencies: M5 environment, M6 source-identified split/sample path, M7 metric
 semantics needed for validation selection, and accepted ADR-0004.
@@ -584,12 +600,28 @@ Exit evidence:
 - One restorable `checkpoint.pt` with exact configuration, environment, split,
   seed, selection rule, history, checksum, and failure record.
 
+Observed 2026-08-28 evidence: pushed commit
+`9199d1507a2a76c522ca265afd8527ef9bd07225` passed a 12.43485-second A10 smoke
+and one 30-epoch full run. The 2,989,766-parameter model trained on 6,217 pairs,
+selected epoch 7 using 2,093 validation pairs, and retained checkpoint SHA-256
+`d11fabf7fc36c0a16719f7a3f73202b5888869f0efb252ba354a86ef28931738`.
+The tracker-independent bundle was copied locally and its checkpoint and
+manifest hashes were verified against the worker copies.
+
 ## M9 — Held-out prototype inference and evaluation
 
-Status: Blocked.
+Status: In progress.
 
 Dependencies: M6 held-out development membership, M7 evaluator/lifecycle
 semantics, and a restorable M8 checkpoint.
+
+Observed 2026-08-28 slice: checkpoint-only inference and raw, no-alignment
+exact-pair SE(3) integration completed for all 1,889 `V2_03_difficult` pairs.
+Pair RMSE was 0.0537358 m translation and 0.0201182 rad rotation; raw trajectory
+ATE was 6.62533 m and final translation drift was 6.82426 m. This is not M9 exit
+evidence: a zero-motion reference has lower raw ATE (2.05572 m), and versioned
+baseline reporting, inference latency/memory, complete coverage/failure
+accounting, and model-quality improvement remain.
 
 Required work:
 

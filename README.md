@@ -4,9 +4,9 @@
 compact visual-inertial odometry (VIO) on UAVs. The primary scope is causal,
 metric-scale local odometry: mapping and loop closure are outside the main
 comparison, and PX4 retains stabilization, failsafe, and motor control. Exact
-physical sensor hardware, exact development sequence splits, numerical
-thresholds, deployment target, and source licence remain decisions for the
-milestones that need them.
+physical sensor hardware, confirmatory-test membership and thresholds,
+deployment target, and source licence remain decisions for the milestones that
+need them.
 
 ## Current status
 
@@ -26,21 +26,20 @@ and a separate assessment contract, with a visibly synthetic rejected fixture.
 These boundaries require explicit frames, transform direction, units, time
 semantics, validity, reset, initialization, health, state/policy identifiers,
 provenance, and calibration references without selecting project-wide values.
-It does not yet claim a completed estimator, a trained checkpoint, held-out
-model results, a deployable runtime, or a flight-ready system. ADR-0004 now
-accepts a training-first development slice: EuRoC Vicon Room, monocular `cam0`,
-six-axis IMU, official calibration validation, source-sequence-disjoint splits,
-and a compact PyTorch relative-motion model. Exact sequence membership,
-download identity, preprocessing, model dimensions, loss weights, optimizer,
-and run schedule must be recorded in development configuration/manifests before
-use; no result is claimed merely because the architecture is accepted.
+ADR-0004's training-first development slice is now implemented and was executed
+from pushed commit `9199d1507a2a76c522ca265afd8527ef9bd07225` on 2026-08-28.
+The exact EuRoC Vicon Room source-sequence split, download identity,
+preprocessing, model dimensions, losses, optimizer, and 30-epoch schedule are
+versioned. A bounded NVIDIA A10 run produced a restorable development checkpoint
+and held-out `V2_03_difficult` results. The raw, unaligned trajectory result is
+not yet competitive with a zero-motion reference, so this is evidence that the
+pipeline works end to end—not a completed estimator, superiority, deployable
+runtime, or flight-readiness claim.
 
-A Brev A10 worker was observed `RUNNING`, `READY`, and `HEALTHY` on 2026-08-27
-and was authorized for that bounded implementation smoke only. This dated
-observation establishes neither its present lifecycle state nor authorization
-for another paid-worker run. ADR-0004 authorizes the training-first source and
-local workflow; actual worker execution still requires a current inventory and
-bounded run record. Worker storage is never treated as durable.
+The A10 run artifacts were checksum-verified after copying to ignored local path
+`outputs/euroc-compact-vio-v1-full-9199d15`. The worker remains running by
+explicit choice and has not been stopped or terminated. Worker storage is never
+treated as durable.
 
 The project follows these invariants:
 

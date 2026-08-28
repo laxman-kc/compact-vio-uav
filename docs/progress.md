@@ -834,6 +834,56 @@ result, and explicit remaining blockers.
 - No dataset approval, acquisition, download, inspection, role/split assignment,
   training, GPU, paid-worker, or lifecycle action was part of the CI run.
 
+## 2026-08-28 — EuRoC-to-checkpoint prototype executed on the A10
+
+- Training-first implementation commit
+  `9199d1507a2a76c522ca265afd8527ef9bd07225` was pushed before GPU execution.
+  GitHub Actions passed for Python 3.10 and 3.12 in
+  [run 33143004849](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33143004849).
+  Local validation ran 256 tests with 5 dependency-gated skips; all 256 tests
+  passed on the A10 with PyTorch installed. Repository policy passed for 108
+  files, the schema harness passed 10 schemas and 7 templates, and Ruff lint,
+  Ruff format, and `git diff --check` passed.
+- The official EuRoC Vicon Room 1 and Room 2 archives matched their configured
+  byte counts, ETH MD5 values, and SHA-256 values. The six extracted `cam0`
+  frame counts were 2,912 (`V1_01_easy`), 1,710 (`V1_02_medium`), 2,149
+  (`V1_03_difficult`), 2,280 (`V2_01_easy`), 2,348 (`V2_02_medium`), and 1,922
+  (`V2_03_difficult`). Exact identities, rights, modalities, roles, and hashes
+  are recorded in `configs/data/euroc_vicon_v1.json` and
+  `governance/datasets/evidence/euroc-vicon-acquisition-2026-08-28.md`.
+- A bounded smoke run completed in 12.43485 seconds at
+  `/home/ubuntu/compact-vio-runs/euroc-compact-vio-v1-smoke-9199d15`; its
+  checkpoint SHA-256 was
+  `f3f58e55de225d1a06d8d68f687b6f5909bca53eda97a1e1cc268131a32930d9`.
+- The full NVIDIA A10 / PyTorch 2.7.0 run completed all 30 configured epochs in
+  225.2446 seconds. The compact model has 2,989,766 parameters. It used 6,217
+  training pairs, 2,093 validation pairs, and 1,889 held-out test pairs. Epoch
+  7 was selected with validation pair RMSE of 0.0375253 m translation and
+  0.00818984 rad rotation.
+- On held-out `V2_03_difficult`, pair RMSE was 0.0537358 m translation and
+  0.0201182 rad rotation. Raw exact-pair, no-alignment trajectory evaluation
+  reported 6.62533 m translation ATE, 6.82426 m final translation drift, and
+  42.0964 m predicted path length versus 85.9893 m reference path length.
+- This is a successful end-to-end execution result, not a model-quality pass.
+  Pair translation only narrowly improved on the zero-motion value of
+  0.0564645 m, while raw trajectory ATE was worse than the zero-motion value of
+  2.05572 m because scale and directional errors accumulated. No superiority,
+  deployment, onboard-runtime, or flight claim is supported.
+- The full result remains at worker path
+  `/home/ubuntu/compact-vio-runs/euroc-compact-vio-v1-full-9199d15` and was
+  copied to ignored local path
+  `outputs/euroc-compact-vio-v1-full-9199d15`. Checkpoint SHA-256
+  `d11fabf7fc36c0a16719f7a3f73202b5888869f0efb252ba354a86ef28931738`
+  and artifact-manifest SHA-256
+  `143cad6b475af1fe204196e9b0d571c98ed1cf62ffbb9169ff1886ce8e4e659a`
+  matched on the worker and local copy. This verification does not by itself
+  satisfy the independent recovery-copy requirement in M2.
+- M6 and M8 are complete. M7 remains in progress. M9 is now in progress because
+  held-out inference ran, but a versioned baseline, inference latency/memory,
+  complete coverage/failure evidence, and model improvement remain. The worker
+  was intentionally left running; no stop, deletion, or termination action was
+  taken.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
