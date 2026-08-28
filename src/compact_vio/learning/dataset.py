@@ -11,10 +11,12 @@ from typing import Any
 
 from compact_vio.data.euroc import (
     CausalFramePair,
+    EuRoCSensorSequence,
     EuRoCSequence,
     GroundTruthState,
     interpolate_ground_truth,
     iter_causal_frame_pairs,
+    iter_causal_sensor_frame_pairs,
 )
 from compact_vio.learning.config import DataConfig, ModelConfig
 from compact_vio.learning.errors import LearningDependencyError, LearningError
@@ -379,6 +381,87 @@ def _supervised_pairs(
     return tuple(records)
 
 
+def _inference_pairs(sequence: EuRoCSensorSequence) -> tuple[_PairRecord, ...]:
+    """Index every native stride-one sensor pair without inventing labels."""
+
+    records: list[_PairRecord] = []
+    for previous_frame_index, pair in enumerate(iter_causal_sensor_frame_pairs(sequence)):
+        current_frame_index = previous_frame_index + 1
+        if (
+            pair.previous_frame != sequence.camera_frames[previous_frame_index]
+            or pair.current_frame != sequence.camera_frames[current_frame_index]
+        ):
+            raise LearningError(
+                "internal sensor-pair order does not match exact camera-frame indices"
+            )
+        if pair.previous_ground_truth is not None or pair.current_ground_truth is not None:
+            raise LearningError("sensor-only inference pair unexpectedly contains ground truth")
+        records.append(
+            _PairRecord(
+                sequence_id=sequence.sequence_id,
+                frame_stride=1,
+                previous_frame_index=previous_frame_index,
+                current_frame_index=current_frame_index,
+                pair=pair,
+            )
+        )
+    if not records:
+        raise LearningError(
+            f"sequence {sequence.sequence_id!r} has no native stride-one causal frame pair"
+        )
+    return tuple(records)
+
+
+def _normalized_image_tensor(
+    path: Path,
+    *,
+    model_config: ModelConfig,
+    data_config: DataConfig,
+) -> Tensor:
+    """Load one grayscale frame using the shared training/inference normalization."""
+
+    try:
+        with Image.open(path) as image:
+            grayscale = image.convert("L")
+            resized = grayscale.resize(
+                (model_config.image_width_px, model_config.image_height_px),
+                resample=Image.Resampling.BILINEAR,
+            )
+            pixels = bytearray(resized.tobytes())
+    except (OSError, ValueError) as exc:
+        raise LearningError(f"cannot decode EuRoC image {path}: {exc}") from exc
+    tensor = torch.frombuffer(pixels, dtype=torch.uint8).reshape(
+        model_config.image_height_px,
+        model_config.image_width_px,
+    )
+    tensor = tensor.to(dtype=torch.float32).div_(255.0)
+    return tensor.sub_(data_config.image_mean).div_(data_config.image_std)
+
+
+def _normalized_imu_tensor(
+    pair: CausalFramePair,
+    *,
+    data_config: DataConfig,
+    sample_kind: str,
+) -> Tensor:
+    """Normalize one causal IMU window using the shared data contract."""
+
+    imu_rows = [
+        (
+            measurement.angular_velocity_rs_s_rad_s[0] / data_config.gyroscope_scale_rad_s,
+            measurement.angular_velocity_rs_s_rad_s[1] / data_config.gyroscope_scale_rad_s,
+            measurement.angular_velocity_rs_s_rad_s[2] / data_config.gyroscope_scale_rad_s,
+            measurement.linear_acceleration_rs_s_m_s2[0] / data_config.accelerometer_scale_m_s2,
+            measurement.linear_acceleration_rs_s_m_s2[1] / data_config.accelerometer_scale_m_s2,
+            measurement.linear_acceleration_rs_s_m_s2[2] / data_config.accelerometer_scale_m_s2,
+        )
+        for measurement in pair.imu_measurements
+    ]
+    if not imu_rows:
+        raise LearningError(f"{sample_kind} frame pair contains no causal IMU samples")
+    return torch.tensor(imu_rows, dtype=torch.float32)
+
+
 class EuRoCPairDataset:
     """Lazy EuRoC image dataset with eager timestamp/target validation."""
 
@@ -424,22 +507,11 @@ class EuRoCPairDataset:
         return len(self._records)
 
     def _image_tensor(self, path: Path) -> Tensor:
-        try:
-            with Image.open(path) as image:
-                grayscale = image.convert("L")
-                resized = grayscale.resize(
-                    (self.model_config.image_width_px, self.model_config.image_height_px),
-                    resample=Image.Resampling.BILINEAR,
-                )
-                pixels = bytearray(resized.tobytes())
-        except (OSError, ValueError) as exc:
-            raise LearningError(f"cannot decode EuRoC image {path}: {exc}") from exc
-        tensor = torch.frombuffer(pixels, dtype=torch.uint8).reshape(
-            self.model_config.image_height_px,
-            self.model_config.image_width_px,
+        return _normalized_image_tensor(
+            path,
+            model_config=self.model_config,
+            data_config=self.data_config,
         )
-        tensor = tensor.to(dtype=torch.float32).div_(255.0)
-        return tensor.sub_(self.data_config.image_mean).div_(self.data_config.image_std)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         if type(index) is not int:
@@ -453,22 +525,6 @@ class EuRoCPairDataset:
         if pair.previous_ground_truth is None or pair.current_ground_truth is None:
             raise LearningError("internal supervised pair is missing ground truth")
         target = relative_motion_target(pair.previous_ground_truth, pair.current_ground_truth)
-        imu_rows = [
-            (
-                measurement.angular_velocity_rs_s_rad_s[0] / self.data_config.gyroscope_scale_rad_s,
-                measurement.angular_velocity_rs_s_rad_s[1] / self.data_config.gyroscope_scale_rad_s,
-                measurement.angular_velocity_rs_s_rad_s[2] / self.data_config.gyroscope_scale_rad_s,
-                measurement.linear_acceleration_rs_s_m_s2[0]
-                / self.data_config.accelerometer_scale_m_s2,
-                measurement.linear_acceleration_rs_s_m_s2[1]
-                / self.data_config.accelerometer_scale_m_s2,
-                measurement.linear_acceleration_rs_s_m_s2[2]
-                / self.data_config.accelerometer_scale_m_s2,
-            )
-            for measurement in pair.imu_measurements
-        ]
-        if not imu_rows:
-            raise LearningError("supervised frame pair contains no causal IMU samples")
         return {
             "frame_pair": torch.stack(
                 (
@@ -476,7 +532,11 @@ class EuRoCPairDataset:
                     self._image_tensor(pair.current_frame.image_path),
                 )
             ),
-            "imu": torch.tensor(imu_rows, dtype=torch.float32),
+            "imu": _normalized_imu_tensor(
+                pair,
+                data_config=self.data_config,
+                sample_kind="supervised",
+            ),
             "delta_time_s": torch.tensor(
                 [(pair.current_frame.timestamp_ns - pair.previous_frame.timestamp_ns) * 1e-9],
                 dtype=torch.float32,
@@ -485,6 +545,93 @@ class EuRoCPairDataset:
                 (*target.translation_previous_m, *target.rotation_vector_rad),
                 dtype=torch.float32,
             ),
+            "identity": SampleIdentity(
+                sequence_id=record.sequence_id,
+                previous_timestamp_ns=pair.previous_frame.timestamp_ns,
+                current_timestamp_ns=pair.current_frame.timestamp_ns,
+            ),
+        }
+
+
+class EuRoCInferencePairDataset:
+    """Native stride-one EuRoC sensor pairs for inference without ground truth.
+
+    ``target_motion`` is an exact-zero structural sentinel required by the
+    existing :class:`VIOBatch` shape. It is never a reference trajectory or a
+    valid accuracy target.
+    """
+
+    target_motion_is_reference = False
+
+    def __init__(
+        self,
+        sequences: Sequence[EuRoCSensorSequence],
+        *,
+        model_config: ModelConfig | None = None,
+        data_config: DataConfig | None = None,
+    ) -> None:
+        if model_config is None:
+            model_config = ModelConfig()
+        if data_config is None:
+            data_config = DataConfig()
+        sequence_tuple = tuple(sequences)
+        if not sequence_tuple or not all(
+            type(item) is EuRoCSensorSequence for item in sequence_tuple
+        ):
+            raise LearningError("sequences must contain at least one EuRoCSensorSequence")
+        sequence_ids = tuple(item.sequence_id for item in sequence_tuple)
+        if len(sequence_ids) != len(set(sequence_ids)):
+            raise LearningError("sequences must not repeat a sequence_id")
+        if not isinstance(model_config, ModelConfig) or not isinstance(data_config, DataConfig):
+            raise LearningError("model_config and data_config have invalid types")
+
+        records: list[_PairRecord] = []
+        for sequence in sequence_tuple:
+            records.extend(_inference_pairs(sequence))
+        self._records = tuple(records)
+        self.model_config = model_config
+        self.data_config = data_config
+        self.frame_strides = (1,)
+        self.sequence_ids = sequence_ids
+
+    def __len__(self) -> int:
+        return len(self._records)
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        if type(index) is not int:
+            raise TypeError("dataset index must be an integer")
+        return self._sample_from_record(self._records[index])
+
+    def _sample_from_record(self, record: _PairRecord) -> dict[str, Any]:
+        pair = record.pair
+        if pair.previous_ground_truth is not None or pair.current_ground_truth is not None:
+            raise LearningError("internal inference pair unexpectedly contains ground truth")
+        return {
+            "frame_pair": torch.stack(
+                (
+                    _normalized_image_tensor(
+                        pair.previous_frame.image_path,
+                        model_config=self.model_config,
+                        data_config=self.data_config,
+                    ),
+                    _normalized_image_tensor(
+                        pair.current_frame.image_path,
+                        model_config=self.model_config,
+                        data_config=self.data_config,
+                    ),
+                )
+            ),
+            "imu": _normalized_imu_tensor(
+                pair,
+                data_config=self.data_config,
+                sample_kind="inference",
+            ),
+            "delta_time_s": torch.tensor(
+                [(pair.current_frame.timestamp_ns - pair.previous_frame.timestamp_ns) * 1e-9],
+                dtype=torch.float32,
+            ),
+            # Structural sentinel only; sensor-only inference has no reference motion.
+            "target_motion": torch.zeros(6, dtype=torch.float32),
             "identity": SampleIdentity(
                 sequence_id=record.sequence_id,
                 previous_timestamp_ns=pair.previous_frame.timestamp_ns,
@@ -581,6 +728,79 @@ class EuRoCSequenceDataset(EuRoCPairDataset):
     @property
     def pair_count(self) -> int:
         """Return the exact number of valid supervised pairs across all chunks."""
+
+        return len(self._records)
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        if type(index) is not int:
+            raise TypeError("dataset index must be an integer")
+        chunk = self._chunks[index]
+        samples = tuple(self._sample_from_record(record) for record in chunk.records)
+        return {
+            "frame_pairs": torch.stack(tuple(sample["frame_pair"] for sample in samples)),
+            "imu": tuple(sample["imu"] for sample in samples),
+            "delta_time_s": torch.stack(tuple(sample["delta_time_s"] for sample in samples)),
+            "target_motion": torch.stack(tuple(sample["target_motion"] for sample in samples)),
+            "identities": tuple(sample["identity"] for sample in samples),
+            "chain_id": chunk.chain_id,
+            "chunk_index": chunk.chunk_index,
+            "chain_start": chunk.chain_start,
+            "chain_end": chunk.chain_end,
+        }
+
+
+class EuRoCInferenceSequenceDataset(EuRoCInferencePairDataset):
+    """Deterministic recurrent inference chunks with one chain per sequence.
+
+    Every native stride-one pair appears exactly once. The final short chunk is
+    retained, and its ``target_motion`` rows remain zero structural sentinels,
+    never reference motion.
+    """
+
+    def __init__(
+        self,
+        sequences: Sequence[EuRoCSensorSequence],
+        *,
+        unroll_pairs: int,
+        model_config: ModelConfig | None = None,
+        data_config: DataConfig | None = None,
+    ) -> None:
+        if type(unroll_pairs) is not int or unroll_pairs <= 0:
+            raise LearningError("unroll_pairs must be a positive integer")
+        super().__init__(
+            sequences,
+            model_config=model_config,
+            data_config=data_config,
+        )
+        self.unroll_pairs = unroll_pairs
+
+        chunks: list[_SequenceChunk] = []
+        for sequence_id in self.sequence_ids:
+            sequence_records = tuple(
+                record for record in self._records if record.sequence_id == sequence_id
+            )
+            chunk_count = math.ceil(len(sequence_records) / unroll_pairs)
+            for chunk_index in range(chunk_count):
+                start = chunk_index * unroll_pairs
+                chunks.append(
+                    _SequenceChunk(
+                        records=sequence_records[start : start + unroll_pairs],
+                        chain_id=sequence_id,
+                        chunk_index=chunk_index,
+                        chain_start=chunk_index == 0,
+                        chain_end=chunk_index == chunk_count - 1,
+                    )
+                )
+        if not chunks:
+            raise LearningError("inference sequence dataset contains no recurrent chunk")
+        self._chunks = tuple(chunks)
+
+    def __len__(self) -> int:
+        return len(self._chunks)
+
+    @property
+    def pair_count(self) -> int:
+        """Return the exact number of sensor pairs across all chunks."""
 
         return len(self._records)
 
@@ -765,6 +985,8 @@ def collate_vio_sequence_batch(samples: Sequence[dict[str, Any]]) -> VIOSequence
 
 
 __all__ = [
+    "EuRoCInferencePairDataset",
+    "EuRoCInferenceSequenceDataset",
     "EuRoCPairDataset",
     "EuRoCSequenceDataset",
     "SampleIdentity",

@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import stat
 import sys
@@ -17,18 +18,34 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from compact_vio.data.euroc import EuRoCDataError, load_euroc_sequence, sha256_file
+from compact_vio.data.euroc import (
+    EuRoCDataError,
+    load_euroc_sensor_sequence,
+    load_euroc_sequence,
+    sha256_file,
+)
+from compact_vio.data.euroc_position import load_euroc_position_reference
 
 _USER_AGENT = "compact-vio-uav/0.1 (research dataset acquisition)"
 _ALLOWED_SENSOR_PATHS = (
     PurePosixPath("mav0/cam0"),
     PurePosixPath("mav0/imu0"),
     PurePosixPath("mav0/state_groundtruth_estimate0"),
+    PurePosixPath("mav0/leica0"),
 )
+_STATE_REFERENCE_PATH = PurePosixPath("mav0/state_groundtruth_estimate0")
+_POSITION_REFERENCE_PATH = PurePosixPath("mav0/leica0")
+_SAFE_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 
 class EuRoCAcquisitionError(RuntimeError):
     """Raised when acquisition cannot preserve the declared archive identity."""
+
+
+def _safe_identifier(value: object, *, field: str) -> str:
+    if type(value) is not str or _SAFE_IDENTIFIER.fullmatch(value) is None or value in (".", ".."):
+        raise EuRoCAcquisitionError(f"{field} must be one safe identifier without path separators")
+    return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,7 +66,13 @@ class ArchivePlan:
         ):
             if type(value) is not str or not value.strip():
                 raise EuRoCAcquisitionError(f"{field} must be a non-empty string")
-        if PurePosixPath(self.filename).name != self.filename or not self.filename.endswith(".zip"):
+        _safe_identifier(self.archive_id, field="archive_id")
+        if (
+            "/" in self.filename
+            or "\\" in self.filename
+            or PurePosixPath(self.filename).name != self.filename
+            or not self.filename.endswith(".zip")
+        ):
             raise EuRoCAcquisitionError("filename must be one .zip basename")
         if not self.url.startswith("https://"):
             raise EuRoCAcquisitionError("archive URL must use HTTPS")
@@ -71,8 +94,8 @@ class ArchivePlan:
             raise EuRoCAcquisitionError("sequences must be a non-empty tuple")
         if len(set(self.sequences)) != len(self.sequences):
             raise EuRoCAcquisitionError("archive sequence identifiers must be unique")
-        if any(type(value) is not str or not value.strip() for value in self.sequences):
-            raise EuRoCAcquisitionError("sequence identifiers must be non-empty strings")
+        for value in self.sequences:
+            _safe_identifier(value, field="sequence identifier")
 
 
 def _exact_dict(value: object, *, field: str) -> dict[str, Any]:
@@ -306,12 +329,18 @@ def extract_sequences(
     destination_root: os.PathLike[str] | str,
     sequences: tuple[str, ...],
 ) -> tuple[dict[str, object], ...]:
-    """Safely extract only cam0, imu0, and ground truth for selected sequences."""
+    """Safely extract cam0/IMU plus supported reference streams.
+
+    The supported reference streams are the full state estimate under
+    ``mav0/state_groundtruth_estimate0`` and the position-only Leica stream
+    under ``mav0/leica0``. Every extracted sequence must contain at least one
+    of them; every stream that is present is validated before publication.
+    """
 
     if type(sequences) is not tuple or not sequences or len(set(sequences)) != len(sequences):
         raise EuRoCAcquisitionError("sequences must be a non-empty unique tuple")
-    if any(type(value) is not str or not value.strip() for value in sequences):
-        raise EuRoCAcquisitionError("sequence identifiers must be non-empty strings")
+    for value in sequences:
+        _safe_identifier(value, field="sequence identifier")
     archive = Path(archive_path)
     destination = Path(destination_root)
     destination.mkdir(parents=True, exist_ok=True)
@@ -387,7 +416,24 @@ def extract_sequences(
                 raise EuRoCAcquisitionError(f"sequence {sequence!r} was not found in archive")
             staged = temporary / sequence
             try:
-                loaded = load_euroc_sequence(staged)
+                sensor_sequence = load_euroc_sensor_sequence(staged)
+                state_reference_root = staged.joinpath(*_STATE_REFERENCE_PATH.parts)
+                position_reference_root = staged.joinpath(*_POSITION_REFERENCE_PATH.parts)
+                has_state_reference = state_reference_root.exists()
+                has_position_reference = position_reference_root.exists()
+                if not has_state_reference and not has_position_reference:
+                    raise EuRoCDataError(
+                        "sequence has no supported reference stream "
+                        "(state_groundtruth_estimate0 or leica0)"
+                    )
+
+                ground_truth_state_count = 0
+                if has_state_reference:
+                    ground_truth_state_count = len(load_euroc_sequence(staged).ground_truth_states)
+
+                position_reference_count = 0
+                if has_position_reference:
+                    position_reference_count = len(load_euroc_position_reference(staged).positions)
             except EuRoCDataError as exc:
                 raise EuRoCAcquisitionError(
                     f"extracted sequence {sequence!r} failed validation: {exc}"
@@ -395,9 +441,10 @@ def extract_sequences(
             reports.append(
                 {
                     "sequence_id": sequence,
-                    "camera_frame_count": len(loaded.camera_frames),
-                    "imu_measurement_count": len(loaded.imu_measurements),
-                    "ground_truth_state_count": len(loaded.ground_truth_states),
+                    "camera_frame_count": len(sensor_sequence.camera_frames),
+                    "imu_measurement_count": len(sensor_sequence.imu_measurements),
+                    "ground_truth_state_count": ground_truth_state_count,
+                    "position_reference_count": position_reference_count,
                     "extracted_file_count": extracted_files[sequence],
                 }
             )

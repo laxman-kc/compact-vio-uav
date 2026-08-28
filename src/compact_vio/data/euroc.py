@@ -190,6 +190,18 @@ class EuRoCSequence:
 
 
 @dataclass(frozen=True, slots=True)
+class EuRoCSensorSequence:
+    """Validated EuRoC camera and IMU streams without a ground-truth contract."""
+
+    sequence_id: str
+    root: Path
+    camera_calibration: CameraCalibration
+    imu_calibration: ImuCalibration
+    camera_frames: tuple[CameraFrame, ...]
+    imu_measurements: tuple[ImuMeasurement, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class CausalFramePair:
     """Consecutive frames plus exactly the IMU samples in ``(previous, current]``."""
 
@@ -602,9 +614,7 @@ def _required_directory(root: Path, relative: PurePosixPath) -> Path:
     return path.resolve(strict=True)
 
 
-def load_euroc_sequence(sequence_root: os.PathLike[str] | str) -> EuRoCSequence:
-    """Load and fully validate one exact EuRoC ASL-format sequence root."""
-
+def _validated_sequence_root(sequence_root: os.PathLike[str] | str) -> Path:
     supplied_root = Path(sequence_root)
     try:
         root = supplied_root.resolve(strict=True)
@@ -614,6 +624,35 @@ def load_euroc_sequence(sequence_root: os.PathLike[str] | str) -> EuRoCSequence:
         raise EuRoCDataError(f"EuRoC sequence root is not a directory: {root}")
     if not root.name.strip():
         raise EuRoCDataError("EuRoC sequence root must have a non-empty directory name")
+    return root
+
+
+def load_euroc_sensor_sequence(
+    sequence_root: os.PathLike[str] | str,
+) -> EuRoCSensorSequence:
+    """Load one exact EuRoC cam0/IMU stream without requiring ground truth."""
+
+    root = _validated_sequence_root(sequence_root)
+    camera_csv = _required_file(root, _CAMERA_CSV)
+    camera_data = _required_directory(root, _CAMERA_DATA)
+    camera_yaml = _required_file(root, _CAMERA_YAML)
+    imu_csv = _required_file(root, _IMU_CSV)
+    imu_yaml = _required_file(root, _IMU_YAML)
+
+    return EuRoCSensorSequence(
+        sequence_id=root.name,
+        root=root,
+        camera_calibration=_load_camera_calibration(camera_yaml),
+        imu_calibration=_load_imu_calibration(imu_yaml),
+        camera_frames=_load_camera_frames(camera_csv, camera_data),
+        imu_measurements=_load_imu(imu_csv),
+    )
+
+
+def load_euroc_sequence(sequence_root: os.PathLike[str] | str) -> EuRoCSequence:
+    """Load and fully validate one exact EuRoC ASL-format sequence root."""
+
+    root = _validated_sequence_root(sequence_root)
 
     camera_csv = _required_file(root, _CAMERA_CSV)
     camera_data = _required_directory(root, _CAMERA_DATA)
@@ -776,6 +815,46 @@ def iter_causal_frame_pairs(
         )
 
 
+def iter_causal_sensor_frame_pairs(
+    sequence: EuRoCSensorSequence,
+    *,
+    frame_stride: int = 1,
+    require_imu: bool = True,
+) -> Iterable[CausalFramePair]:
+    """Yield fixed-stride sensor pairs with IMU in ``(previous, current]``.
+
+    No timestamp conversion or resampling is performed. Both ground-truth
+    fields are always ``None`` because this sequence type has no ground-truth
+    contract.
+    """
+
+    if type(sequence) is not EuRoCSensorSequence:
+        raise EuRoCDataError("sequence must be an EuRoCSensorSequence")
+    if type(frame_stride) is not int or frame_stride <= 0:
+        raise EuRoCDataError("frame_stride must be a positive integer")
+    if type(require_imu) is not bool:
+        raise EuRoCDataError("require_imu must be boolean")
+    imu_timestamps = tuple(item.timestamp_ns for item in sequence.imu_measurements)
+    for index in range(len(sequence.camera_frames) - frame_stride):
+        previous = sequence.camera_frames[index]
+        current = sequence.camera_frames[index + frame_stride]
+        start = bisect.bisect_right(imu_timestamps, previous.timestamp_ns)
+        end = bisect.bisect_right(imu_timestamps, current.timestamp_ns)
+        window = sequence.imu_measurements[start:end]
+        if require_imu and not window:
+            raise EuRoCDataError(
+                "no IMU measurement in causal interval "
+                f"({previous.timestamp_ns}, {current.timestamp_ns}]"
+            )
+        yield CausalFramePair(
+            previous_frame=previous,
+            current_frame=current,
+            imu_measurements=window,
+            previous_ground_truth=None,
+            current_ground_truth=None,
+        )
+
+
 def _sequence_ids(values: Iterable[str], *, split: str) -> tuple[str, ...]:
     if isinstance(values, str):
         raise EuRoCDataError(f"{split} split must be an iterable of sequence identifiers")
@@ -904,13 +983,7 @@ def calibration_sources_sha256(sequence_root: os.PathLike[str] | str) -> str:
     )
 
 
-def sequence_sources_sha256(sequence_root: os.PathLike[str] | str) -> str:
-    """Hash every source byte consumed by the V1 cam0/IMU/GT adapter.
-
-    The inventory includes calibration, sensor CSV files, and every cam0 image.
-    It intentionally excludes unused cam1 and ROS-bag data.
-    """
-
+def _camera_image_sources(sequence_root: os.PathLike[str] | str) -> tuple[PurePosixPath, ...]:
     root = Path(sequence_root).resolve(strict=True)
     camera_data = root.joinpath(*_CAMERA_DATA.parts)
     if not camera_data.is_dir() or camera_data.is_symlink():
@@ -921,19 +994,50 @@ def sequence_sources_sha256(sequence_root: os.PathLike[str] | str) -> str:
         raise EuRoCDataError(f"cannot enumerate camera data {camera_data}: {exc}") from exc
     if not image_names:
         raise EuRoCDataError("camera data directory must not be empty")
-    relative_paths: list[PurePosixPath] = [
+    relative_paths: list[PurePosixPath] = []
+    for name in image_names:
+        if PurePosixPath(name).name != name:
+            raise EuRoCDataError(f"camera data contains a non-canonical basename: {name!r}")
+        relative_paths.append(_CAMERA_DATA / name)
+    return tuple(relative_paths)
+
+
+def sensor_calibration_sources_sha256(sequence_root: os.PathLike[str] | str) -> str:
+    """Hash the exact cam0 and IMU calibration source files."""
+
+    return source_files_sha256(sequence_root, (_CAMERA_YAML, _IMU_YAML))
+
+
+def sensor_sequence_sources_sha256(sequence_root: os.PathLike[str] | str) -> str:
+    """Hash every source byte consumed by the sensor-only EuRoC adapter."""
+
+    relative_paths = [
+        _CAMERA_CSV,
+        _CAMERA_YAML,
+        _IMU_CSV,
+        _IMU_YAML,
+        *_camera_image_sources(sequence_root),
+    ]
+    return source_files_sha256(sequence_root, relative_paths)
+
+
+def sequence_sources_sha256(sequence_root: os.PathLike[str] | str) -> str:
+    """Hash every source byte consumed by the V1 cam0/IMU/GT adapter.
+
+    The inventory includes calibration, sensor CSV files, and every cam0 image.
+    It intentionally excludes unused cam1 and ROS-bag data.
+    """
+
+    relative_paths = [
         _CAMERA_CSV,
         _CAMERA_YAML,
         _IMU_CSV,
         _IMU_YAML,
         _GROUND_TRUTH_CSV,
         _GROUND_TRUTH_YAML,
+        *_camera_image_sources(sequence_root),
     ]
-    for name in image_names:
-        if PurePosixPath(name).name != name:
-            raise EuRoCDataError(f"camera data contains a non-canonical basename: {name!r}")
-        relative_paths.append(_CAMERA_DATA / name)
-    return source_files_sha256(root, relative_paths)
+    return source_files_sha256(sequence_root, relative_paths)
 
 
 __all__ = [
@@ -943,6 +1047,7 @@ __all__ = [
     "EuRoCDataError",
     "EuRoCDependencyError",
     "EuRoCSequence",
+    "EuRoCSensorSequence",
     "GroundTruthCalibration",
     "GroundTruthState",
     "ImuCalibration",
@@ -951,7 +1056,11 @@ __all__ = [
     "calibration_sources_sha256",
     "interpolate_ground_truth",
     "iter_causal_frame_pairs",
+    "iter_causal_sensor_frame_pairs",
+    "load_euroc_sensor_sequence",
     "load_euroc_sequence",
+    "sensor_calibration_sources_sha256",
+    "sensor_sequence_sources_sha256",
     "sha256_file",
     "sequence_sources_sha256",
     "source_files_sha256",
