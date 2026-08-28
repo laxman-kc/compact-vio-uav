@@ -31,6 +31,7 @@ from compact_vio.evaluation.se3 import (
     RelativePoseIncrement,
     Se3EvaluationError,
     evaluate_relative_pose_sequence,
+    zero_motion_baseline,
 )
 from compact_vio.learning.config import TrainingConfig
 from compact_vio.learning.errors import LearningDependencyError, LearningError
@@ -60,6 +61,7 @@ class RunSpec:
     split_sha256: str
     dataset_doi: str
     training: TrainingConfig
+    training_frame_strides: tuple[int, ...]
     splits: SequenceSplits
     integration_only: tuple[str, ...]
     archives: tuple[ArchiveIdentity, ...]
@@ -246,6 +248,13 @@ def load_run_spec(config_path: os.PathLike[str] | str) -> RunSpec:
     config = supplied.resolve()
     document = _read_json(config, field="experiment config")
     training = TrainingConfig.from_mapping(document)
+    sampling = document.get("sampling")
+    if type(sampling) is not dict:
+        raise LearningError("sampling must be a JSON object")
+    if "frame_strides" in sampling:
+        training_frame_strides = tuple(sampling["frame_strides"])
+    else:
+        training_frame_strides = (sampling.get("frame_stride"),)
     experiment_id = _text(document.get("experiment_id"), field="experiment_id")
     split_declared = _text(document.get("split_manifest"), field="split_manifest")
     split_path = _resolve_declared_path(config, split_declared)
@@ -258,6 +267,7 @@ def load_run_spec(config_path: os.PathLike[str] | str) -> RunSpec:
         split_sha256=sha256_file(split_path),
         dataset_doi=doi,
         training=training,
+        training_frame_strides=training_frame_strides,  # type: ignore[arg-type]
         splits=splits,
         integration_only=integration_only,
         archives=archives,
@@ -385,6 +395,34 @@ def _runtime_training_config(config: TrainingConfig, *, smoke: bool) -> Training
     return replace(config, epochs=_SMOKE_EPOCHS) if smoke else config
 
 
+def _bounded_subset_indices(sample_count: int, maximum_samples: int) -> tuple[int, ...]:
+    """Select a deterministic, sequence-wide smoke subset without prefix bias."""
+
+    if type(sample_count) is not int or sample_count <= 0:
+        raise LearningError("sample_count must be a positive integer")
+    if type(maximum_samples) is not int or maximum_samples <= 0:
+        raise LearningError("maximum_samples must be a positive integer")
+    if sample_count <= maximum_samples:
+        return tuple(range(sample_count))
+    if maximum_samples == 1:
+        return (0,)
+    return tuple(
+        index * (sample_count - 1) // (maximum_samples - 1) for index in range(maximum_samples)
+    )
+
+
+def _empirical_percentile(values: Sequence[float], percentile: float) -> float:
+    """Return a nearest-rank percentile for a nonempty finite sample."""
+
+    if not values or any(type(value) is not float or not math.isfinite(value) for value in values):
+        raise LearningError("percentile values must be nonempty finite floats")
+    if type(percentile) is not float or not 0.0 <= percentile <= 1.0:
+        raise LearningError("percentile must be a float in [0, 1]")
+    ordered = sorted(values)
+    rank = max(1, math.ceil(percentile * len(ordered)))
+    return ordered[rank - 1]
+
+
 def _write_predictions_and_metrics(
     *,
     model: Any,
@@ -397,6 +435,7 @@ def _write_predictions_and_metrics(
     collate: Any,
     predict: Any,
     subset_type: Any,
+    torch_module: Any,
     maximum_samples: int | None = None,
 ) -> dict[str, object]:
     sequence_results: dict[str, object] = {}
@@ -406,9 +445,19 @@ def _write_predictions_and_metrics(
         raise LearningError(f"cannot create predictions artifact {output_path}: {exc}") from exc
     with output_handle:
         for sequence in sequences:
-            dataset = dataset_type((sequence,), model_config=config.model, data_config=config.data)
+            dataset = dataset_type(
+                (sequence,),
+                model_config=config.model,
+                data_config=config.data,
+                frame_strides=(1,),
+            )
+            eligible_pair_count = len(dataset)
             if maximum_samples is not None:
-                dataset = subset_type(dataset, range(min(maximum_samples, len(dataset))))
+                dataset = subset_type(
+                    dataset,
+                    _bounded_subset_indices(len(dataset), maximum_samples),
+                )
+            selected_pair_count = len(dataset)
             loader = data_loader_type(
                 dataset,
                 batch_size=config.batch_size,
@@ -420,11 +469,22 @@ def _write_predictions_and_metrics(
             )
             reference: list[RelativePoseIncrement] = []
             predicted: list[RelativePoseIncrement] = []
+            batch_latencies_seconds: list[float] = []
             translation_squared_error = 0.0
             rotation_squared_error = 0.0
             sample_count = 0
+            model.zero_grad(set_to_none=True)
+            if device.type == "cuda":
+                torch_module.cuda.empty_cache()
+                torch_module.cuda.reset_peak_memory_stats(device)
             for batch in loader:
+                if device.type == "cuda":
+                    torch_module.cuda.synchronize(device)
+                inference_started = time.perf_counter()
                 prediction = predict(model, batch, device=device).motion_vectors
+                if device.type == "cuda":
+                    torch_module.cuda.synchronize(device)
+                batch_latencies_seconds.append(time.perf_counter() - inference_started)
                 truth = batch.target_motion.detach().to(device="cpu")
                 error = prediction - truth
                 translation_squared_error += float(error[:, :3].square().sum())
@@ -476,10 +536,43 @@ def _write_predictions_and_metrics(
             if sample_count <= 0:
                 raise LearningError(f"test sequence {sequence.sequence_id!r} yielded no samples")
             metrics = evaluate_relative_pose_sequence(tuple(reference), tuple(predicted))
+            zero_metrics = zero_motion_baseline(tuple(reference))
+            inference_seconds = math.fsum(batch_latencies_seconds)
             sequence_results[sequence.sequence_id] = {
                 "pair_translation_rmse_m": math.sqrt(translation_squared_error / sample_count),
                 "pair_rotation_rmse_rad": math.sqrt(rotation_squared_error / sample_count),
                 "se3": asdict(metrics),
+                "zero_motion_se3": asdict(zero_metrics),
+                "coverage": {
+                    "eligible_pair_count": eligible_pair_count,
+                    "selected_pair_count": selected_pair_count,
+                    "produced_pair_count": sample_count,
+                    "produced_fraction_of_selected": sample_count / selected_pair_count,
+                },
+                "inference": {
+                    "scope": (
+                        "predict-batch-model-placement-eval-host-to-device-forward-"
+                        "and-device-to-host"
+                    ),
+                    "dedicated_warmup_batch_count": 0,
+                    "batch_count": len(batch_latencies_seconds),
+                    "total_seconds": inference_seconds,
+                    "pairs_per_second": sample_count / inference_seconds,
+                    "batch_latency_p50_ms": 1000.0
+                    * _empirical_percentile(batch_latencies_seconds, 0.5),
+                    "batch_latency_p95_ms": 1000.0
+                    * _empirical_percentile(batch_latencies_seconds, 0.95),
+                    "cuda_peak_allocated_bytes": (
+                        torch_module.cuda.max_memory_allocated(device)
+                        if device.type == "cuda"
+                        else None
+                    ),
+                    "cuda_peak_reserved_bytes": (
+                        torch_module.cuda.max_memory_reserved(device)
+                        if device.type == "cuda"
+                        else None
+                    ),
+                },
             }
         try:
             output_handle.flush()
@@ -522,18 +615,25 @@ def _run(args: argparse.Namespace) -> int:
 
     dataset = EuRoCPairDataset
     train_dataset = dataset(
-        train_sequences, model_config=runtime_config.model, data_config=runtime_config.data
+        train_sequences,
+        model_config=runtime_config.model,
+        data_config=runtime_config.data,
+        frame_strides=spec.training_frame_strides,
     )
     validation_dataset = dataset(
         validation_sequences,
         model_config=runtime_config.model,
         data_config=runtime_config.data,
+        frame_strides=spec.training_frame_strides,
     )
     if args.smoke:
-        train_dataset = Subset(train_dataset, range(min(_SMOKE_TRAIN_SAMPLES, len(train_dataset))))
+        train_dataset = Subset(
+            train_dataset,
+            _bounded_subset_indices(len(train_dataset), _SMOKE_TRAIN_SAMPLES),
+        )
         validation_dataset = Subset(
             validation_dataset,
-            range(min(_SMOKE_EVALUATION_SAMPLES, len(validation_dataset))),
+            _bounded_subset_indices(len(validation_dataset), _SMOKE_EVALUATION_SAMPLES),
         )
     generator = torch.Generator()
     generator.manual_seed(runtime_config.seed)
@@ -567,9 +667,10 @@ def _run(args: argparse.Namespace) -> int:
     provenance = CheckpointProvenance.create(
         dataset_id=f"EuRoC DOI {spec.dataset_doi}",
         split_id=(
-            f"{spec.experiment_id}:{spec.split_sha256}:smoke"
-            if args.smoke
-            else f"{spec.experiment_id}:{spec.split_sha256}:full"
+            f"{spec.experiment_id}:config={spec.config_sha256}:"
+            f"split={spec.split_sha256}:"
+            f"strides={','.join(str(stride) for stride in spec.training_frame_strides)}:"
+            f"mode={'smoke' if args.smoke else 'full'}"
         ),
         train_sequence_ids=spec.splits.train,
         validation_sequence_ids=spec.splits.validation,
@@ -621,6 +722,7 @@ def _run(args: argparse.Namespace) -> int:
         collate=collate_vio_batch,
         predict=predict_batch,
         subset_type=Subset,
+        torch_module=torch,
         maximum_samples=_SMOKE_EVALUATION_SAMPLES if args.smoke else None,
     )
     test_metrics_path = output / "test-metrics.json"
@@ -631,6 +733,7 @@ def _run(args: argparse.Namespace) -> int:
         "status": "completed",
         "experiment_id": spec.experiment_id,
         "execution_mode": "smoke" if args.smoke else "full",
+        "training_frame_strides": list(spec.training_frame_strides),
         "runtime_config": runtime_config.to_dict(),
         "started_at": started_at,
         "completed_at": _utc_now(),

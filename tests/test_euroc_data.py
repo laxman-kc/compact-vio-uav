@@ -248,6 +248,17 @@ class EuRoCDataTests(unittest.TestCase):
             self.assertEqual(pairs[0].current_ground_truth.timestamp_ns, 200)
             self.assertEqual(pairs[0].current_ground_truth.position_rs_r_m, (1.0, 2.0, 3.0))
 
+            stride_two = tuple(iter_causal_frame_pairs(sequence, frame_stride=2))
+            self.assertEqual(len(stride_two), 1)
+            self.assertEqual(stride_two[0].previous_frame.timestamp_ns, 100)
+            self.assertEqual(stride_two[0].current_frame.timestamp_ns, 300)
+            self.assertEqual(
+                tuple(item.timestamp_ns for item in stride_two[0].imu_measurements),
+                (150, 200, 250, 300),
+            )
+            with self.assertRaisesRegex(EuRoCDataError, "frame_stride"):
+                tuple(iter_causal_frame_pairs(sequence, frame_stride=0))
+
     def test_frame_pairs_can_omit_ground_truth_but_never_invent_imu(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             fixture = EuRoCFixture(directory)

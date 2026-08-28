@@ -8,6 +8,7 @@ from compact_vio.evaluation.se3 import (
     Se3EvaluationError,
     evaluate_relative_pose_sequence,
     rotation_vector_to_matrix,
+    zero_motion_baseline,
 )
 
 
@@ -22,6 +23,20 @@ def _increment(
 
 
 class Se3EvaluationTests(unittest.TestCase):
+    def test_zero_motion_baseline_preserves_reference_scope(self) -> None:
+        reference = (
+            _increment("a", 0, 1, (1.0, 0.0, 0.0)),
+            _increment("b", 1, 2, (1.0, 0.0, 0.0)),
+        )
+
+        baseline = zero_motion_baseline(reference)
+
+        self.assertEqual(baseline.sequence_id, "V2_03_difficult")
+        self.assertEqual(baseline.pair_count, 2)
+        self.assertEqual(baseline.predicted_path_length_m, 0.0)
+        self.assertEqual(baseline.reference_path_length_m, 2.0)
+        self.assertEqual(baseline.relative_translation_rmse_m, 1.0)
+
     def test_perfect_sequence_is_zero(self) -> None:
         reference = (
             _increment("a", 0, 1, (1.0, 0.0, 0.0)),

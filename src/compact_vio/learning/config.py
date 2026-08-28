@@ -241,14 +241,28 @@ class TrainingConfig:
             },
             field="optimization",
         )
-        sampling = _exact_mapping(
-            value["sampling"],
-            {"frame_stride", "max_pairs_per_sequence"},
-            field="sampling",
-        )
+        sampling_value = value["sampling"]
+        if not isinstance(sampling_value, Mapping):
+            raise LearningError("sampling must be a mapping")
+        if set(sampling_value) == {"frame_stride", "max_pairs_per_sequence"}:
+            sampling = sampling_value
+            if sampling["frame_stride"] != 1:
+                raise LearningError("V1 frame_stride must equal one")
+        elif set(sampling_value) == {"frame_strides", "max_pairs_per_sequence"}:
+            sampling = sampling_value
+            strides = sampling["frame_strides"]
+            if (
+                type(strides) is not list
+                or not strides
+                or any(type(item) is not int or item <= 0 for item in strides)
+                or len(strides) != len(set(strides))
+            ):
+                raise LearningError("frame_strides must contain unique positive integers")
+        else:
+            raise LearningError(
+                "sampling must declare frame_stride or frame_strides plus max_pairs_per_sequence"
+            )
         selection = _exact_mapping(value["selection"], {"metric", "mode"}, field="selection")
-        if sampling["frame_stride"] != 1:
-            raise LearningError("V1 training supports only consecutive frame pairs")
         maximum = sampling["max_pairs_per_sequence"]
         if maximum is not None and (type(maximum) is not int or maximum <= 0):
             raise LearningError("max_pairs_per_sequence must be null or a positive integer")

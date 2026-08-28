@@ -264,6 +264,19 @@ class LearningTorchTests(unittest.TestCase):
             self.assertEqual(batch.imu.shape, (2, 2, 6))
             self.assertEqual(batch.imu_lengths.tolist(), [2, 2])
 
+            augmented = EuRoCPairDataset(
+                (sequence,),
+                model_config=self.model_config,
+                data_config=DataConfig(
+                    gyroscope_scale_rad_s=1.0,
+                    accelerometer_scale_m_s2=1.0,
+                ),
+                frame_strides=(1, 2),
+            )
+            self.assertEqual(len(augmented), 3)
+            self.assertEqual(augmented[2]["imu"].shape, (4, 6))
+            self.assertEqual(augmented[2]["target_motion"][:3].tolist(), [2.0, 0.0, 0.0])
+
     def test_dataset_rejects_mismatched_imu_and_label_transform(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             sequence = load_euroc_sequence(_write_asl_fixture(directory))

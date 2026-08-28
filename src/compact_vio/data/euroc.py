@@ -729,10 +729,11 @@ def interpolate_ground_truth(
 def iter_causal_frame_pairs(
     sequence: EuRoCSequence,
     *,
+    frame_stride: int = 1,
     include_ground_truth: bool = True,
     require_imu: bool = True,
 ) -> Iterable[CausalFramePair]:
-    """Yield consecutive camera pairs with IMU in ``(previous, current]``.
+    """Yield fixed-stride camera pairs with IMU in ``(previous, current]``.
 
     The function performs no resampling and no timestamp conversion. Ground
     truth, when requested, is interpolated independently at both frame times.
@@ -740,10 +741,14 @@ def iter_causal_frame_pairs(
 
     if type(sequence) is not EuRoCSequence:
         raise EuRoCDataError("sequence must be an EuRoCSequence")
+    if type(frame_stride) is not int or frame_stride <= 0:
+        raise EuRoCDataError("frame_stride must be a positive integer")
     if type(include_ground_truth) is not bool or type(require_imu) is not bool:
         raise EuRoCDataError("include_ground_truth and require_imu must be boolean")
     imu_timestamps = tuple(item.timestamp_ns for item in sequence.imu_measurements)
-    for previous, current in zip(sequence.camera_frames, sequence.camera_frames[1:], strict=False):
+    for index in range(len(sequence.camera_frames) - frame_stride):
+        previous = sequence.camera_frames[index]
+        current = sequence.camera_frames[index + frame_stride]
         start = bisect.bisect_right(imu_timestamps, previous.timestamp_ns)
         end = bisect.bisect_right(imu_timestamps, current.timestamp_ns)
         window = sequence.imu_measurements[start:end]

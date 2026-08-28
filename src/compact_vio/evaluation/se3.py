@@ -249,3 +249,34 @@ def evaluate_relative_pose_sequence(
         predicted_path_length_m=float(predicted_length),
         reference_path_length_m=float(reference_length),
     )
+
+
+def zero_motion_baseline(
+    reference: tuple[RelativePoseIncrement, ...],
+) -> SequencePoseMetrics:
+    """Evaluate the exact reference identities against a zero-motion predictor."""
+
+    if type(reference) is not tuple or not reference:
+        raise Se3EvaluationError("reference must be a non-empty exact tuple")
+    zero = tuple(
+        RelativePoseIncrement(
+            sequence_id=item.sequence_id,
+            sample_id=item.sample_id,
+            start_timestamp_ns=item.start_timestamp_ns,
+            end_timestamp_ns=item.end_timestamp_ns,
+            translation_previous_body_m=(0.0, 0.0, 0.0),
+            rotation_vector_previous_to_current_rad=(0.0, 0.0, 0.0),
+        )
+        for item in reference
+    )
+    return evaluate_relative_pose_sequence(reference, zero)
+
+
+__all__ = [
+    "RelativePoseIncrement",
+    "Se3EvaluationError",
+    "SequencePoseMetrics",
+    "evaluate_relative_pose_sequence",
+    "rotation_vector_to_matrix",
+    "zero_motion_baseline",
+]

@@ -6,6 +6,8 @@ import unittest
 from pathlib import Path
 
 from compact_vio.learning.cli import (
+    _bounded_subset_indices,
+    _empirical_percentile,
     _prepare_output_directory,
     _runtime_training_config,
     build_parser,
@@ -15,6 +17,7 @@ from compact_vio.learning.errors import LearningError
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = REPOSITORY_ROOT / "configs/training/euroc_compact_vio_v1.json"
+STRIDE_CONFIG_PATH = REPOSITORY_ROOT / "configs/training/euroc_compact_vio_v2_stride_augmented.json"
 SPLIT_PATH = REPOSITORY_ROOT / "configs/data/euroc_vicon_v1.json"
 
 
@@ -28,6 +31,7 @@ class LearningCliTests(unittest.TestCase):
         self.assertEqual(spec.training.model.image_height_px, 160)
         self.assertEqual(spec.training.data.image_mean, 0.5)
         self.assertEqual(spec.training.data.image_std, 0.25)
+        self.assertEqual(spec.training_frame_strides, (1,))
         self.assertEqual(
             spec.splits.train,
             ("V1_02_medium", "V2_01_easy", "V2_02_medium"),
@@ -39,6 +43,17 @@ class LearningCliTests(unittest.TestCase):
         self.assertEqual(
             spec.archive_sha256_by_sequence()["V2_03_difficult"],
             "6daf2cbc2de9a6bc4e02866c99ed01c29a5c7c164756f06c4f72656192977cfc",
+        )
+
+    def test_stride_augmented_config_retains_v1_model_and_declares_two_strides(self) -> None:
+        baseline = load_run_spec(CONFIG_PATH)
+        augmented = load_run_spec(STRIDE_CONFIG_PATH)
+
+        self.assertEqual(augmented.training, baseline.training)
+        self.assertEqual(augmented.training_frame_strides, (1, 2))
+        self.assertEqual(
+            augmented.experiment_id,
+            "euroc-compact-vio-v2-stride-augmented",
         )
 
     def test_overlapping_integration_and_train_split_is_rejected(self) -> None:
@@ -104,6 +119,19 @@ class LearningCliTests(unittest.TestCase):
         self.assertEqual(smoke.data, declared.data)
         self.assertEqual(smoke.batch_size, declared.batch_size)
         self.assertEqual(_runtime_training_config(declared, smoke=False), declared)
+
+    def test_smoke_subset_is_deterministic_and_spans_the_full_dataset(self) -> None:
+        self.assertEqual(_bounded_subset_indices(5, 10), (0, 1, 2, 3, 4))
+        selected = _bounded_subset_indices(1000, 64)
+        self.assertEqual(len(selected), 64)
+        self.assertEqual(selected[0], 0)
+        self.assertEqual(selected[-1], 999)
+        self.assertEqual(len(set(selected)), len(selected))
+
+    def test_empirical_percentile_uses_nearest_rank(self) -> None:
+        values = (0.04, 0.01, 0.03, 0.02)
+        self.assertEqual(_empirical_percentile(values, 0.5), 0.02)
+        self.assertEqual(_empirical_percentile(values, 0.95), 0.04)
 
 
 if __name__ == "__main__":

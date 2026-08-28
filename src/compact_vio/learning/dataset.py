@@ -142,7 +142,11 @@ class _PairRecord:
     pair: CausalFramePair
 
 
-def _supervised_pairs(sequence: EuRoCSequence) -> tuple[_PairRecord, ...]:
+def _supervised_pairs(
+    sequence: EuRoCSequence,
+    *,
+    frame_strides: tuple[int, ...],
+) -> tuple[_PairRecord, ...]:
     imu_t_bs = sequence.imu_calibration.t_bs
     ground_truth_t_bs = sequence.ground_truth_calibration.t_bs
     if any(
@@ -169,27 +173,32 @@ def _supervised_pairs(sequence: EuRoCSequence) -> tuple[_PairRecord, ...]:
         )
 
     records: list[_PairRecord] = []
-    for pair in iter_causal_frame_pairs(
-        sequence,
-        include_ground_truth=False,
-        require_imu=True,
-    ):
-        if pair.previous_frame.timestamp_ns < first_gt or pair.current_frame.timestamp_ns > last_gt:
-            continue
-        previous_gt = state_at(pair.previous_frame.timestamp_ns)
-        current_gt = state_at(pair.current_frame.timestamp_ns)
-        records.append(
-            _PairRecord(
-                sequence_id=sequence.sequence_id,
-                pair=CausalFramePair(
-                    previous_frame=pair.previous_frame,
-                    current_frame=pair.current_frame,
-                    imu_measurements=pair.imu_measurements,
-                    previous_ground_truth=previous_gt,
-                    current_ground_truth=current_gt,
+    for frame_stride in frame_strides:
+        for pair in iter_causal_frame_pairs(
+            sequence,
+            frame_stride=frame_stride,
+            include_ground_truth=False,
+            require_imu=True,
+        ):
+            if (
+                pair.previous_frame.timestamp_ns < first_gt
+                or pair.current_frame.timestamp_ns > last_gt
+            ):
+                continue
+            previous_gt = state_at(pair.previous_frame.timestamp_ns)
+            current_gt = state_at(pair.current_frame.timestamp_ns)
+            records.append(
+                _PairRecord(
+                    sequence_id=sequence.sequence_id,
+                    pair=CausalFramePair(
+                        previous_frame=pair.previous_frame,
+                        current_frame=pair.current_frame,
+                        imu_measurements=pair.imu_measurements,
+                        previous_ground_truth=previous_gt,
+                        current_ground_truth=current_gt,
+                    ),
                 ),
             )
-        )
     if not records:
         raise LearningError(
             f"sequence {sequence.sequence_id!r} has no causal frame pair "
@@ -207,6 +216,7 @@ class EuRoCPairDataset:
         *,
         model_config: ModelConfig | None = None,
         data_config: DataConfig | None = None,
+        frame_strides: tuple[int, ...] = (1,),
     ) -> None:
         if model_config is None:
             model_config = ModelConfig()
@@ -220,12 +230,22 @@ class EuRoCPairDataset:
             raise LearningError("sequences must not repeat a sequence_id")
         if not isinstance(model_config, ModelConfig) or not isinstance(data_config, DataConfig):
             raise LearningError("model_config and data_config have invalid types")
+        if (
+            type(frame_strides) is not tuple
+            or not frame_strides
+            or any(type(value) is not int or value <= 0 for value in frame_strides)
+            or len(frame_strides) != len(set(frame_strides))
+        ):
+            raise LearningError(
+                "frame_strides must be a non-empty tuple of unique positive integers"
+            )
         records: list[_PairRecord] = []
         for sequence in sequence_tuple:
-            records.extend(_supervised_pairs(sequence))
+            records.extend(_supervised_pairs(sequence, frame_strides=frame_strides))
         self._records = tuple(records)
         self.model_config = model_config
         self.data_config = data_config
+        self.frame_strides = frame_strides
         self.sequence_ids = sequence_ids
 
     def __len__(self) -> int:

@@ -30,6 +30,7 @@ from compact_vio.evaluation.se3 import (
     SequencePoseMetrics,
     evaluate_relative_pose_sequence,
     rotation_vector_to_matrix,
+    zero_motion_baseline,
 )
 from compact_vio.evaluation.translation import (
     EXACT_PAIR_TRANSLATION_RESIDUALS_ID,
@@ -83,5 +84,6 @@ __all__ = [
     "exact_pair_translation_rmse",
     "evaluate_relative_pose_sequence",
     "rotation_vector_to_matrix",
+    "zero_motion_baseline",
     "summarize_output_coverage",
 ]
