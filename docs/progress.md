@@ -655,6 +655,31 @@ result, and explicit remaining blockers.
 - No Brev/A10 command, paid-worker action, model training, stop, deletion, or
   termination occurred.
 
+## 2026-08-27 — M7 recorder lifecycle-policy declaration implemented
+
+- The preceding modular refactor and terminal execution-coverage slice were
+  committed as `2fa6cdc` and pushed to `origin/main` before this slice began.
+- Added the immutable, no-default `ExecutionLifecyclePolicyDeclaration` to the
+  causal recorder boundary. It requires caller-supplied versioned IDs for replay
+  exhaustion, ordinary processing exceptions, process-control exceptions, and
+  the unattempted replay suffix; the recorder and every snapshot retain and
+  structurally revalidate the exact declaration.
+- The declaration records semantic identity only. It does not select a failure
+  taxonomy, threshold, output schedule, completion rule, run-success rule, or
+  scientific acceptance criterion. M7 remains in progress.
+- Migrated the terminal recorder-coverage tests to the typed declaration and
+  added focused no-default, wrong-type, immutability, raw-string, nested-forgery,
+  and active/completed/failed retention controls.
+- Working-tree evidence at this entry: 210 standard-library tests passed;
+  repository policy passed for 80 files; the pinned schema harness passed 9
+  schemas and 7 templates; compileall, Ruff 0.12.12 lint/format, and
+  `git diff --check` passed. The immutable implementation commit and remote
+  push are recorded in the next append-only evidence entry.
+- No dataset or sequence was approved or downloaded. No backend, model,
+  learned weights, framework, threshold, training job, checkpoint, deployment
+  target, or estimator policy meaning was selected. No Brev/A10 command or
+  lifecycle action occurred.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

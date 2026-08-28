@@ -237,7 +237,11 @@ session and batch validation, and leaves later events unconsumed after a
 failure. Its structurally frozen in-memory snapshot retains the complete event
 plan, watermark, successful batches, first failed event and exception type,
 whether session delivery/reset transition occurred, replay counts, and reset
-generation.
+generation. The recorder requires and retains an immutable
+`ExecutionLifecyclePolicyDeclaration`: five caller-supplied versioned IDs name
+the recorder's replay-exhaustion, processing-exception, process-control-
+exception, and unattempted-suffix semantics. The declaration chooses no values,
+failure taxonomy, threshold, output schedule, or scientific-success rule.
 Generic payload objects are not deep-copied, and the snapshot is not persistent
 run evidence. The recorder does not infer expected output opportunities,
 missing-output reasons, estimator success, or scientific run acceptance.

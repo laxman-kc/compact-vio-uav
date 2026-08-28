@@ -509,11 +509,17 @@ Implemented evaluator slice (not M7 exit evidence by itself):
   in-memory snapshots retain the full event plan, causal watermark, execution
   counts, reset generation, and whether session delivery/reset transition
   occurred for the failed event.
+- The recorder now requires and retains an immutable lifecycle-policy
+  declaration. Its five caller-supplied opaque IDs name only the recorder's
+  existing replay-exhaustion, processing-exception, process-control-exception,
+  and unattempted-suffix semantics; no taxonomy, threshold, output schedule, or
+  scientific-success value is selected.
 - The recorder does not define expected opportunities, infer missing outputs or
   failure causes, prove adapter-internal reset/sample use, or establish
-  scientific run success. Persistent full-run traces and complete
-  lifecycle/failure-policy evidence remain open; generic payload objects are not
-  deep-copied by the in-memory snapshot.
+  scientific run success. Persistent full-run traces, accepted meanings for the
+  declared lifecycle-policy IDs, complete failure classification, and scientific
+  acceptance evidence remain open; generic payload objects are not deep-copied
+  by the in-memory snapshot.
 - A terminal execution-coverage bridge now binds caller-declared outcomes to the
   complete recorder plan. Every successfully recorded output ordinal is bound
   exactly once; explicit missing slots may reference the failed event and

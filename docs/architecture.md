@@ -309,9 +309,12 @@ creates one terminal failure record for the consumed event and leaves later
 events unconsumed; process-control exceptions also terminalize the recorder
 before being re-raised. Structurally frozen in-memory snapshots retain the full
 event plan, causal watermark, delivery/reset progress, and execution counts,
-but generic payloads are not deep-copied and no persistent trace format exists
-yet. This proves only the recorder-observed envelope path: it does not prove
-adapter-internal sample use
+plus an immutable lifecycle-policy declaration. That declaration contains only
+required opaque IDs for the recorder's existing replay-exhaustion, processing-
+exception, process-control-exception, and unattempted-suffix behavior; it does
+not select a taxonomy, threshold, schedule, or success rule. Generic payloads
+are not deep-copied and no persistent trace format exists yet. This proves only
+the recorder-observed envelope path: it does not prove adapter-internal sample use
 or reset behavior, define output opportunities, classify missing/failure causes,
 or establish scientific run success.
 

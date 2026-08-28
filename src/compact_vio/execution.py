@@ -48,6 +48,32 @@ class RecorderState(Enum):
 
 
 @dataclass(frozen=True, slots=True)
+class ExecutionLifecyclePolicyDeclaration:
+    """Names policies for the recorder's observable lifecycle behavior.
+
+    These opaque identifiers do not select a failure taxonomy, threshold,
+    output schedule, or scientific success rule. They only make the policies
+    governing behavior already exposed by ``CausalEstimatorRecorder`` explicit.
+    """
+
+    policy_id: str
+    replay_exhaustion_semantics_id: str
+    processing_exception_semantics_id: str
+    process_control_exception_semantics_id: str
+    unattempted_suffix_semantics_id: str
+
+    def __post_init__(self) -> None:
+        for field in (
+            "policy_id",
+            "replay_exhaustion_semantics_id",
+            "processing_exception_semantics_id",
+            "process_control_exception_semantics_id",
+            "unattempted_suffix_semantics_id",
+        ):
+            _require_non_empty_text(getattr(self, field), field=field)
+
+
+@dataclass(frozen=True, slots=True)
 class RecorderFailure:
     """First consumed event whose release, delivery, validation, or retention failed."""
 
@@ -83,7 +109,7 @@ class RecorderSnapshot:
     """Structurally frozen in-memory snapshot from one recorder."""
 
     trace_id: str
-    execution_policy_id: str
+    execution_policy: ExecutionLifecyclePolicyDeclaration
     clock_id: str
     planned_events: tuple[ReplayEvent[object], ...]
     state: RecorderState
@@ -97,8 +123,18 @@ class RecorderSnapshot:
     session_reset_generation: int
 
     def __post_init__(self) -> None:
-        for field in ("trace_id", "execution_policy_id", "clock_id"):
+        for field in ("trace_id", "clock_id"):
             _require_non_empty_text(getattr(self, field), field=field)
+        if type(self.execution_policy) is not ExecutionLifecyclePolicyDeclaration:
+            raise ExecutionRecorderError(
+                "execution_policy must be an ExecutionLifecyclePolicyDeclaration"
+            )
+        try:
+            replace(self.execution_policy)
+        except Exception as error:
+            raise ExecutionRecorderError(
+                f"execution_policy violates ExecutionLifecyclePolicyDeclaration: {error}"
+            ) from error
         if type(self.planned_events) is not tuple or not all(
             type(event) is ReplayEvent for event in self.planned_events
         ):
@@ -201,6 +237,12 @@ class RecorderSnapshot:
                 "an active snapshot must not leave an eligible planned event unattempted"
             )
 
+    @property
+    def execution_policy_id(self) -> str:
+        """Compatibility view of the retained declaration identity."""
+
+        return self.execution_policy.policy_id
+
 
 class CausalEstimatorRecorder(Generic[InputT, OutputT]):
     """Record one fresh causal replay/session pair without prefetching events."""
@@ -214,10 +256,19 @@ class CausalEstimatorRecorder(Generic[InputT, OutputT]):
         convention: OutputConvention,
         interface: EstimatorInterfaceDeclaration | None = None,
         trace_id: str,
-        execution_policy_id: str,
+        execution_policy: ExecutionLifecyclePolicyDeclaration,
     ) -> None:
         _require_non_empty_text(trace_id, field="trace_id")
-        _require_non_empty_text(execution_policy_id, field="execution_policy_id")
+        if type(execution_policy) is not ExecutionLifecyclePolicyDeclaration:
+            raise ExecutionRecorderError(
+                "execution_policy must be an ExecutionLifecyclePolicyDeclaration"
+            )
+        try:
+            replace(execution_policy)
+        except Exception as error:
+            raise ExecutionRecorderError(
+                f"execution_policy violates ExecutionLifecyclePolicyDeclaration: {error}"
+            ) from error
         try:
             planned_events = tuple(events)
         except TypeError as error:
@@ -231,7 +282,7 @@ class CausalEstimatorRecorder(Generic[InputT, OutputT]):
         )
         self._planned_events = planned_events
         self._trace_id = trace_id
-        self._execution_policy_id = execution_policy_id
+        self._execution_policy = execution_policy
         self._batches: list[EventOutputBatch] = []
         self._failure: RecorderFailure | None = None
         self._processing = False
@@ -280,7 +331,7 @@ class CausalEstimatorRecorder(Generic[InputT, OutputT]):
         )
         return RecorderSnapshot(
             trace_id=self._trace_id,
-            execution_policy_id=self._execution_policy_id,
+            execution_policy=self._execution_policy,
             clock_id=self._replay.clock_id,
             planned_events=self._planned_events,
             state=state,
@@ -384,6 +435,7 @@ class CausalEstimatorRecorder(Generic[InputT, OutputT]):
 
 __all__ = [
     "CausalEstimatorRecorder",
+    "ExecutionLifecyclePolicyDeclaration",
     "ExecutionRecorderError",
     "RecorderFailure",
     "RecorderSnapshot",

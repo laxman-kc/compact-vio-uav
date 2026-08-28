@@ -147,8 +147,10 @@ The following must be decided through ADRs before dependent implementation:
   constructed, fresh, clock-matched replay/session pair**, with one-event
   release, no retained partially validated batch, first-failure retention,
   later-suffix preservation, and structurally frozen in-memory plan/watermark/
-  count snapshots with delivery/reset progress. Persistent full-run traces,
-  expected-opportunity creation, complete lifecycle/failure policy,
+  count snapshots with delivery/reset progress. A required immutable declaration
+  now retains caller-supplied IDs for the recorder's existing lifecycle
+  behavior. Persistent full-run traces, accepted meanings for those policy IDs,
+  expected-opportunity creation, complete failure classification,
   adapter-internal proof, and scientific success criteria: **TBD**.
 - Artifact vault, independent backup, retention capacity, and spending ceiling: **TBD**.
 - Control boundary: **PX4 retains stabilization, failsafes, and motor control**;

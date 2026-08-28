@@ -19,6 +19,7 @@ from compact_vio.evaluation import (
 )
 from compact_vio.execution import (
     CausalEstimatorRecorder,
+    ExecutionLifecyclePolicyDeclaration,
     RecorderSnapshot,
     RecorderState,
 )
@@ -33,6 +34,14 @@ CONVENTION = OutputConvention(
     rotation_representation="synthetic-rotation",
     rotation_unit="synthetic-rotation-unit",
     health_schema_id="synthetic-health-v1",
+)
+
+EXECUTION_POLICY = ExecutionLifecyclePolicyDeclaration(
+    policy_id="synthetic-recorded-coverage-policy-v1",
+    replay_exhaustion_semantics_id="synthetic-replay-exhaustion-v1",
+    processing_exception_semantics_id="synthetic-processing-exception-v1",
+    process_control_exception_semantics_id="synthetic-process-control-exception-v1",
+    unattempted_suffix_semantics_id="synthetic-unattempted-suffix-v1",
 )
 
 
@@ -99,7 +108,7 @@ def _snapshot(
         clock_id="synthetic-clock",
         convention=CONVENTION,
         trace_id="synthetic-recorded-coverage-trace-v1",
-        execution_policy_id="synthetic-recorded-coverage-policy-v1",
+        execution_policy=EXECUTION_POLICY,
     )
     return recorder.record_to(watermark_ns)
 

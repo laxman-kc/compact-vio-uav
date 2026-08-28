@@ -4,7 +4,7 @@ import inspect
 import sys
 import unittest
 from collections.abc import Callable
-from dataclasses import FrozenInstanceError, replace
+from dataclasses import FrozenInstanceError, fields, replace
 
 from compact_vio.estimator import (
     EstimatorOutput,
@@ -20,6 +20,7 @@ from compact_vio.evaluation import (
 )
 from compact_vio.execution import (
     CausalEstimatorRecorder,
+    ExecutionLifecyclePolicyDeclaration,
     ExecutionRecorderError,
     RecorderState,
 )
@@ -34,6 +35,14 @@ CONVENTION = OutputConvention(
     rotation_representation="synthetic-rotation",
     rotation_unit="synthetic-rotation-unit",
     health_schema_id="synthetic-health-v1",
+)
+
+EXECUTION_POLICY = ExecutionLifecyclePolicyDeclaration(
+    policy_id="synthetic-execution-policy-v1",
+    replay_exhaustion_semantics_id="synthetic-replay-exhaustion-v1",
+    processing_exception_semantics_id="synthetic-processing-exception-v1",
+    process_control_exception_semantics_id="synthetic-process-control-exception-v1",
+    unattempted_suffix_semantics_id="synthetic-unattempted-suffix-v1",
 )
 
 
@@ -105,8 +114,49 @@ def _recorder(
         clock_id="synthetic-clock",
         convention=CONVENTION,
         trace_id="synthetic-execution-trace-v1",
-        execution_policy_id="synthetic-execution-policy-v1",
+        execution_policy=EXECUTION_POLICY,
     )
+
+
+class ExecutionLifecyclePolicyDeclarationTests(unittest.TestCase):
+    def _values(self) -> dict[str, object]:
+        return {
+            "policy_id": "synthetic-execution-policy-v1",
+            "replay_exhaustion_semantics_id": "synthetic-replay-exhaustion-v1",
+            "processing_exception_semantics_id": "synthetic-processing-exception-v1",
+            "process_control_exception_semantics_id": ("synthetic-process-control-exception-v1"),
+            "unattempted_suffix_semantics_id": "synthetic-unattempted-suffix-v1",
+        }
+
+    def _declaration(self, **updates: object) -> ExecutionLifecyclePolicyDeclaration:
+        values = self._values()
+        values.update(updates)
+        return ExecutionLifecyclePolicyDeclaration(**values)  # type: ignore[arg-type]
+
+    def test_every_identifier_is_explicit_nonblank_exact_text(self) -> None:
+        class TextSubclass(str):
+            pass
+
+        for field in self._values():
+            for value in (" ", 1, TextSubclass("synthetic")):
+                with self.subTest(field=field, value=value):
+                    with self.assertRaisesRegex(ExecutionRecorderError, field):
+                        self._declaration(**{field: value})
+
+    def test_declaration_is_immutable_and_has_no_policy_defaults(self) -> None:
+        declaration = self._declaration()
+
+        self.assertFalse(hasattr(declaration, "__dict__"))
+        self.assertTrue(
+            all(
+                parameter.default is inspect.Parameter.empty
+                for parameter in inspect.signature(
+                    ExecutionLifecyclePolicyDeclaration
+                ).parameters.values()
+            )
+        )
+        with self.assertRaises(FrozenInstanceError):
+            declaration.policy_id = "changed"  # type: ignore[misc]
 
 
 class CausalEstimatorRecorderTests(unittest.TestCase):
@@ -115,6 +165,8 @@ class CausalEstimatorRecorderTests(unittest.TestCase):
 
         snapshot = recorder.snapshot()
 
+        self.assertIs(snapshot.execution_policy, EXECUTION_POLICY)
+        self.assertEqual(snapshot.execution_policy_id, EXECUTION_POLICY.policy_id)
         self.assertEqual(snapshot.state, RecorderState.COMPLETED)
         self.assertIsNone(snapshot.watermark_ns)
         self.assertEqual(snapshot.batches, ())
@@ -164,6 +216,9 @@ class CausalEstimatorRecorderTests(unittest.TestCase):
         first = recorder.record_to(10)
         completed = recorder.record_to(20)
 
+        self.assertIs(before_due.execution_policy, EXECUTION_POLICY)
+        self.assertIs(first.execution_policy, EXECUTION_POLICY)
+        self.assertIs(completed.execution_policy, EXECUTION_POLICY)
         self.assertEqual(before_due.state, RecorderState.ACTIVE)
         self.assertEqual(before_due.watermark_ns, 9)
         self.assertEqual(before_due.batches, ())
@@ -232,6 +287,7 @@ class CausalEstimatorRecorderTests(unittest.TestCase):
 
         snapshot = recorder.record_to(100)
 
+        self.assertIs(snapshot.execution_policy, EXECUTION_POLICY)
         self.assertEqual(snapshot.state, RecorderState.FAILED)
         self.assertEqual(tuple(batch.event for batch in snapshot.batches), (events[0],))
         self.assertIs(snapshot.failure.event, events[1])
@@ -509,7 +565,7 @@ class CausalEstimatorRecorderTests(unittest.TestCase):
             clock_id="synthetic-clock",
             convention=CONVENTION,
             trace_id="trace",
-            execution_policy_id="policy",
+            execution_policy=EXECUTION_POLICY,
         )
         self.assertIs(recorder.snapshot().planned_events[0], event)
 
@@ -520,7 +576,7 @@ class CausalEstimatorRecorderTests(unittest.TestCase):
                 clock_id="synthetic-clock",
                 convention=CONVENTION,
                 trace_id="trace",
-                execution_policy_id="policy",
+                execution_policy=EXECUTION_POLICY,
             )
 
         with self.assertRaisesRegex(ExecutionRecorderError, "events must be an iterable"):
@@ -530,21 +586,66 @@ class CausalEstimatorRecorderTests(unittest.TestCase):
                 clock_id="synthetic-clock",
                 convention=CONVENTION,
                 trace_id="trace",
-                execution_policy_id="policy",
+                execution_policy=EXECUTION_POLICY,
             )
 
-        for field, value in (("trace_id", " "), ("execution_policy_id", " ")):
-            values = {"trace_id": "trace", "execution_policy_id": "policy"}
-            values[field] = value
-            with self.subTest(field=field):
-                with self.assertRaisesRegex(ExecutionRecorderError, field):
-                    CausalEstimatorRecorder(
-                        (event,),
-                        estimator,
-                        clock_id="synthetic-clock",
-                        convention=CONVENTION,
-                        **values,
-                    )
+        with self.assertRaisesRegex(ExecutionRecorderError, "trace_id"):
+            CausalEstimatorRecorder(
+                (event,),
+                estimator,
+                clock_id="synthetic-clock",
+                convention=CONVENTION,
+                trace_id=" ",
+                execution_policy=EXECUTION_POLICY,
+            )
+        with self.assertRaisesRegex(
+            ExecutionRecorderError,
+            "ExecutionLifecyclePolicyDeclaration",
+        ):
+            CausalEstimatorRecorder(
+                (event,),
+                estimator,
+                clock_id="synthetic-clock",
+                convention=CONVENTION,
+                trace_id="trace",
+                execution_policy="raw-policy-id",  # type: ignore[arg-type]
+            )
+
+    def test_constructor_and_snapshot_revalidate_forged_nested_policy(self) -> None:
+        forged = object.__new__(ExecutionLifecyclePolicyDeclaration)
+        for field in fields(EXECUTION_POLICY):
+            object.__setattr__(
+                forged,
+                field.name,
+                " "
+                if field.name == "processing_exception_semantics_id"
+                else getattr(
+                    EXECUTION_POLICY,
+                    field.name,
+                ),
+            )
+
+        event = _event(1)
+        estimator = _FunctionEstimator(lambda _: ())
+        with self.assertRaisesRegex(
+            ExecutionRecorderError,
+            "processing_exception_semantics_id",
+        ):
+            CausalEstimatorRecorder(
+                (event,),
+                estimator,
+                clock_id="synthetic-clock",
+                convention=CONVENTION,
+                trace_id="trace",
+                execution_policy=forged,
+            )
+
+        snapshot = _recorder((), estimator).snapshot()
+        with self.assertRaisesRegex(
+            ExecutionRecorderError,
+            "processing_exception_semantics_id",
+        ):
+            replace(snapshot, execution_policy=forged)
 
     def test_snapshot_rejects_forged_counts_state_and_identity(self) -> None:
         recorder = _recorder((), _FunctionEstimator(lambda _: ()))
