@@ -29,12 +29,13 @@ a time/cost bound, and disposable outputs. M2 gates important or extended paid
 GPU work and irreplaceable retained artifacts; it is not a global
 implementation gate.
 
-An inventoried A10 was authorized for the bounded training-first run executed
-on 2026-08-28 from pushed commit
-`9199d1507a2a76c522ca265afd8527ef9bd07225`. The run record, checkpoint, and
-held-out outputs were copied and checksum-verified; the worker was intentionally
-left running. That dated state and authorization do not carry forward. A future
-paid-worker run still requires current inventory and its own bounded record.
+An inventoried A10 was authorized for the bounded training-first run at pushed
+commit `9199d1507a2a76c522ca265afd8527ef9bd07225` and the exploratory
+stride-augmented follow-up at commit `92aa329`, both executed on 2026-08-28.
+Their records, checkpoints, and outputs were copied and checksum-verified; the
+worker was intentionally left running. That dated state and authorization do
+not carry forward. A future paid-worker run still requires current inventory
+and its own bounded record.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -135,8 +136,8 @@ configuration and must not be invented in documentation.
 | M5 | Reproducible execution environments | In progress | Local path active; worker tasks require fresh inventory and authorization |
 | M6 | EuRoC development ingestion and split | Complete | Versioned split/acquisition plan, official archive identity, extracted-source hashes, and focused tests |
 | M7 | Common causal replay and evaluator | In progress | Raw real-data SE(3) slice executed; common lifecycle/coverage exit remains |
-| M8 | Compact model and bounded training | Complete | A10 smoke, 30-epoch bounded run, and checksum-verified checkpoint |
-| M9 | Held-out prototype inference and evaluation | In progress | Held-out raw evaluation executed; baseline, runtime/coverage, and model-quality work remain |
+| M8 | Compact model and bounded training | Complete | A10 smoke, two bounded 30-epoch runs, and checksum-verified checkpoints |
+| M9 | Held-out prototype inference and evaluation | In progress | Exploratory baseline/runtime/coverage evidence exists; fresh evaluation and model quality remain |
 | M10 | Later baselines, reliability ablations, and failure atlas | Conditional | Reproducible M9 prototype evidence and a separately frozen ablation protocol |
 | M11 | Confirmatory final-test execution and scientific selection | Blocked | Reproducible candidate set, sealed untouched membership, and frozen confirmatory protocol |
 | M12 | Conditional export, exact-target benchmark, and deployable selection | Blocked | M11; authorized provisional sensor/target choices |
@@ -608,6 +609,14 @@ selected epoch 7 using 2,093 validation pairs, and retained checkpoint SHA-256
 The tracker-independent bundle was copied locally and its checkpoint and
 manifest hashes were verified against the worker copies.
 
+Exploratory follow-up evidence: commit `92aa329` trained the unchanged model with
+frame strides 1 and 2 for 30 epochs, using 12,431 training and 4,185 validation
+pairs. The 422.111738068-second A10 run selected epoch 28 and retained
+checkpoint SHA-256
+`17698fbf70862bf1aae17925081b0baf536d2c5b84fa6dcaea7b69926e3c3605`.
+This follow-up remains development evidence because the v1 `V2_03_difficult`
+outcome informed the augmentation choice.
+
 ## M9 — Held-out prototype inference and evaluation
 
 Status: In progress.
@@ -615,13 +624,23 @@ Status: In progress.
 Dependencies: M6 held-out development membership, M7 evaluator/lifecycle
 semantics, and a restorable M8 checkpoint.
 
-Observed 2026-08-28 slice: checkpoint-only inference and raw, no-alignment
+Initial 2026-08-28 slice: checkpoint-only inference and raw, no-alignment
 exact-pair SE(3) integration completed for all 1,889 `V2_03_difficult` pairs.
 Pair RMSE was 0.0537358 m translation and 0.0201182 rad rotation; raw trajectory
-ATE was 6.62533 m and final translation drift was 6.82426 m. This is not M9 exit
-evidence: a zero-motion reference has lower raw ATE (2.05572 m), and versioned
-baseline reporting, inference latency/memory, complete coverage/failure
-accounting, and model-quality improvement remain.
+ATE was 6.62533 m and final translation drift was 6.82426 m.
+
+The exploratory stride-augmented repeat produced all 1,889 of 1,889 native
+stride-1 pairs and added a declared inference benchmark plus zero-motion
+reference. It improved pair RMSE to 0.0499361 m and 0.00516903 rad and raw ATE
+and drift to 6.33804 m and 6.23185 m, respectively. Its raw ATE nevertheless
+remained worse than the 2.05572 m zero-motion result. The benchmark reported
+5,482.75 pairs/s, 8.215/14.078 ms batch p50/p95, and CUDA peak allocated/reserved
+memory of 267,884,544/322,961,408 bytes for its explicitly recorded scope; it
+used no dedicated warmup.
+
+This is not fresh M9 exit evidence because `V2_03_difficult` informed the
+augmentation. A fresh development evaluation, common M7 lifecycle/failure
+evidence, and a model-quality improvement that resolves trajectory drift remain.
 
 Required work:
 

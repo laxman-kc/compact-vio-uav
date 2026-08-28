@@ -36,10 +36,17 @@ not yet competitive with a zero-motion reference, so this is evidence that the
 pipeline works end to end—not a completed estimator, superiority, deployable
 runtime, or flight-readiness claim.
 
-The A10 run artifacts were checksum-verified after copying to ignored local path
-`outputs/euroc-compact-vio-v1-full-9199d15`. The worker remains running by
-explicit choice and has not been stopped or terminated. Worker storage is never
-treated as durable.
+An exploratory follow-up at commit `92aa329` augmented training with frame
+strides 1 and 2 while retaining native stride-1 evaluation. It improved the v1
+pair errors and raw trajectory errors, but its 6.33804 m raw ATE remained worse
+than the 2.05572 m zero-motion reference. Because the earlier
+`V2_03_difficult` result informed this augmentation, the repeat is a development
+diagnostic—not fresh held-out confirmation or a quality/superiority claim.
+
+Both A10 result bundles were checksum-verified after copying to ignored local
+paths, including `outputs/euroc-compact-vio-v2-stride-full-92aa329`. The worker
+remains running by explicit choice and has not been stopped or terminated.
+Worker storage is never treated as durable.
 
 The project follows these invariants:
 

@@ -884,6 +884,47 @@ result, and explicit remaining blockers.
   was intentionally left running; no stop, deletion, or termination action was
   taken.
 
+## 2026-08-28 — Exploratory stride-augmented v2 run completed on the A10
+
+- Commit `92aa3294002a9da5861961a314fe74e2bb1ada05` added a versioned
+  exploratory configuration with training frame strides 1 and 2. The model and
+  native stride-1 evaluation path were otherwise retained. The full A10 run
+  completed in 422.111738068 seconds, used 12,431 training pairs and 4,185
+  validation pairs, and selected epoch 28.
+- Native stride-1 evaluation produced all 1,889 of 1,889 eligible/selected
+  `V2_03_difficult` pairs. Pair RMSE was 0.0499360933 m translation and
+  0.00516902818 rad rotation. Raw exact-pair, no-alignment evaluation reported
+  6.33804218 m translation ATE, 6.23185397 m final translation drift, and
+  54.9195732 m predicted path length versus 85.9893305 m reference path length,
+  a predicted/reference ratio of 0.6386789.
+- The recorded zero-motion reference had 0.0564645414 m pair translation RMSE,
+  0.0482671721 rad pair rotation RMSE, 2.05571752 m raw translation ATE, and
+  2.22648942 m final translation drift. Relative to v1, v2 reduced overall pair
+  translation RMSE by 7.071%, pair rotation RMSE by 74.307%, raw ATE by 4.336%,
+  and final drift by 8.681%. In the pair-interval diagnostic, 0.05-second
+  translation worsened by 1.442% while rotation improved by 45.313%; at 0.10
+  seconds, translation improved by 13.517% and rotation by 80.834%.
+- The inference measurement covered exactly
+  `predict-batch-model-placement-eval-host-to-device-forward-and-device-to-host`.
+  It reported 5,482.75 pairs/s, batch-latency p50/p95 of 8.215/14.078 ms, CUDA
+  peak allocated memory of 267,884,544 bytes, and peak reserved memory of
+  322,961,408 bytes. No dedicated warmup batch was run, so this is an
+  exploratory worker measurement, not a target-runtime benchmark.
+- The retained checkpoint SHA-256 is
+  `17698fbf70862bf1aae17925081b0baf536d2c5b84fa6dcaea7b69926e3c3605`; the
+  artifact-manifest SHA-256 is
+  `fb0e04398af590e3ca2d708bc7bcae74ed8afc7834a6b9b329677fe869d998c8`.
+  The bundle is present at worker path
+  `/home/ubuntu/compact-vio-runs/euroc-compact-vio-v2-stride-full-92aa329` and
+  ignored local path `outputs/euroc-compact-vio-v2-stride-full-92aa329`.
+- This run is exploratory, not a fresh held-out or confirmatory result: the v1
+  `V2_03_difficult` outcome informed the stride augmentation. Although v2
+  improved every overall learned metric, raw ATE and drift remain substantially
+  worse than zero motion. No model-quality, superiority, deployment,
+  onboard-runtime, or flight claim is supported. M7 and M9 remain in progress.
+  The worker remains running; no stop, deletion, or termination action was
+  taken.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
