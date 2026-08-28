@@ -43,10 +43,21 @@ than the 2.05572 m zero-motion reference. Because the earlier
 `V2_03_difficult` result informed this augmentation, the repeat is a development
 diagnostic—not fresh held-out confirmation or a quality/superiority claim.
 
-Both A10 result bundles were checksum-verified after copying to ignored local
-paths, including `outputs/euroc-compact-vio-v2-stride-full-92aa329`. The worker
-remains running by explicit choice and has not been stopped or terminated.
-Worker storage is never treated as durable.
+A second exploratory follow-up at commit
+`336e88c7e80f6841c7d25b7da311172b40f5a3ba` added an eight-pair causal
+recurrent training unroll and carried state only within the contiguous
+held-out sequence. Relative to v2, it lowered pair translation RMSE by 1.783%,
+raw ATE by 20.539%, and final drift by 3.745%, but rotation RMSE increased by
+84.151% and the predicted/reference path ratio moved from 0.638679 to 0.553645.
+Its 5.03625 m raw ATE still remained worse than the 2.05572 m zero-motion
+reference. This is mixed exploratory evidence, not a superiority,
+generalization, deployment, or flight-readiness result.
+
+All three A10 result bundles were copied to ignored local paths and
+checksum-verified against the worker copies, including
+`outputs/euroc-compact-vio-v3-stateful-full-336e88c`. The worker remains
+running by explicit choice and has not been stopped or terminated. Worker
+storage is never treated as durable.
 
 The project follows these invariants:
 

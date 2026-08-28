@@ -31,11 +31,13 @@ implementation gate.
 
 An inventoried A10 was authorized for the bounded training-first run at pushed
 commit `9199d1507a2a76c522ca265afd8527ef9bd07225` and the exploratory
-stride-augmented follow-up at commit `92aa329`, both executed on 2026-08-28.
-Their records, checkpoints, and outputs were copied and checksum-verified; the
-worker was intentionally left running. That dated state and authorization do
-not carry forward. A future paid-worker run still requires current inventory
-and its own bounded record.
+stride-augmented follow-up at commit
+`92aa3294002a9da5861961a314fe74e2bb1ada05`. A second exploratory follow-up at
+commit `336e88c7e80f6841c7d25b7da311172b40f5a3ba` added causal recurrent unroll.
+All three runs executed on 2026-08-28. Their records, checkpoints, and outputs
+were copied and checksum-verified; the worker was intentionally left running.
+That dated state and authorization do not carry forward. A future paid-worker
+run still requires current inventory and its own bounded record.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -136,7 +138,7 @@ configuration and must not be invented in documentation.
 | M5 | Reproducible execution environments | In progress | Local path active; worker tasks require fresh inventory and authorization |
 | M6 | EuRoC development ingestion and split | Complete | Versioned split/acquisition plan, official archive identity, extracted-source hashes, and focused tests |
 | M7 | Common causal replay and evaluator | In progress | Raw real-data SE(3) slice executed; common lifecycle/coverage exit remains |
-| M8 | Compact model and bounded training | Complete | A10 smoke, two bounded 30-epoch runs, and checksum-verified checkpoints |
+| M8 | Compact model and bounded training | Complete | A10 smoke, three bounded 30-epoch runs, and checksum-verified checkpoints |
 | M9 | Held-out prototype inference and evaluation | In progress | Exploratory baseline/runtime/coverage evidence exists; fresh evaluation and model quality remain |
 | M10 | Later baselines, reliability ablations, and failure atlas | Conditional | Reproducible M9 prototype evidence and a separately frozen ablation protocol |
 | M11 | Confirmatory final-test execution and scientific selection | Blocked | Reproducible candidate set, sealed untouched membership, and frozen confirmatory protocol |
@@ -617,6 +619,20 @@ checkpoint SHA-256
 This follow-up remains development evidence because the v1 `V2_03_difficult`
 outcome informed the augmentation choice.
 
+Stateful exploratory follow-up evidence: commit
+`336e88c7e80f6841c7d25b7da311172b40f5a3ba` retained the v2 architecture,
+strides, loss, seed, and 30-epoch schedule while training eight-pair causal
+unrolls and carrying state only across contiguous evaluation chunks. It used
+12,431 training and 4,185 validation pairs, completed in 443.290710302 seconds,
+and selected epoch 26. The selected validation result was 0.0524894 m
+translation RMSE, 0.0100985 rad rotation RMSE, and 0.000476186 total loss. The
+retained checkpoint SHA-256 is
+`40d18a9a3a04131d04e06a4ab313279613d1dc2339d1758f99777ecb70de8c37`.
+The independently matching worker/local artifact-manifest SHA-256 is
+`4244c8841eb3498b150628c3c8126efbf6af90d544c85c9e22e9a79f4e15801f`.
+Because earlier `V2_03_difficult` outcomes motivated this change, it remains
+development evidence rather than fresh held-out confirmation.
+
 ## M9 — Held-out prototype inference and evaluation
 
 Status: In progress.
@@ -641,6 +657,15 @@ used no dedicated warmup.
 This is not fresh M9 exit evidence because `V2_03_difficult` informed the
 augmentation. A fresh development evaluation, common M7 lifecycle/failure
 evidence, and a model-quality improvement that resolves trajectory drift remain.
+
+The stateful exploratory repeat also produced all 1,889 native stride-1 pairs,
+with one declared state reset for the complete contiguous sequence. Relative
+to v2, pair translation RMSE decreased by 1.783% to 0.0490458 m, raw ATE
+decreased by 20.539% to 5.03625 m, and final drift decreased by 3.745% to
+5.99849 m. Pair rotation RMSE increased by 84.151% to 0.00951883 rad, however,
+and the predicted/reference path ratio moved farther from 1.0, from 0.638679
+to 0.553645. Zero motion still had lower raw ATE and drift. The result is mixed
+and does not close M9 or support a superiority/generalization claim.
 
 Required work:
 

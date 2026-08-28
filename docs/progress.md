@@ -925,6 +925,56 @@ result, and explicit remaining blockers.
   The worker remains running; no stop, deletion, or termination action was
   taken.
 
+## 2026-08-28 — Exploratory stateful v3 run completed on the A10
+
+- Commit `336e88c7e80f6841c7d25b7da311172b40f5a3ba` added eight-pair causal
+  recurrent training unroll, explicit state input/output, and state carry only
+  across contiguous chunks of the same evaluation chain. GitHub Actions
+  [run 33146072746](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33146072746)
+  succeeded, and all 273 tests passed on the A10 with PyTorch installed.
+- The full deterministic AMP run completed 30 epochs in 443.290710302 seconds,
+  used 12,431 training pairs and 4,185 validation pairs, and selected epoch 26.
+  Its selected validation result was 0.0524893811 m translation RMSE,
+  0.0100984845 rad rotation RMSE, and 0.000476185769 total loss.
+- Native stride-1 evaluation produced all 1,889 of 1,889 eligible, selected,
+  and produced `V2_03_difficult` pairs. The evaluation used 128-pair chunks,
+  carried state only across contiguous same-chain chunks, and recorded one
+  state reset for the complete sequence.
+- Pair RMSE was 0.0490458270 m translation and 0.00951882642 rad rotation. Raw
+  exact-pair, no-alignment evaluation reported 5.03624842 m translation ATE,
+  5.99848752 m final translation drift, and 47.6075271 m predicted path length
+  versus 85.9893305 m reference path length, a ratio of 0.553644584.
+- Relative to v2, v3 reduced overall pair translation RMSE by 1.782811%, raw
+  ATE by 20.539367%, and final drift by 3.744736%. Pair rotation RMSE worsened
+  by 84.151181%, and the path ratio moved farther from 1.0. For the 1,482
+  approximately 0.05-second pairs, translation improved by 3.910307% and
+  rotation worsened by 81.751270%; for the 407 exact 0.10-second pairs,
+  translation worsened by 0.220455% and rotation worsened by 86.573980%.
+- The zero-motion control remained better on integrated trajectory measures:
+  2.05571752 m raw ATE and 2.22648942 m final drift. V3 remained better than
+  zero motion on local pair translation and rotation RMSE. The stateful result
+  is therefore mixed rather than an across-the-board improvement.
+- The declared inference scope was
+  `predict-sequence-batch-model-placement-eval-host-to-device-forward-and-device-to-host`.
+  Across 15 batches it reported 1,732.648988 pairs/s, 1.090238 seconds total,
+  batch-latency p50/p95 of 67.417437/151.718379 ms, and CUDA peak
+  allocated/reserved memory of 456,700,928/543,162,368 bytes. No dedicated
+  warmup batch was run; this remains an A10 worker measurement, not an
+  embedded-target benchmark.
+- The retained checkpoint SHA-256 is
+  `40d18a9a3a04131d04e06a4ab313279613d1dc2339d1758f99777ecb70de8c37`.
+  The artifact-manifest SHA-256 is
+  `4244c8841eb3498b150628c3c8126efbf6af90d544c85c9e22e9a79f4e15801f`,
+  independently identical for worker path
+  `/home/ubuntu/compact-vio-runs/euroc-compact-vio-v3-stateful-full-336e88c`
+  and ignored local path
+  `outputs/euroc-compact-vio-v3-stateful-full-336e88c`.
+- Earlier `V2_03_difficult` evidence motivated recurrent unroll, so this is
+  exploratory development evidence, not fresh held-out confirmation. It makes
+  no superiority, generalization, deployment, onboard-resource, safety, or
+  flight-readiness claim. M7 and M9 remain in progress. The worker remains
+  running; no stop, deletion, or termination action was taken.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
