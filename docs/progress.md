@@ -822,6 +822,18 @@ result, and explicit remaining blockers.
   threshold, or training action was selected. No Brev/A10, paid-worker,
   lifecycle, deletion, or termination action occurred.
 
+## 2026-08-27 — Dataset candidate brief verified remotely
+
+- Candidate-screening commit
+  `cdb5cff36df5585c88cfdaf4c7786fe30e2fea52` was pushed to `origin/main`.
+- GitHub Actions CI passed for Python 3.10 and 3.12 in
+  [run 33139733430](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33139733430).
+- The remote checks compiled, built, and installed the package; exercised the
+  command-line tools; ran the unit suite; checked scratch exclusions; ran Ruff;
+  and validated schemas and contract fixtures.
+- No dataset approval, acquisition, download, inspection, role/split assignment,
+  training, GPU, paid-worker, or lifecycle action was part of the CI run.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
