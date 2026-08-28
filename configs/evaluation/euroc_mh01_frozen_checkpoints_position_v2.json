@@ -1,0 +1,123 @@
+{
+  "record_type": "euroc_position_only_checkpoint_evaluation",
+  "schema_version": "2.0.0",
+  "evaluation_id": "euroc-mh01-frozen-checkpoints-position-v2",
+  "dataset": {
+    "doi": "10.3929/ethz-b-000690084",
+    "rights_statement": "In Copyright - Non-Commercial Use Permitted",
+    "sequence_id": "MH_01_easy",
+    "archive_filename": "machine_hall.zip",
+    "archive_size_bytes": 12683729426,
+    "archive_md5": "363f5c2502b469cdd97ef85997714806",
+    "archive_sha256": "5ed7d07903f8d19b6c8808e2ae8a0872b281f6e34ef5497023b8ac58c3de0f6f",
+    "sensor_sources_sha256": "10dd5e711a8c063c16b65d2fe69baa979e8b39299bcaaf5643c5683f27a6977f",
+    "sensor_calibration_sha256": "966b51d7ecd4086f0c7f8ccb6644d8d66447f5eb703c4398c3bf0bde10f16085",
+    "position_reference_sha256": "5ff4628faea7594c21668f6e31b9e92718ce844902da225b2727acc880742ee0"
+  },
+  "sampling": {
+    "frame_stride": 1,
+    "evaluation_unroll_pairs": 128,
+    "max_reference_bracket_interval_ns": 100000000,
+    "prediction_origin_id": "imu0",
+    "reference_origin_id": "leica0",
+    "sensor_origin_projection_policy_id": "imu-to-leica-origin/from-native-t-bs/r-il-equals-r-bi-transpose-times-p-bl-minus-p-bi/delta-l-equals-t-i-plus-r-rel-r-il-minus-r-il/v1",
+    "reference_association_policy_id": "linear-within-leica-coverage/max-bracket-100ms/all-native-pairs-both-endpoints-valid/no-extrapolation/v1"
+  },
+  "metric_policy_id": "sensor-point-displacement-magnitude/exact-preassociated-position-pairs/predicted-rotation-and-declared-lever-arm/no-reference-orientation/preassociated-input/no-internal-interpolation/no-alignment/no-scale-fitting/v1",
+  "decision_rule_id": "full-sensor-and-reference-coverage/beat-zero-pair-rmse/minimum-pair-displacement-magnitude-rmse/no-tie-break/v1",
+  "candidates": [
+    {
+      "candidate_id": "v2",
+      "checkpoint_sha256": "17698fbf70862bf1aae17925081b0baf536d2c5b84fa6dcaea7b69926e3c3605",
+      "inference_policy_id": "independent-zero-state-per-pair/v1",
+      "checkpoint_provenance": {
+        "code_revision": "92aa3294002a9da5861961a314fe74e2bb1ada05",
+        "split_id": "euroc-compact-vio-v2-stride-augmented:config=88792b038687442f5707dfa72fde12c5a05473aa0236dc4281543df85565cba4:split=96d609aca0877b8b37f78498df01cf28f66ba9458a7b9849c1e8cad035b789a0:strides=1,2:mode=full",
+        "train_sequence_ids": [
+          "V1_02_medium",
+          "V2_01_easy",
+          "V2_02_medium"
+        ],
+        "validation_sequence_ids": [
+          "V1_03_difficult"
+        ],
+        "source_sha256": {
+          "V1_02_medium": "d273aa1a8bff0288bd7fd1a0491926bb2f17c48cb9fce4acf87632c73a150236",
+          "V1_03_difficult": "4ae0b0df1cffb38b77fe7418cb3c508cb9ce68e00bdd6d7963535e8dafac0009",
+          "V2_01_easy": "25eda368bbbd2126e4ee579221d0c62343d2684d1eb6ab5f9c1139e3ca49294b",
+          "V2_02_medium": "a387cc1d25929a8f180fdc22ba6101725aa4b2812352eb35490149c4cbac9235",
+          "V2_03_difficult": "4db6f13f464bb342af669e9b9fc3a494afec656bdd72a89824293c55ec83ab78"
+        },
+        "calibration_sha256": {
+          "V1_02_medium": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V1_03_difficult": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V2_01_easy": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V2_02_medium": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V2_03_difficult": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883"
+        }
+      }
+    },
+    {
+      "candidate_id": "v3",
+      "checkpoint_sha256": "40d18a9a3a04131d04e06a4ab313279613d1dc2339d1758f99777ecb70de8c37",
+      "inference_policy_id": "stateful-contiguous-native-pairs/v1",
+      "checkpoint_provenance": {
+        "code_revision": "336e88c7e80f6841c7d25b7da311172b40f5a3ba",
+        "split_id": "euroc-compact-vio-v3-stateful:config=5f95e1a6b9e2958d81b15ecd0d063712f1497d63273ac5e22aa59b1a742ea431:split=96d609aca0877b8b37f78498df01cf28f66ba9458a7b9849c1e8cad035b789a0:strides=1,2:unroll=8:mode=full",
+        "train_sequence_ids": [
+          "V1_02_medium",
+          "V2_01_easy",
+          "V2_02_medium"
+        ],
+        "validation_sequence_ids": [
+          "V1_03_difficult"
+        ],
+        "source_sha256": {
+          "V1_02_medium": "d273aa1a8bff0288bd7fd1a0491926bb2f17c48cb9fce4acf87632c73a150236",
+          "V1_03_difficult": "4ae0b0df1cffb38b77fe7418cb3c508cb9ce68e00bdd6d7963535e8dafac0009",
+          "V2_01_easy": "25eda368bbbd2126e4ee579221d0c62343d2684d1eb6ab5f9c1139e3ca49294b",
+          "V2_02_medium": "a387cc1d25929a8f180fdc22ba6101725aa4b2812352eb35490149c4cbac9235",
+          "V2_03_difficult": "4db6f13f464bb342af669e9b9fc3a494afec656bdd72a89824293c55ec83ab78"
+        },
+        "calibration_sha256": {
+          "V1_02_medium": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V1_03_difficult": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V2_01_easy": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V2_02_medium": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V2_03_difficult": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883"
+        }
+      }
+    },
+    {
+      "candidate_id": "v4",
+      "checkpoint_sha256": "e775adb16aa4f9522aa577a32704a54db5c82c53685b0e97fb8d149402bf159d",
+      "inference_policy_id": "stateful-contiguous-native-pairs/v1",
+      "checkpoint_provenance": {
+        "code_revision": "94d834a82bddb2e6185fb70ec289fd45017c325c",
+        "split_id": "euroc-compact-vio-v4-translation-state:config=ca8d95e9502383897e78b81274dc375b219a7b29cad0e42c71ac8c5bdc0ce85a:split=96d609aca0877b8b37f78498df01cf28f66ba9458a7b9849c1e8cad035b789a0:strides=1,2:unroll=8:rotation-state-source=current-pair-zero-initialized-fusion-state/v1:mode=full",
+        "train_sequence_ids": [
+          "V1_02_medium",
+          "V2_01_easy",
+          "V2_02_medium"
+        ],
+        "validation_sequence_ids": [
+          "V1_03_difficult"
+        ],
+        "source_sha256": {
+          "V1_02_medium": "d273aa1a8bff0288bd7fd1a0491926bb2f17c48cb9fce4acf87632c73a150236",
+          "V1_03_difficult": "4ae0b0df1cffb38b77fe7418cb3c508cb9ce68e00bdd6d7963535e8dafac0009",
+          "V2_01_easy": "25eda368bbbd2126e4ee579221d0c62343d2684d1eb6ab5f9c1139e3ca49294b",
+          "V2_02_medium": "a387cc1d25929a8f180fdc22ba6101725aa4b2812352eb35490149c4cbac9235",
+          "V2_03_difficult": "4db6f13f464bb342af669e9b9fc3a494afec656bdd72a89824293c55ec83ab78"
+        },
+        "calibration_sha256": {
+          "V1_02_medium": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V1_03_difficult": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V2_01_easy": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V2_02_medium": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883",
+          "V2_03_difficult": "27522832a03b2ac35415fd397224b82b12d719c391762a2ef5f67fc08b834883"
+        }
+      }
+    }
+  ]
+}

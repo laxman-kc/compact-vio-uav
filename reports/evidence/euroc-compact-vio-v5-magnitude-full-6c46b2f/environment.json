@@ -1,0 +1,32 @@
+{
+  "git": {
+    "repository": "https://github.com/laxman-kc/compact-vio-uav",
+    "commit_sha": "6c46b2f8ef719a7007eef72eebe13b34575aea93",
+    "branch": "main",
+    "dirty": false,
+    "diff_sha256": null
+  },
+  "environment": {
+    "os": "Linux-6.8.0-60-generic-x86_64-with-glibc2.35",
+    "architecture": "x86_64",
+    "fingerprint": "worker-runtime/python3.10.12/torch2.7.0/cuda12.8/driver570.148.08/v1",
+    "container_digest": null,
+    "runtime_versions": {
+      "python": "3.10.12",
+      "torch": "2.7.0",
+      "torch_cuda": "12.8",
+      "cudnn": "90800",
+      "pillow": "12.3.0",
+      "pyyaml": "6.0.3"
+    }
+  },
+  "hardware": {
+    "platform_role": "training_worker",
+    "summary": "Disposable Linux worker with 30 Intel Xeon Platinum 8358 vCPUs and one NVIDIA A10 GPU",
+    "cpu": "30 vCPU; Intel(R) Xeon(R) Platinum 8358 CPU @ 2.60GHz",
+    "gpu": "NVIDIA A10; 23696375808 bytes",
+    "memory_bytes": 238546477056,
+    "driver": "570.148.08",
+    "power_mode": null
+  }
+}

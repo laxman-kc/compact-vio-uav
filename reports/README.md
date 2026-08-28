@@ -18,9 +18,14 @@ its presence is not evidence that a run happened or that a hypothesis passed.
 ## Prospective control records
 
 - [EuRoC compact VIO v5 controlled magnitude-loss experiment](euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md)
+  — retained as the rule frozen before execution; see the rejected outcome
+  below.
 
 ## Reviewed reports
 
+- [EuRoC compact VIO v5 controlled magnitude-loss result](euroc-compact-vio-v5-magnitude-result-2026-08-28.md)
+  ([visual summary](assets/v5-magnitude-result.svg); [governed run-record
+  mirror](evidence/euroc-compact-vio-v5-magnitude-full-6c46b2f/README.md))
 - [EuRoC MH_01 frozen position-only evaluation](euroc-mh01-frozen-position-evaluation-2026-08-28.md)
 - [EuRoC compact VIO v4 translation-state exploratory result](euroc-compact-vio-v4-translation-state-exploratory-2026-08-28.md)
 - [EuRoC compact VIO v3 stateful exploratory result](euroc-compact-vio-v3-stateful-exploratory-2026-08-28.md)

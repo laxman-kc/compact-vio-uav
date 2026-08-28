@@ -1,6 +1,7 @@
 # EuRoC compact VIO v5 controlled magnitude-loss experiment plan
 
-Status: Prospective control record — pending execution
+Status: Prospective control record frozen before execution; result recorded
+separately
 
 Plan date: 2026-08-28
 
@@ -202,7 +203,7 @@ next architecture investigation is the planned IMU-anchored hybrid. ONNX,
 TensorRT, target hardware, ROS 2, PX4, HIL, and flight testing remain outside
 this experiment.
 
-## Pending evidence fields
+## Required outcome fields
 
 The outcome update must replace none of the control history above. It must add:
 
@@ -218,6 +219,9 @@ The outcome update must replace none of the control history above. It must add:
 - complete v2/v5/zero-motion metric and coverage tables; and
 - the mechanical accept/reject outcome with every interpretation limit.
 
-Until those fields exist, v5 has no measured result and this document is not a
-training, quality, generalization, deployment, safety, or flight-readiness
-report.
+Those execution fields now exist in the separate
+[reviewed result](euroc-compact-vio-v5-magnitude-result-2026-08-28.md). V5
+failed both frozen validation guardrails and was rejected before `MH_02_easy`;
+this prospective record remains the immutable rule source, not the result
+report. Neither document establishes quality, generalization, deployment,
+safety, or flight readiness.

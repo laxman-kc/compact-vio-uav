@@ -1,0 +1,52 @@
+{
+  "record_type": "execution_record",
+  "schema_version": "1.0.0",
+  "run_id": "euroc-compact-vio-v5-magnitude-full-6c46b2f",
+  "status": "completed",
+  "started_at": "2026-08-28T13:05:56.866718Z",
+  "completed_at": "2026-08-28T13:13:04.921466Z",
+  "duration_seconds": 428.0547558530088,
+  "launch_command": [
+    "python3",
+    "-m",
+    "compact_vio.learning.cli",
+    "--config",
+    "configs/training/euroc_compact_vio_v5_magnitude.json",
+    "--data-root",
+    "/home/ubuntu/datasets/euroc/sequences",
+    "--output-dir",
+    "/home/ubuntu/compact-vio-runs/euroc-compact-vio-v5-magnitude-full-6c46b2f",
+    "--device",
+    "cuda"
+  ],
+  "environment_prefix": "PYTHONPATH=src",
+  "continuous_integration": {
+    "provider": "GitHub Actions",
+    "run_id": "33173750012",
+    "url": "https://github.com/laxman-kc/compact-vio-uav/actions/runs/33173750012",
+    "outcome": "success"
+  },
+  "execution_preflight": {
+    "a10_test_count": 351,
+    "a10_test_outcome": "pass",
+    "smoke_output_path": "/home/ubuntu/compact-vio-runs/euroc-compact-vio-v5-magnitude-smoke-6c46b2f",
+    "smoke_checkpoint_sha256": "56d307755a1203a2e3d2798dee02d07dc7a9d8c85b478dd04f15ba6a84db309e",
+    "smoke_duration_seconds": 16.68084,
+    "smoke_scope": "2 epochs; 128 training, 64 validation, and 64 selected development-test pairs; structural evidence only"
+  },
+  "selected_checkpoint": {
+    "epoch": 29,
+    "sha256": "f26267f2cb55962ba236257acda0a7ac97ad87f93ae0ecdcb585026fa21f0741",
+    "validation_translation_rmse_m": 0.05985308049522323,
+    "validation_rotation_rmse_rad": 0.007484109588922632
+  },
+  "decision": {
+    "id": "reject-v5-before-mh02-no-retry-no-export/v1",
+    "translation_guardrail_passed": false,
+    "rotation_guardrail_passed": false,
+    "mh02_accessed": false,
+    "v5_inference_export_created": false
+  },
+  "original_trainer_output_manifest_sha256": "9628a7b93da229700b07aa9bb43c07e8b31f68bd4e9ee764b4d7ad06ac63b2f9",
+  "authorization_evidence_limit": "The project owner explicitly directed continued GPU execution in the governing Codex task. No standalone worker-authorization record was created, so this execution record does not claim the separate artifact-storage restore gate."
+}

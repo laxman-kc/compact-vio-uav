@@ -1,0 +1,93 @@
+schema_version: "1.0"
+last_reviewed: "2026-08-28"
+policy: governance/datasets/policy.md
+evidence_brief: governance/datasets/evidence/representative-unit-candidate-brief.md
+
+# EuRoC is selected for the accepted training-first development prototype.
+# Every other entry remains a candidate. Exact EuRoC archives, checksums,
+# modalities, sequence-disjoint development membership, and the separately
+# frozen Machine Hall position endpoint are recorded in the linked plans rather
+# than duplicated here.
+datasets:
+  - id: tartanair-v2
+    name: TartanAir V2
+    decision_status: candidate
+    project_role: unresolved
+    official_url: https://tartanair.org/
+    rights:
+      status: recorded_from_official_source
+      label: CC BY 4.0
+      url: https://tartanair.org/
+    cautions:
+      - Synthetic data does not establish real-sensor timing, calibration, or noise robustness.
+      - Environment, trajectory, modality, and render variants require source grouping.
+
+  - id: euroc-mav
+    name: EuRoC MAV Dataset
+    decision_status: selected_for_development
+    project_role: training_validation_held_out_prototype_evaluation
+    official_url: https://projects.asl.ethz.ch/datasets/euroc-mav/
+    acquisition_plan: configs/data/euroc_vicon_v1.json
+    position_evaluation_plan: configs/data/euroc_machine_hall_position_v1.json
+    rights:
+      status: recorded_from_official_archive
+      label: In Copyright - Non-Commercial Use Permitted
+      url: https://www.research-collection.ethz.ch/entities/researchdata/bcaf173e-5dac-484b-bc37-faf97a594f1f
+    cautions:
+      - Selection is for non-commercial open research and does not imply redistribution rights.
+      - The checked-in split is a development prototype split, not a publication confirmatory protocol.
+      - Physical sequences, not derived frame pairs, are the split and evaluation units.
+
+  - id: uzh-fpv
+    name: UZH FPV Drone Racing Dataset
+    decision_status: candidate
+    project_role: unresolved
+    official_url: https://fpv.ifi.uzh.ch/datasets/
+    rights:
+      status: recorded_from_official_source
+      label: CC BY-NC-SA 3.0
+      url: https://fpv.ifi.uzh.ch/
+    cautions:
+      - Commercial-use and share-alike restrictions require a separate research lane.
+      - Sensor suites and public versus hidden ground-truth roles must be recorded.
+
+  - id: blackbird
+    name: Blackbird UAV Dataset
+    decision_status: candidate
+    project_role: unresolved
+    official_url: https://github.com/mit-aera/Blackbird-Dataset
+    rights:
+      status: unresolved_for_dataset_files
+      label: null
+      url: null
+    cautions:
+      - The repository software license must not be treated as the dataset-file license.
+      - The complete corpus is multi-terabyte; acquisition must be selective.
+      - Renders sharing one physical trajectory require a common source group.
+
+  - id: mid-air
+    name: Mid-Air Dataset
+    decision_status: candidate
+    project_role: unresolved
+    official_url: https://midair.ulg.ac.be/
+    rights:
+      status: recorded_from_official_source
+      label: CC BY-NC-SA 4.0
+      url: https://midair.ulg.ac.be/
+    cautions:
+      - Non-commercial and share-alike restrictions require a separate research lane.
+      - Synthetic conditions cannot establish real-weather or physical-IMU robustness.
+      - Variants sharing an underlying path require a common source group.
+
+  - id: tum-vi
+    name: TUM Visual-Inertial Dataset
+    decision_status: candidate
+    project_role: unresolved
+    official_url: https://cvg.cit.tum.de/data/datasets/visual-inertial-dataset
+    rights:
+      status: recorded_from_official_source
+      label: CC BY 4.0
+      url: https://cvg.cit.tum.de/data/datasets/visual-inertial-dataset
+    cautions:
+      - The motion/domain is not a substitute for UAV-domain evidence.
+      - Ground-truth availability varies and must be recorded per sequence.

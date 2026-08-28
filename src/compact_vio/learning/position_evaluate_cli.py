@@ -29,9 +29,10 @@ from compact_vio.learning.errors import LearningError
 
 _HEX_32 = re.compile(r"[0-9a-f]{32}")
 _HEX_64 = re.compile(r"[0-9a-f]{64}")
+_GIT_REVISION = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})")
 _SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 _RECORD_TYPE = "euroc_position_only_checkpoint_evaluation"
-_SCHEMA_VERSION = "1.0.0"
+_SCHEMA_VERSION = "2.0.0"
 _METRIC_POLICY_ID = DISPLACEMENT_MAGNITUDE_METRIC_ID
 _DECISION_RULE_ID = (
     "full-sensor-and-reference-coverage/beat-zero-pair-rmse/"
@@ -81,6 +82,30 @@ def _exact_mapping(
     if set(value) != expected:
         raise LearningError(f"{field} fields must equal {sorted(expected)!r}")
     return value
+
+
+def _identifier_array(value: object, *, field: str) -> tuple[str, ...]:
+    if type(value) is not list or not value:
+        raise LearningError(f"{field} must be a non-empty JSON array")
+    result = tuple(_identifier(item, field=f"{field}[{index}]") for index, item in enumerate(value))
+    if len(result) != len(set(result)):
+        raise LearningError(f"{field} must not contain duplicates")
+    return result
+
+
+def _sha256_mapping(value: object, *, field: str) -> tuple[tuple[str, str], ...]:
+    if type(value) is not dict or not value:
+        raise LearningError(f"{field} must be a non-empty JSON object")
+    result: list[tuple[str, str]] = []
+    for key, digest in value.items():
+        sequence_id = _identifier(key, field=f"{field} key")
+        result.append(
+            (
+                sequence_id,
+                _digest(digest, field=f"{field}[{sequence_id!r}]", pattern=_HEX_64),
+            )
+        )
+    return tuple(sorted(result))
 
 
 def _json_without_duplicate_keys(path: Path) -> tuple[object, bytes]:
@@ -289,12 +314,92 @@ class PositionEvaluationSampling:
 
 
 @dataclass(frozen=True, slots=True)
+class PositionCheckpointProvenance:
+    """Exact training-run provenance required for one frozen candidate."""
+
+    code_revision: str
+    split_id: str
+    train_sequence_ids: tuple[str, ...]
+    validation_sequence_ids: tuple[str, ...]
+    source_sha256: tuple[tuple[str, str], ...]
+    calibration_sha256: tuple[tuple[str, str], ...]
+
+    def __post_init__(self) -> None:
+        _digest(
+            self.code_revision,
+            field="checkpoint_provenance.code_revision",
+            pattern=_GIT_REVISION,
+        )
+        _text(self.split_id, field="checkpoint_provenance.split_id")
+        for field in ("train_sequence_ids", "validation_sequence_ids"):
+            values = getattr(self, field)
+            if type(values) is not tuple or not values:
+                raise LearningError(f"checkpoint_provenance.{field} must be a non-empty tuple")
+            checked = tuple(
+                _identifier(value, field=f"checkpoint_provenance.{field}[{index}]")
+                for index, value in enumerate(values)
+            )
+            if checked != values or len(checked) != len(set(checked)):
+                raise LearningError(
+                    f"checkpoint_provenance.{field} must contain unique exact identifiers"
+                )
+        overlap = set(self.train_sequence_ids) & set(self.validation_sequence_ids)
+        if overlap:
+            raise LearningError(
+                f"checkpoint_provenance train/validation membership overlaps: {sorted(overlap)!r}"
+            )
+        for field in ("source_sha256", "calibration_sha256"):
+            pairs = getattr(self, field)
+            if type(pairs) is not tuple or not pairs:
+                raise LearningError(f"checkpoint_provenance.{field} must be a non-empty tuple")
+            if any(
+                type(item) is not tuple
+                or len(item) != 2
+                or type(item[0]) is not str
+                or type(item[1]) is not str
+                for item in pairs
+            ):
+                raise LearningError(
+                    f"checkpoint_provenance.{field} must contain exact identifier/hash pairs"
+                )
+            checked = tuple(
+                sorted(
+                    (
+                        _identifier(key, field=f"checkpoint_provenance.{field} key"),
+                        _digest(
+                            digest,
+                            field=f"checkpoint_provenance.{field}[{key!r}]",
+                            pattern=_HEX_64,
+                        ),
+                    )
+                    for key, digest in pairs
+                )
+            )
+            if checked != pairs or len({key for key, _ in pairs}) != len(pairs):
+                raise LearningError(
+                    f"checkpoint_provenance.{field} must be sorted with unique identifiers"
+                )
+        source_ids = {key for key, _ in self.source_sha256}
+        calibration_ids = {key for key, _ in self.calibration_sha256}
+        if source_ids != calibration_ids:
+            raise LearningError(
+                "checkpoint_provenance source/calibration sequence membership differs"
+            )
+        required_ids = set(self.train_sequence_ids) | set(self.validation_sequence_ids)
+        if not required_ids <= source_ids:
+            raise LearningError(
+                "checkpoint_provenance source/calibration hashes do not cover split membership"
+            )
+
+
+@dataclass(frozen=True, slots=True)
 class PositionEvaluationCandidate:
     """One frozen checkpoint and its declared fusion-state inference behavior."""
 
     candidate_id: str
     checkpoint_sha256: str
     inference_policy_id: str
+    checkpoint_provenance: PositionCheckpointProvenance
 
     def __post_init__(self) -> None:
         _identifier(self.candidate_id, field="candidate_id")
@@ -304,6 +409,10 @@ class PositionEvaluationCandidate:
             or self.inference_policy_id not in _INFERENCE_POLICIES
         ):
             raise LearningError("unsupported candidate inference_policy_id")
+        if type(self.checkpoint_provenance) is not PositionCheckpointProvenance:
+            raise LearningError(
+                "candidate checkpoint_provenance must be a PositionCheckpointProvenance"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -361,6 +470,15 @@ class PositionEvaluationProtocol:
         hashes = tuple(item.checkpoint_sha256 for item in self.candidates)
         if len(hashes) != len(set(hashes)):
             raise LearningError("candidate checkpoint hashes must be unique")
+        for candidate in self.candidates:
+            if self.dataset.sequence_id in (
+                *candidate.checkpoint_provenance.train_sequence_ids,
+                *candidate.checkpoint_provenance.validation_sequence_ids,
+            ):
+                raise LearningError(
+                    f"evaluation sequence {self.dataset.sequence_id!r} appears in checkpoint "
+                    f"{candidate.candidate_id!r} frozen split provenance"
+                )
         if self.decision_rule_id == _CONTROLLED_MAGNITUDE_DECISION_RULE_ID:
             if type(self.validation_guardrail) is not PositionValidationGuardrail:
                 raise LearningError(
@@ -461,10 +579,55 @@ def load_position_evaluation_protocol(path: Path | str) -> PositionEvaluationPro
     for index, raw_candidate in enumerate(candidate_values):
         candidate = _exact_mapping(
             raw_candidate,
-            {"candidate_id", "checkpoint_sha256", "inference_policy_id"},
+            {
+                "candidate_id",
+                "checkpoint_sha256",
+                "inference_policy_id",
+                "checkpoint_provenance",
+            },
             field=f"candidates[{index}]",
         )
-        candidates.append(PositionEvaluationCandidate(**candidate))  # type: ignore[arg-type]
+        checkpoint_provenance = _exact_mapping(
+            candidate["checkpoint_provenance"],
+            {
+                "code_revision",
+                "split_id",
+                "train_sequence_ids",
+                "validation_sequence_ids",
+                "source_sha256",
+                "calibration_sha256",
+            },
+            field=f"candidates[{index}].checkpoint_provenance",
+        )
+        candidates.append(
+            PositionEvaluationCandidate(
+                candidate_id=candidate["candidate_id"],  # type: ignore[arg-type]
+                checkpoint_sha256=candidate["checkpoint_sha256"],  # type: ignore[arg-type]
+                inference_policy_id=candidate["inference_policy_id"],  # type: ignore[arg-type]
+                checkpoint_provenance=PositionCheckpointProvenance(
+                    code_revision=checkpoint_provenance["code_revision"],  # type: ignore[arg-type]
+                    split_id=checkpoint_provenance["split_id"],  # type: ignore[arg-type]
+                    train_sequence_ids=_identifier_array(
+                        checkpoint_provenance["train_sequence_ids"],
+                        field=(f"candidates[{index}].checkpoint_provenance.train_sequence_ids"),
+                    ),
+                    validation_sequence_ids=_identifier_array(
+                        checkpoint_provenance["validation_sequence_ids"],
+                        field=(
+                            f"candidates[{index}].checkpoint_provenance.validation_sequence_ids"
+                        ),
+                    ),
+                    source_sha256=_sha256_mapping(
+                        checkpoint_provenance["source_sha256"],
+                        field=f"candidates[{index}].checkpoint_provenance.source_sha256",
+                    ),
+                    calibration_sha256=_sha256_mapping(
+                        checkpoint_provenance["calibration_sha256"],
+                        field=f"candidates[{index}].checkpoint_provenance.calibration_sha256",
+                    ),
+                ),
+            )
+        )
     guardrail: PositionValidationGuardrail | None = None
     if "validation_guardrail" in root:
         guardrail_value = _exact_mapping(
@@ -794,13 +957,29 @@ def _validate_candidate_checkpoint_metadata(
     evaluation_sequence_id: str,
     expected_dataset_id: str,
 ) -> None:
-    if metadata.provenance.dataset_id != expected_dataset_id:
-        raise LearningError(
-            f"checkpoint {candidate.candidate_id!r} dataset identity differs from protocol DOI"
-        )
+    provenance = metadata.provenance
+    expected = candidate.checkpoint_provenance
+    checks = (
+        ("dataset_id", provenance.dataset_id, expected_dataset_id),
+        ("code_revision", provenance.code_revision, expected.code_revision),
+        ("split_id", provenance.split_id, expected.split_id),
+        ("train_sequence_ids", provenance.train_sequence_ids, expected.train_sequence_ids),
+        (
+            "validation_sequence_ids",
+            provenance.validation_sequence_ids,
+            expected.validation_sequence_ids,
+        ),
+        ("source_sha256", provenance.source_sha256, expected.source_sha256),
+        ("calibration_sha256", provenance.calibration_sha256, expected.calibration_sha256),
+    )
+    for field, actual, required in checks:
+        if type(actual) is not type(required) or actual != required:
+            raise LearningError(
+                f"checkpoint {candidate.candidate_id!r} provenance {field} differs from protocol"
+            )
     if evaluation_sequence_id in (
-        *metadata.provenance.train_sequence_ids,
-        *metadata.provenance.validation_sequence_ids,
+        *provenance.train_sequence_ids,
+        *provenance.validation_sequence_ids,
     ):
         raise LearningError(
             f"evaluation sequence {evaluation_sequence_id!r} appears in checkpoint "
@@ -1265,6 +1444,12 @@ def _run(args: argparse.Namespace) -> int:
         protocol.source_path,
         expected_source_sha256=protocol.source_sha256,
     )
+    checkpoints = _resolve_checkpoints(protocol, args.checkpoint)
+    _preflight_candidate_checkpoints(
+        protocol,
+        checkpoints,
+        expected_dataset_id=f"EuRoC DOI {protocol.dataset.doi}",
+    )
     archive = _regular_file(args.archive, field="archive")
     size, md5, archive_sha256 = _archive_hashes(archive)
     if (
@@ -1273,12 +1458,6 @@ def _run(args: argparse.Namespace) -> int:
         or archive_sha256 != protocol.dataset.archive_sha256
     ):
         raise LearningError("archive identity does not match the frozen evaluation protocol")
-    checkpoints = _resolve_checkpoints(protocol, args.checkpoint)
-    _preflight_candidate_checkpoints(
-        protocol,
-        checkpoints,
-        expected_dataset_id=f"EuRoC DOI {protocol.dataset.doi}",
-    )
     output = _prepare_output_directory(args.output_dir)
     data_root = Path(args.data_root).resolve(strict=True)
     sequence_root = data_root / protocol.dataset.sequence_id
@@ -1535,6 +1714,7 @@ if __name__ == "__main__":
 
 __all__ = [
     "CandidateDecisionInput",
+    "PositionCheckpointProvenance",
     "PositionDatasetIdentity",
     "PositionEvaluationCandidate",
     "PositionEvaluationProtocol",

@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="720" viewBox="0 0 1100 720" role="img" aria-labelledby="title desc">
+  <title id="title">Controlled v5 magnitude-loss result</title>
+  <desc id="desc">V5 failed both validation gates and was not advanced to MH_02. Development metrics compare v2, v5, and zero motion on V2_03 difficult.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .bg { fill: #ffffff; }
+    .fg { fill: #172033; }
+    .muted { fill: #536176; }
+    .grid { stroke: #c9d2df; stroke-width: 1; }
+    .gate { stroke: #172033; stroke-width: 2; stroke-dasharray: 7 5; }
+    .v2 { fill: #2563eb; }
+    .v5 { fill: #ea580c; }
+    .zero { fill: #64748b; }
+    .fail { fill: #b42318; font-weight: 700; }
+    text { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; }
+    .title { font-size: 24px; font-weight: 700; }
+    .section { font-size: 18px; font-weight: 700; }
+    .value { font-size: 13px; font-weight: 650; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #101522; }
+      .fg { fill: #eef3fa; }
+      .muted { fill: #acb8c8; }
+      .grid { stroke: #465267; }
+      .gate { stroke: #eef3fa; }
+      .fail { fill: #ff8a80; }
+    }
+  </style>
+  <rect class="bg" width="1100" height="720"/>
+  <text class="title fg" x="48" y="46">Controlled v5 magnitude-loss result</text>
+  <text class="muted" x="48" y="72">Lower is better · exact selected checkpoints · EuRoC development evidence</text>
+
+  <rect class="v2" x="48" y="92" width="18" height="12"/>
+  <text class="fg" x="74" y="103">V2 retained</text>
+  <rect class="v5" x="182" y="92" width="18" height="12"/>
+  <text class="fg" x="208" y="103">V5 controlled</text>
+  <rect class="zero" x="336" y="92" width="18" height="12"/>
+  <text class="fg" x="362" y="103">Zero motion</text>
+
+  <text class="section fg" x="48" y="144">Pre-MH_02 validation gate</text>
+  <text class="muted" x="48" y="166">Ratio to the frozen v2 maximum; bars at or below 1.0 pass.</text>
+  <line class="grid" x1="258" y1="190" x2="608" y2="190"/>
+  <line class="grid" x1="258" y1="250" x2="608" y2="250"/>
+  <line class="gate" x1="527.23" y1="180" x2="527.23" y2="286"/>
+  <text class="fg" x="527.23" y="302" text-anchor="middle">1.0× ceiling</text>
+  <text class="fg" x="48" y="208">Translation RMSE</text>
+  <rect class="v2" x="258" y="190" width="269.23" height="18"/>
+  <text class="value fg" x="535" y="204">V2 1.000× · 0.058766 m</text>
+  <rect class="v5" x="258" y="214" width="274.21" height="18"/>
+  <text class="value fail" x="540" y="228">V5 1.019× · 0.059853 m · FAIL</text>
+  <text class="fg" x="48" y="268">Rotation RMSE</text>
+  <rect class="v2" x="258" y="250" width="269.23" height="18"/>
+  <text class="value fg" x="535" y="264">V2 1.000× · 0.006190 rad</text>
+  <rect class="v5" x="258" y="274" width="325.52" height="18"/>
+  <text class="value fail" x="591" y="288">V5 1.209× · 0.007484 rad · FAIL</text>
+
+  <text class="section fg" x="48" y="346">V2_03 difficult development comparison</text>
+  <text class="muted" x="48" y="368">Each row has its own scale. These seen-unit results do not override the failed validation gate.</text>
+
+  <text class="fg" x="48" y="408">Pair translation RMSE (m)</text>
+  <rect class="v2" x="310" y="390" width="194.56" height="14"/>
+  <text class="value fg" x="512" y="402">0.04994</text>
+  <rect class="v5" x="310" y="410" width="195.99" height="14"/>
+  <text class="value fg" x="514" y="422">0.05030</text>
+  <rect class="zero" x="310" y="430" width="220" height="14"/>
+  <text class="value fg" x="538" y="442">0.05646</text>
+
+  <text class="fg" x="48" y="488">Pair rotation RMSE (rad)</text>
+  <rect class="v2" x="310" y="470" width="23.56" height="14"/>
+  <text class="value fg" x="342" y="482">0.00517</text>
+  <rect class="v5" x="310" y="490" width="27.04" height="14"/>
+  <text class="value fg" x="345" y="502">0.00593</text>
+  <rect class="zero" x="310" y="510" width="220" height="14"/>
+  <text class="value fg" x="538" y="522">0.04827</text>
+
+  <text class="fg" x="600" y="408">Raw translation ATE RMSE (m)</text>
+  <rect class="v2" x="844" y="390" width="141.74" height="14"/>
+  <text class="value fg" x="993" y="402">6.338</text>
+  <rect class="v5" x="844" y="410" width="220" height="14"/>
+  <text class="value fg" x="1072" y="422" text-anchor="end">9.838</text>
+  <rect class="zero" x="844" y="430" width="45.97" height="14"/>
+  <text class="value fg" x="898" y="442">2.056</text>
+
+  <text class="fg" x="600" y="488">Final translation drift (m)</text>
+  <rect class="v2" x="844" y="470" width="89.75" height="14"/>
+  <text class="value fg" x="942" y="482">6.232</text>
+  <rect class="v5" x="844" y="490" width="220" height="14"/>
+  <text class="value fg" x="1072" y="502" text-anchor="end">15.275</text>
+  <rect class="zero" x="844" y="510" width="32.07" height="14"/>
+  <text class="value fg" x="884" y="522">2.226</text>
+
+  <line class="grid" x1="48" y1="568" x2="1052" y2="568"/>
+  <text class="fail" x="48" y="604">Decision: reject v5 before fresh evaluation.</text>
+  <text class="fg" x="48" y="630">Both selected-checkpoint validation guardrails failed. MH_02 was not extracted, opened, or inferred.</text>
+  <text class="muted" x="48" y="656">V5 completed 30 epochs with 1,889/1,889/1,889 V2_03 coverage; execution success is not model acceptance.</text>
+  <text class="muted" x="48" y="682">Source: retained run summaries at commit 6c46b2f8ef719a7007eef72eebe13b34575aea93.</text>
+</svg>

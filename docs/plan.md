@@ -44,12 +44,14 @@ were copied and checksum-verified; the worker was intentionally left running.
 That dated state and authorization do not carry forward. A future paid-worker
 run still requires current inventory and its own bounded record.
 
-The immediate follow-up is the
-[controlled v5 magnitude-loss experiment](../reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md).
-It retains v2 as the control, permits one loss change and one bounded training
-run, and requires a predeclared fresh evaluation before any replacement
-decision. Implementation and local smoke may proceed now; paid execution still
-requires the current worker and run gates above.
+The
+[controlled v5 magnitude-loss experiment](../reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md)
+completed once at revision `6c46b2f8ef719a7007eef72eebe13b34575aea93`
+and failed both frozen selected-v2 validation limits. It is rejected; no retry,
+tuning, `MH_02_easy` access, fresh v5 evaluation, inference export, or
+deployment work is permitted. The immediate follow-up is independent selection
+and freeze of a new full-pose evaluation unit and protocol before any new model
+work.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -150,8 +152,8 @@ configuration and must not be invented in documentation.
 | M5 | Reproducible execution environments | In progress | Local path active; worker tasks require fresh inventory and authorization |
 | M6 | EuRoC development ingestion and split | Complete | Versioned split/acquisition plan, official archive identity, extracted-source hashes, and focused tests |
 | M7 | Common causal replay and evaluator | In progress | Raw real-data SE(3) slice executed; common lifecycle/coverage exit remains |
-| M8 | Compact model and bounded training | Complete | A10 smoke, four bounded 30-epoch runs, and checksum-verified checkpoints; the optional v5 follow-up does not reopen the completed vertical-slice exit |
-| M9 | Held-out prototype inference and evaluation | In progress | V2 has a narrow position selection; controlled v5 execution, a fresh replacement decision, full-pose/rotation/ATE, and common lifecycle evidence remain |
+| M8 | Compact model and bounded training | Complete | A10 smoke, five bounded 30-epoch runs, and checksum-verified checkpoints; rejected v5 does not reopen the completed vertical-slice exit |
+| M9 | Held-out prototype inference and evaluation | In progress | V2 has a narrow position selection; v5 failed before fresh evaluation, while a new frozen full-pose/rotation protocol and common lifecycle evidence remain |
 | M10 | Later baselines, reliability ablations, and failure atlas | Conditional | Reproducible M9 prototype evidence and a separately frozen ablation protocol |
 | M11 | Confirmatory final-test execution and scientific selection | Blocked | Reproducible candidate set, sealed untouched membership, and frozen confirmatory protocol |
 | M12 | Conditional export, exact-target benchmark, and deployable selection | Blocked | M11; authorized provisional sensor/target choices |
@@ -660,19 +662,30 @@ the independently matching worker/local artifact-manifest SHA-256 is
 Because prior `V2_03_difficult` results motivated the change, this is
 exploratory development evidence rather than fresh confirmation.
 
-Controlled v5 follow-up: retain the complete v2 model/data/optimization
-configuration and add only
+Controlled v5 follow-up: the single completed run retained the complete v2
+model/data/optimization configuration and added only
 `translation_magnitude_loss_weight: 1.0` in
 `configs/training/euroc_compact_vio_v5_magnitude.json`. The exact objective is
 the sum of unit-weight Smooth-L1 translation-vector, translation-magnitude, and
-rotation losses. Its prospective SHA-256 is
+rotation losses. Its SHA-256 is
 `7f5e50785ed1907c26f5bbea6766a4fc13fd3df591c8930ef8b15ac9f7d71af0`.
 The legacy v1–v4 behavior remains the same because the new
-configuration field defaults to `0.0`. Local implementation verification and
-temporary v2 inference-only export parity have passed; immutable-revision
-reproduction, retained export evidence, smoke, bounded training, and every v5
-result remain pending. This optional controlled run does not reopen M8's
-completed vertical-slice exit.
+configuration field defaults to `0.0`. Revision
+`6c46b2f8ef719a7007eef72eebe13b34575aea93` passed CI and 351 A10 tests;
+the structural smoke and one 30-epoch full run completed. The full run selected
+epoch 29 but failed both frozen validation limits: translation RMSE was
+`0.05985308049522323` m versus `0.058765891780989885` m, and rotation RMSE
+was `0.007484109588922632` rad versus `0.0061899144990098035` rad. V5 is
+rejected without retry and never reached `MH_02_easy`, fresh evaluation,
+inference export, or deployment. The retained checkpoint and original
+trainer-output artifact-manifest SHA-256 values are
+`f26267f2cb55962ba236257acda0a7ac97ad87f93ae0ecdcb585026fa21f0741`
+and `9628a7b93da229700b07aa9bb43c07e8b31f68bd4e9ee764b4d7ad06ac63b2f9`.
+The unchanged trainer output is nested in a governed wrapper whose schema-valid
+run-manifest and outer artifact-manifest SHA-256 values are
+`aeeb4f573d7dcf590f4f0aaf3fd49e922498ec5e2c465fd87e7c00aabf272af4`
+and `548fd52ffd0d89e4a7d347c78a8e9c4ba799c84dd74f7e0a6f3a365f0ba3b91e`.
+This controlled run does not reopen M8's completed vertical-slice exit.
 
 ## M9 — Held-out prototype inference and evaluation
 
@@ -752,46 +765,34 @@ artifact-manifest SHA-256
 The reviewed report records the exact archive/source/calibration/reference,
 checkpoint, summary, metric, and prediction hashes.
 
-### Controlled v5 replacement decision — pending execution
+### Controlled v5 replacement decision — rejected before fresh evaluation
 
 The [prospective control record](../reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md)
-owns the next replacement decision. It permits exactly one v2-derived
-configuration with an added unit-weight Smooth-L1 translation-magnitude term,
-one bounded 30-epoch run, and no sweep. V2 remains the control and must first
-be exported with `compact-vio-export-inference`. The checkpoint retains the
-canonical `TrainingConfig`, provenance, source SHA-256, inference policy, and
-selected source epoch/metrics lineage, but no optimizer state or full training
-history. Canonical metadata/model-state hashes, exclusive atomic write, exact
-parameter identity, and deterministic prediction parity are mandatory. The
-outer PyTorch-file SHA is scoped to transport/copy integrity for one exact
-container, not cross-runtime model identity.
+permitted one v2-derived configuration with an added unit-weight Smooth-L1
+translation-magnitude term, one bounded 30-epoch run, and no sweep. Revision
+`6c46b2f8ef719a7007eef72eebe13b34575aea93` executed that run once. It
+completed in `428.054755853` seconds and selected epoch 29.
 
-Before any `MH_02_easy` inference, the selected v5 checkpoint must have
-validation translation RMSE at most `0.058765891780989885` m and validation
-rotation RMSE at most `0.0061899144990098035` rad. These limits are the exact
-selected-v2 validation values. A missing, non-finite, or greater result rejects
-v5 before the reserved evaluation unit is inspected.
+The frozen pre-`MH_02_easy` limits were validation translation RMSE at most
+`0.058765891780989885` m and validation rotation RMSE at most
+`0.0061899144990098035` rad. V5 measured `0.05985308049522323` m and
+`0.007484109588922632` rad, respectively. Both comparisons failed. The
+[reviewed result](../reports/euroc-compact-vio-v5-magnitude-result-2026-08-28.md)
+therefore rejects v5 without a retry, repair, or threshold change.
 
-Neither `V2_03_difficult` nor `MH_01_easy` is untouched for this hypothesis.
-`MH_02_easy`, from the same verified Machine Hall archive, is reserved for this
-one position-only replacement decision by
-`configs/data/euroc_machine_hall_mh02_position_v1.json`, prospective SHA-256
-`3546ed0ed0721224c156e8b929ba5cf3aba517da381cc0f832162380599ca137`.
-Its exact extracted source identities and protocol must be frozen before
-candidate outcomes are inspected. On that unit, v5 must have identical complete
-eligible coverage, pair displacement-magnitude RMSE strictly below both v2 and
-zero motion, cumulative scored-distance RMSE strictly below v2, and distance
-ratio strictly closer to `1.0` than v2. A tie or any failed gate rejects v5 and
-retains v2 for its existing narrow endpoint; no post-result repair run is part
-of this plan. Once candidate results are inspected, `MH_02_easy` is consumed and
-cannot support another model-selection decision.
+The run's configured `V2_03_difficult` test diagnostics do not override this
+predeclared rejection and are not fresh confirmation because that sequence had
+already informed development. `MH_02_easy` was never extracted, opened, or
+used for inference; it remains unconsumed by v5. No v5 fresh evaluation,
+inference export, deployment, or model-promotion work is permitted.
 
-Even a passing v5 is provisional until a separate frozen full-pose evaluation
-compares the retained learned candidate, v2, zero motion, and a native
-classical baseline. Dataset/backend selection, the full-pose primary metric,
-thresholds, and tie rule remain pending protocol freeze. If the direct learned
-candidate fails that frozen rule, direct-model tuning stops and the next
-architecture investigation is the IMU-anchored hybrid.
+The next safe decision is independent of a v5 repair. Before any new model
+work, select a rights-compatible full-pose evaluation unit with the necessary
+reference capabilities and freeze its source membership, candidate/control
+set, native classical backend, fairness contract, ATE/RPE/rotation/drift
+semantics, coverage/failure handling, resource scope, primary metric,
+thresholds, and tie rule. No dataset, backend, threshold, or candidate is
+silently selected by this roadmap update.
 
 Required work:
 
@@ -996,49 +997,34 @@ Exit evidence:
 
 Execute these as separate small slices; do not combine them into one long phase:
 
-1. Completed at revision `5c54bb5fe3c67ff93ace9401beae3c06c13b81fa`:
-   freeze the inference-checkpoint, v5-loss/configuration, and `MH_02_easy`
-   role-record slices; pass 351 local/A10 tests, schema validation, repository
-   policy, pinned Ruff, compileall, diff checks, adversarial review, push, and
-   GitHub Actions run 33172588729.
-2. Completed for the frozen control: export selected v2 through the
-   optimizer-free path, verify parameter/prediction parity, and retain exact
-   source/file/canonical metadata/model-state hashes outside the worker. The
-   retained A10 `.pt` file SHA is
-   `521e9813fde80f68cb0734fd474a1cf08e8d4ef767fc8cd53bd2adf08ead2202`;
-   canonical metadata/state hashes are
-   `63f632912862067c471020d4cda4f2e87772eda0f2d59a29f434fba71a8be321` /
-   `f70693fc2c188773ef8e78779f6e5d1a01b22e14067204cd8cc18ba4691d650d`.
-3. Re-observe the worker, record the bounded authorization, and confirm a new
-   v5 smoke/full output path plus export destinations before paid work.
-4. Execute exactly one deterministic v5 smoke on the execution worker. It must
-   complete load, forward, backward, optimizer update, checkpoint save/load,
-   inference, and finite metric checks.
-5. If the smoke passes, execute exactly one 30-epoch v5 run. Do not sweep or
-   repair the configuration from `V2_03_difficult` or `MH_01_easy` results.
-6. Apply the frozen selected-v2 validation guardrails to v5. Stop before
-   `MH_02_easy` if translation RMSE exceeds `0.058765891780989885` m or rotation
-   RMSE exceeds `0.0061899144990098035` rad. If both pass, export and verify the
-   v5 checkpoint/run bundle and append exact revision, commands, times,
-   environment, selected epoch, hashes, failures, and artifact locations to the
-   prospective report and progress ledger.
-7. Finalize source identities for the reserved `MH_02_easy` position unit, then
-   freeze its eligible-pair construction, v2/v5/zero baselines, metrics,
-   coverage gates, and no-tie rule before running any candidate.
-8. Execute that frozen position decision once. Reject v5 on a tie or any failed
-   gate; otherwise retain it provisionally. In either case, publish the complete
-   metric/coverage table and do not tune from the result.
-9. Select and freeze a full-pose unit and native classical backend under one
-   fairness contract. Compare the retained learned candidate, v2, zero motion,
-   and classical VIO on ATE, RPE, rotation, drift, coverage/failures, latency,
-   and memory. Stop direct-model tuning and move to the IMU-anchored hybrid if
-   the candidate fails the frozen rule.
-10. Consider ONNX, target benchmarking, ROS 2, PX4, or flight work only after a
-    learned candidate passes the full-pose gate and separate deployment/safety
-    decisions are accepted.
+1. Completed at revision `6c46b2f8ef719a7007eef72eebe13b34575aea93`:
+   pass CI and 351 A10 tests, complete one structural v5 smoke and one bounded
+   30-epoch run, apply the frozen validation limits, reject v5 on both failed
+   comparisons, preserve the immutable trainer output inside a governed
+   run-manifest/configuration/environment wrapper, verify the original trainer
+   output at its worker/local paths, and validate the canonical governed-v2
+   wrapper locally.
+2. Retain the failed-run evidence without retry, loss/threshold repair, v5
+   inference export, deployment work, or `MH_02_easy` access. The unit was
+   never extracted, opened, or inferred and remains unconsumed by v5.
+3. Independently select a rights-compatible new full-pose evaluation unit with
+   reference position and orientation. Record its exact source identity,
+   provenance, licence, membership role, reference capabilities, and leakage
+   review before any prediction is inspected.
+4. Freeze one full-pose protocol before any new model work: candidates and
+   controls, native classical backend, association/alignment/scale semantics,
+   ATE/RPE/rotation/drift measures, coverage and failure rules, latency/memory
+   scope, primary metric, thresholds, tie handling, and stop rule.
+5. Only after that freeze, implement the minimum missing adapter/evaluator
+   behavior and execute the protocol once. Publish complete coverage, failures,
+   resource measurements, metrics, identities, and checksums without tuning
+   from the outcome.
+6. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
+   flight work only after the frozen full-pose result and its separate
+   deployment/safety decisions justify that step.
 
-No task in this queue assumes current A10 state. The exact `MH_02_easy`
-source/protocol identities, full-pose dataset, classical backend, full-pose
-primary metric/thresholds, artifact stores, and target hardware remain pending
-their explicit freezes; this plan does not silently choose them. Worker
-deletion remains a separate destructive action requiring explicit approval.
+No task in this queue assumes current A10 state. The full-pose dataset,
+classical backend, candidates, primary metric, thresholds, artifact stores,
+and target hardware remain pending their explicit freezes; this plan does not
+silently choose them. Worker deletion remains a separate destructive action
+requiring explicit approval.

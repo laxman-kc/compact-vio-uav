@@ -16,6 +16,9 @@ data = [
   "Pillow>=10.4,<13",
   "PyYAML>=6.0.2,<7",
 ]
+governance = [
+  "jsonschema[format-nongpl]==4.26.0",
+]
 train = [
   "Pillow>=10.4,<13",
   "PyYAML>=6.0.2,<7",
@@ -25,6 +28,7 @@ train = [
 [project.scripts]
 compact-vio-artifacts = "compact_vio.artifacts:main"
 compact-vio-copy-audit = "compact_vio.copy_audit:main"
+compact-vio-validate-governed-bundle = "compact_vio.governed_bundle:main"
 compact-vio-preflight = "compact_vio.preflight:main"
 compact-vio-repo-check = "compact_vio.repository_policy:main"
 compact-vio-euroc = "compact_vio.data.acquire:main"

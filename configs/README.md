@@ -42,7 +42,12 @@ Current namespaces:
   Each new candidate changes only the fields declared by its reviewed plan.
 - `evaluation/` contains frozen checkpoint-evaluation protocols after source,
   calibration, reference, and checkpoint hashes are known. A prospective data
-  role is not itself an executable evaluation protocol.
+  role is not itself an executable evaluation protocol. The MH01 v1 protocol
+  remains immutable historical evidence at its recorded SHA-256; the schema-2
+  MH01 protocol preserves its candidate, sampling, metric, and decision
+  semantics while additionally binding every checkpoint's exact training
+  revision, split membership, and source/calibration hashes. Only schema 2 is
+  executable by the current evaluator.
 - `schemas/` and `templates/` retain the generic calibration contracts and
   visibly synthetic validation fixtures.
 

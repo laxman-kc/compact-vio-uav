@@ -80,8 +80,8 @@ arm, all metrics, and exact hashes. This position-only decision is not a
 full-pose/rotation result, ATE, deployment approval, or publication-grade
 confirmation.
 
-The immediate production work is one controlled v5 experiment, not an open
-tuning loop. V2 remains the exact control. The new
+The one controlled v5 experiment has completed; it was not an open tuning
+loop. V2 remains the exact control. The
 `compact-vio-export-inference` path produces an optimizer-free PyTorch
 checkpoint that retains canonical `TrainingConfig`, provenance, inference
 policy, and selected source epoch/metrics lineage, but not optimizer state or
@@ -98,39 +98,64 @@ and model-state SHA-256
 `f70693fc2c188773ef8e78779f6e5d1a01b22e14067204cd8cc18ba4691d650d`.
 The A10 file is retained locally with artifact-manifest SHA-256
 `17a1b73abf1223fd8a010391d768849c30830c81914e2c30e7c383d61d095723`.
-V5 keeps
-v2's architecture, data/split, frame
-strides, seed, optimizer, independent-pair state policy, checkpoint rule, and
-30-epoch schedule; its only intended behavioral change is an explicit
-unit-weight Smooth-L1 translation-magnitude loss, configured by
+V5 kept v2's architecture, data/split, frame strides, seed, optimizer,
+independent-pair state policy, checkpoint rule, and 30-epoch schedule; its only
+declared behavioral change was an explicit unit-weight Smooth-L1
+translation-magnitude loss, configured by
 `translation_magnitude_loss_weight: 1.0` in
-`configs/training/euroc_compact_vio_v5_magnitude.json`. No v5 training or
-evaluation result is claimed yet.
+`configs/training/euroc_compact_vio_v5_magnitude.json`.
+
+The single full run at revision
+`6c46b2f8ef719a7007eef72eebe13b34575aea93` completed all 30 epochs and
+selected epoch 29. Its selected validation translation RMSE was
+`0.05985308049522323` m, above the frozen v2 limit of
+`0.058765891780989885` m; rotation RMSE was `0.007484109588922632` rad,
+above the limit of `0.0061899144990098035` rad. Both predeclared guardrails
+failed. V5 was therefore rejected before fresh evaluation, inference export,
+deployment work, or any `MH_02_easy` access. There was no retry or tuning.
 The [prospective control record](reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md)
-defines the smoke, single-run, fresh-evaluation, rejection, and full-pose gates.
-V5 must first match or improve v2's exact selected validation translation and
-rotation RMSE; failure stops the experiment before `MH_02_easy` is inspected.
+preserves the rule declared before execution; the
+[reviewed result](reports/euroc-compact-vio-v5-magnitude-result-2026-08-28.md)
+records the observed run and mechanical rejection.
 
 `V2_03_difficult` and `MH_01_easy` have already informed development, so neither
-can be presented as untouched v5 confirmation. `MH_02_easy`, from the same
-verified Machine Hall archive, is now reserved as the one next position-only
-decision unit; its exact source identities and protocol must be frozen before
-candidate results are inspected. Once used, `MH_02_easy` is consumed and cannot
-select another model. If v5 fails any frozen gate, it is rejected and v2
-remains the narrow-endpoint candidate. Even a passing v5 still requires a
-separately frozen full-pose comparison against v2, zero motion, and a native
-classical baseline before direct learned VIO can be promoted.
+can be presented as untouched v5 confirmation. The completed full run still
+emitted its configured `V2_03_difficult` development diagnostics, but those
+results did not and cannot override the validation guardrail. `MH_02_easy` was
+never extracted, opened, or used for inference and remains unconsumed by v5.
+The next safe scientific step is to select and freeze a new full-pose
+evaluation unit and protocol independently before any new model work. Exact
+dataset membership, reference capabilities, controls, native classical
+backend, metrics, thresholds, and tie rule must be recorded before execution;
+none is silently selected here.
 
-All four training result bundles were copied to ignored local paths and
-checksum-verified against the worker copies, including
-`outputs/euroc-compact-vio-v4-translation-state-full-94d834a`. The MH_01
+All five training result bundles were copied to ignored local paths and
+checksum-verified against the worker copies. The original v5 trainer output is
+preserved unchanged inside a governed wrapper at
+`outputs/euroc-compact-vio-v5-magnitude-governed-v2-6c46b2f` with checkpoint SHA-256
+`f26267f2cb55962ba236257acda0a7ac97ad87f93ae0ecdcb585026fa21f0741`
+and outer artifact-manifest SHA-256
+`548fd52ffd0d89e4a7d347c78a8e9c4ba799c84dd74f7e0a6f3a365f0ba3b91e`.
+The wrapper adds a schema-valid run manifest, resolved configuration,
+environment, and execution record without mutating the original inner manifest
+`9628a7b93da229700b07aa9bb43c07e8b31f68bd4e9ee764b4d7ad06ac63b2f9`;
+its run-manifest SHA-256 is
+`aeeb4f573d7dcf590f4f0aaf3fd49e922498ec5e2c465fd87e7c00aabf272af4`.
+Verification passed for the canonical local wrapper. The original trainer
+bundle remains independently verified at its worker and local paths; the
+canonical governed-v2 wrapper has not been copied to or verified on the
+worker. A superseded draft wrapper is not the evidence target. Small immutable
+records are mirrored under `reports/evidence/`. This is not the
+still-unresolved independent-vault, backup, or restore gate. The MH_01
 evaluation artifacts at
 `/home/ubuntu/compact-vio-runs/euroc-mh01-frozen-position-deea10f` were copied to
 ignored local path `outputs/euroc-mh01-frozen-position-deea10f`; their
 seven-file artifact manifest verified at both locations with SHA-256
 `184d9427ebec373edb4da222bba5ea382146369a61b471b92b30b0e328ce8e76`.
-The worker remains running by explicit choice and has not been stopped or
-terminated. Worker storage is never treated as durable.
+At the last recorded execution observation, the worker was left running by
+explicit choice and was not stopped or terminated. Its present lifecycle state
+has not been re-established in this closeout because the Brev session is no
+longer authenticated. Worker storage is never treated as durable.
 
 The project follows these invariants:
 
@@ -228,6 +253,7 @@ and verified.
 - [Architecture decision records](docs/adr/README.md)
 - [Research protocol](docs/protocols/research-protocol.md)
 - [Experiment lifecycle](docs/protocols/experiment-lifecycle.md)
+- [Controlled v5 magnitude-loss result](reports/euroc-compact-vio-v5-magnitude-result-2026-08-28.md)
 - [Controlled v5 magnitude-loss experiment](reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md)
 - [Dataset governance policy](governance/datasets/policy.md)
 - [Candidate dataset registry](governance/datasets/registry.yaml)

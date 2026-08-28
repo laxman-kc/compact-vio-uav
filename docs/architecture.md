@@ -15,9 +15,11 @@ evaluated the retained v2, v3, and v4 checkpoints without retraining and selecte
 v2 only for that narrow endpoint. A/B/C/D reliability experiments are later
 research ablations, not the implementation critical path. Mapping, loop
 closure, flight control, and target deployment are outside the current core.
-The immediate extension is a single controlled v5 loss ablation against the
-retained v2 checkpoint; it cannot promote a model without fresh position and
-separate full-pose gates.
+The single controlled v5 loss ablation against the retained v2 checkpoint has
+completed and failed both frozen validation guardrails. It was rejected before
+fresh position evaluation. The immediate extension is now independent
+selection and protocol freeze for a new full-pose unit; no new model work may
+precede that freeze.
 
 ## Planes
 
@@ -153,7 +155,7 @@ filtering retains disjoint native-pair segments visibly; it does not join them
 into one full trajectory. Consequently this branch cannot report direction,
 heading, an independent rotation endpoint, ATE, or final pose.
 
-## Controlled v2-to-v5 experiment path
+## Completed controlled v2-to-v5 experiment path
 
 ```text
 retained v2 checkpoint -----------------> inference-only v2 artifact
@@ -167,23 +169,21 @@ retained v2 checkpoint -----------------> inference-only v2 artifact
                     |
              one bounded 30-epoch run
                     |
-           selected v5 checkpoint or failure
+       selected epoch-29 v5 checkpoint
                     |
        frozen v2 validation guardrail
                     |
-      frozen MH_02_easy position evaluation
-          | one decision: v5 vs v2 vs zero motion
-          |
-          +-- any frozen gate fails --> reject v5; retain v2
-          |
-          +-- all gates pass --------> retain v5 provisionally
-                                                |
-                                separately frozen full-pose evaluation
-                                  learned vs v2 vs zero vs classical
-                                                |
-                         pass -> conditional export/target decision
-                         fail -> stop direct tuning; investigate
-                                 the IMU-anchored hybrid
+        translation FAIL + rotation FAIL
+                    |
+               reject v5
+                    |
+       do not open/infer on MH_02_easy
+                    |
+       retain checksum-verified evidence
+                    |
+ independently select + freeze new full-pose unit/protocol
+                    |
+      only then decide any later model work
 ```
 
 The `compact-vio-export-inference` boundary retains the canonical
@@ -206,12 +206,12 @@ fixed. The versioned configuration is
 `configs/training/euroc_compact_vio_v5_magnitude.json`; its only behavioral
 addition is `translation_magnitude_loss_weight: 1.0`, giving unit weight to all
 three Smooth-L1 terms. The loss API defaults that field to zero so v1–v4 remain
-compatible. Its prospective SHA-256 is
+compatible. Its SHA-256 is
 `7f5e50785ed1907c26f5bbea6766a4fc13fd3df591c8930ef8b15ac9f7d71af0`
-and the clean execution checkout must reproduce it. Any additional behavior
-change creates a different experiment.
+and the clean execution checkout reproduced it. Any additional behavior change
+would have created a different experiment.
 
-Before `MH_02_easy`, the selected v5 checkpoint must report validation
+Before `MH_02_easy`, the selected v5 checkpoint had to report validation
 translation RMSE at most `0.058765891780989885` m and validation rotation RMSE
 at most `0.0061899144990098035` rad—the exact retained-v2 selected values. A
 missing, non-finite, or greater value stops the experiment without inspecting
@@ -219,15 +219,21 @@ the reserved position unit. These constants are enforced by the controlled
 evaluation protocol parser and checkpoint-metadata preflight rather than left
 as an operator-only convention.
 
+The revision `6c46b2f8ef719a7007eef72eebe13b34575aea93` run completed in
+`428.054755853` seconds and selected epoch 29, but measured validation RMSE of
+`0.05985308049522323` m translation and `0.007484109588922632` rad rotation.
+Both values exceeded their frozen limits, so the guardrail rejected v5.
+`MH_02_easy` was not extracted, opened, or inferred; no retry, tuning, fresh
+evaluation, v5 inference export, or deployment action followed.
+
 Neither `V2_03_difficult` nor `MH_01_easy` is an untouched v5 endpoint because
-both informed this hypothesis. `MH_02_easy`, from the same verified Machine
-Hall archive, is reserved for exactly one next position-only model decision;
-its source identities, fairness contract, metrics, and tie rules must be frozen
-before candidate outcomes are inspected. It is consumed after that decision
-and cannot select a later model. The required full-pose unit/backend remains
-unselected until its rights, provenance, fairness, metrics, thresholds, and tie
-rules are versioned. No ground truth crosses the evaluator boundary into
-inference.
+both informed this hypothesis. The prior v5 position-only branch ended before
+its reserved unit, so `MH_02_easy` remains unconsumed by this candidate. The
+next scientific branch is not a v5 repair: a new full-pose unit and protocol
+must be selected and frozen independently, including rights, provenance,
+source roles, reference capabilities, controls, native backend, fairness
+rules, metrics, thresholds, and tie handling. No ground truth may cross the
+evaluator boundary into inference.
 
 ## Model and training boundary
 
@@ -257,12 +263,13 @@ a publishable or flight-ready claim. A native classical reference and the
 earlier A/B/C/D-monitor/D reliability design remain later research work with
 their own fairness and confirmation protocols.
 
-The controlled v5 objective is
+The rejected controlled v5 objective was
 `SmoothL1(t_hat, t) + SmoothL1(||t_hat||_2, ||t||_2) + SmoothL1(r_hat, r)`.
-This specifically tests the observed distance under-recovery; it does not
+It tested the observed distance under-recovery; it did not
 directly resolve direction, rotation, long-horizon integration, or estimator
-health. A fresh position pass therefore retains only a provisional checkpoint,
-while the full-pose gate controls any architecture-promotion decision.
+health. Because the validation guardrail failed, no fresh position pass or
+provisional promotion occurred. The separately frozen full-pose gate remains
+the next decision boundary.
 
 ## Current implementation boundary
 
@@ -279,7 +286,7 @@ The learned layer implements strict configuration, relative-motion geometry,
 independent and causal-sequence datasets, the compact PyTorch CNN/IMU-GRU/fusion
 model, deterministic training and validation, checkpoints, independent and
 stateful inference, raw SE(3) result writing, and the frozen Machine Hall
-position-only evaluator. Four bounded 30-epoch A10 training runs, exploratory
+position-only evaluator. Five bounded 30-epoch A10 training runs, exploratory
 `V2_03_difficult` evaluations, and the fresh position-only checkpoint decision
 have executed; their reviewed reports and exact external artifact identities are
 recorded. M7/M9 remain in progress because the fresh endpoint has no reference
@@ -287,7 +294,7 @@ orientation or direction and the common lifecycle/full-pose exit evidence is
 not complete. ONNX, TensorRT, ROS 2, PX4, and flight integration remain outside
 the implemented slice.
 
-Revision `5c54bb5fe3c67ff93ace9401beae3c06c13b81fa` adds the controlled v5
+Revision `5c54bb5fe3c67ff93ace9401beae3c06c13b81fa` added the controlled v5
 loss/configuration and strict optimizer-free inference-checkpoint boundary.
 GitHub Actions run 33172588729 and all 351 A10 tests passed. The retained A10
 v2 export has exact-file SHA-256
@@ -298,9 +305,21 @@ and canonical model-state SHA-256
 `f70693fc2c188773ef8e78779f6e5d1a01b22e14067204cd8cc18ba4691d650d`;
 its verified local artifact-manifest SHA-256 is
 `17a1b73abf1223fd8a010391d768849c30830c81914e2c30e7c383d61d095723`.
-Until the v5 smoke, bounded
-training, validation guardrail, and frozen fresh evaluation each
-complete, there is no v5 checkpoint, metric, selection, or quality claim.
+Revision `6c46b2f8ef719a7007eef72eebe13b34575aea93` then passed CI and all
+351 A10 tests, completed the structural smoke and one bounded v5 run, and
+produced checkpoint SHA-256
+`f26267f2cb55962ba236257acda0a7ac97ad87f93ae0ecdcb585026fa21f0741`.
+The original five-file trainer output and its immutable manifest SHA-256
+`9628a7b93da229700b07aa9bb43c07e8b31f68bd4e9ee764b4d7ad06ac63b2f9`
+are preserved inside a governed wrapper. The wrapper adds the missing run
+manifest, resolved configuration, environment, and execution records; its
+outer artifact-manifest SHA-256 is
+`548fd52ffd0d89e4a7d347c78a8e9c4ba799c84dd74f7e0a6f3a365f0ba3b91e`.
+The canonical governed-v2 wrapper verifies locally. The unchanged original
+trainer bundle verifies at both its worker and local paths, but the canonical
+wrapper has not been copied to or verified on the worker. This is retained
+failed-gate evidence, not a selected model, quality claim, or completed restore
+gate.
 
 ## Technology stack by status
 
@@ -309,11 +328,11 @@ complete, there is no v5 checkpoint, metric, selection, or quality claim.
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
 | Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
 | Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified acquisition; versioned Vicon and Machine Hall identities, hashes, calibration, split, and endpoint configurations | Other datasets or physical sensors require separate rights, calibration, provenance, and role records. |
-| Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, four completed A10 runs, and a locally tested v5 loss/config slice | One controlled v5 training run is pending. Further tuning on seen units is closed; every new evaluation requires a separately frozen purpose and unit. |
+| Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, five completed A10 runs, and a rejected controlled v5 loss ablation | No v5 retry or direct model work is authorized. A new full-pose unit/protocol must be selected and frozen independently before later model work. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
-| GPU execution | Dated A10 smoke, four bounded training runs, and one frozen checkpoint evaluation are recorded; the worker remained running at the last observation | Present state and every later task require fresh inventory and owner confirmation. |
-| Export/deployment | Optimizer-free PyTorch inference-checkpoint export/load is implemented; the immutable A10 v2 file, canonical identity, prediction parity, local copy, and artifact manifest are verified | A v5 inference export is conditional on its training/validation gates. This is experiment hygiene, not target deployment export. ONNX is conditional; TensorRT, Jetson/other edge hardware, ROS 2, and PX4 scope are unresolved. |
+| GPU execution | Dated A10 smoke, five bounded training runs, and one frozen checkpoint evaluation are recorded; worker lifecycle state is not inferred from past evidence | Present state and every later task require fresh inventory and owner confirmation. |
+| Export/deployment | Optimizer-free PyTorch inference-checkpoint export/load is implemented; the immutable A10 v2 file, canonical identity, prediction parity, local copy, and artifact manifest are verified | V5 failed its prerequisite and is rejected from inference export or deployment. ONNX is conditional; TensorRT, Jetson/other edge hardware, ROS 2, and PX4 scope are unresolved. |
 
 ## Repository structure: current and planned
 

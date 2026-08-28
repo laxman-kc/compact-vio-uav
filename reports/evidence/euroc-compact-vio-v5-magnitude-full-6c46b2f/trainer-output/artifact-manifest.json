@@ -1,0 +1,31 @@
+{
+  "files": [
+    {
+      "bytes": 35922455,
+      "path": "checkpoint.pt",
+      "sha256": "f26267f2cb55962ba236257acda0a7ac97ad87f93ae0ecdcb585026fa21f0741"
+    },
+    {
+      "bytes": 6470,
+      "path": "run-summary.json",
+      "sha256": "f2bcf177994eb3ab478b80c8bb7c9716f5abe0660c3a49d4e41f8ffbf3044e07"
+    },
+    {
+      "bytes": 1735,
+      "path": "test-metrics.json",
+      "sha256": "6121936ebca358ecabae2278ea37bb6ae6274e509d3691063c60c821b61df097"
+    },
+    {
+      "bytes": 1098067,
+      "path": "test-predictions.jsonl",
+      "sha256": "e5b53d98be8715e1baa60580fec7277eea875fcf76ec355182b2e9d848bcf048"
+    },
+    {
+      "bytes": 21300,
+      "path": "training-history.json",
+      "sha256": "f9bd794036c958cae7776e6929bcf83e4cdff82b66135c9a803c80697d3785b4"
+    }
+  ],
+  "hash_algorithm": "sha256",
+  "schema_version": 1
+}

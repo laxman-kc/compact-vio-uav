@@ -1240,6 +1240,73 @@ result, and explicit remaining blockers.
   slice. The transport-scope correction must be committed and pass CI before
   the paid run proceeds; there was no model, dataset, or decision-rule change.
 
+## 2026-08-28 — Controlled v5 completed and rejected at the validation gate
+
+- Execution revision `6c46b2f8ef719a7007eef72eebe13b34575aea93` was on
+  `origin/main`; GitHub Actions
+  [run 33173750012](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33173750012)
+  succeeded, and the exact A10 checkout passed all 351 tests.
+- The structural smoke at
+  `/home/ubuntu/compact-vio-runs/euroc-compact-vio-v5-magnitude-smoke-6c46b2f`
+  ran two epochs over 128 training and 64 validation examples, selected and
+  produced 64 of 1,889 eligible configured test pairs, and completed in
+  `16.68084` seconds. Its checkpoint SHA-256 was
+  `56d307755a1203a2e3d2798dee02d07dc7a9d8c85b478dd04f15ba6a84db309e`.
+  It was a structural gate, not quality evidence.
+- The single authorized full run used experiment
+  `euroc-compact-vio-v5-magnitude`, config SHA-256
+  `7f5e50785ed1907c26f5bbea6766a4fc13fd3df591c8930ef8b15ac9f7d71af0`,
+  and split-manifest SHA-256
+  `96d609aca0877b8b37f78498df01cf28f66ba9458a7b9849c1e8cad035b789a0`.
+  It ran on one NVIDIA A10 with PyTorch 2.7.0 from
+  `2026-08-28T13:05:56.866718Z` to `2026-08-28T13:13:04.921466Z`,
+  recorded `428.054755853` seconds, completed all 30 epochs, and selected
+  epoch 29.
+- The frozen pre-`MH_02_easy` translation limit was
+  `0.058765891780989885` m; v5 measured `0.05985308049522323` m and failed.
+  The rotation limit was `0.0061899144990098035` rad; v5 measured
+  `0.007484109588922632` rad and failed. A completed training process is not
+  an accepted candidate: the predeclared outcome is **reject v5**.
+- The configured `V2_03_difficult` development diagnostics retained complete
+  1,889/1,889/1,889 eligible/selected/produced coverage, pair translation RMSE
+  `0.05030155673706295` m, pair rotation RMSE
+  `0.0059332330310097135` rad, raw no-alignment ATE RMSE
+  `9.837654824915393` m, final drift `15.275065744781154` m, and predicted
+  path `63.33375191024651` m versus `85.98933047434808` m reference. Zero
+  motion had raw ATE `2.0557175228736244` m and drift
+  `2.2264894226373304` m. These are seen-sequence diagnostics and cannot
+  override the validation gate or support fresh confirmation.
+- The retained checkpoint SHA-256 is
+  `f26267f2cb55962ba236257acda0a7ac97ad87f93ae0ecdcb585026fa21f0741`.
+  The original five-file trainer output at worker path
+  `/home/ubuntu/compact-vio-runs/euroc-compact-vio-v5-magnitude-full-6c46b2f`
+  and ignored local path
+  `outputs/euroc-compact-vio-v5-magnitude-full-6c46b2f` independently passed
+  manifest verification with immutable inner artifact-manifest SHA-256
+  `9628a7b93da229700b07aa9bb43c07e8b31f68bd4e9ee764b4d7ad06ac63b2f9`.
+  It was then preserved unchanged inside a governed wrapper that adds a
+  schema-valid run manifest, resolved configuration, environment, execution,
+  split, acquisition, and registry records. The wrapper run-manifest SHA-256 is
+  `aeeb4f573d7dcf590f4f0aaf3fd49e922498ec5e2c465fd87e7c00aabf272af4`;
+  its outer artifact-manifest SHA-256 is
+  `548fd52ffd0d89e4a7d347c78a8e9c4ba799c84dd74f7e0a6f3a365f0ba3b91e`.
+  Governed-bundle validation returned `ok: true` for 14 payload files totaling
+  37,075,047 bytes, 13 declared artifacts, and five nested trainer payloads.
+  The canonical governed-v2 wrapper verifies locally. The original trainer
+  bundle independently verifies at its worker and local paths, but the
+  canonical wrapper has not been copied to or verified on the worker. Small
+  records are mirrored in Git; matching content remains copy-integrity
+  evidence, not the unresolved independent-vault, backup, or restore gate.
+- `MH_02_easy` was never extracted, opened, or used for inference; no retry,
+  loss/threshold repair, fresh v5 evaluation, inference export, deployment, or
+  model-promotion action occurred. V5 is rejected from those paths.
+- The next safe plan is to retain this failed evidence and, before any new
+  model work, independently select a rights-compatible full-pose evaluation
+  unit and freeze its source roles, reference capabilities, candidates and
+  controls, native classical backend, fairness/metric/coverage/resource rules,
+  thresholds, tie handling, and stop rule. No exact unit or backend is selected
+  by this entry.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

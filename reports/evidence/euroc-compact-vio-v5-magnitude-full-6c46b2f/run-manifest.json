@@ -1,0 +1,257 @@
+{
+  "schema_version": "1.1.0",
+  "run_id": "euroc-compact-vio-v5-magnitude-full-6c46b2f",
+  "created_at": "2026-08-28T13:41:07Z",
+  "started_at": "2026-08-28T13:05:56.866718Z",
+  "finished_at": "2026-08-28T13:13:04.921466Z",
+  "status": "succeeded",
+  "purpose": "Execute exactly one deterministic controlled v5 translation-magnitude-loss ablation against the frozen v2 validation guardrails; reject it before fresh MH_02 evaluation when either guardrail fails.",
+  "owner": "project owner",
+  "protocol_revision": "reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md@6c46b2f8ef719a7007eef72eebe13b34575aea93",
+  "provenance": {
+    "git": {
+      "repository": "https://github.com/laxman-kc/compact-vio-uav",
+      "commit_sha": "6c46b2f8ef719a7007eef72eebe13b34575aea93",
+      "branch": "main",
+      "dirty": false,
+      "diff_sha256": null
+    },
+    "environment": {
+      "os": "Linux-6.8.0-60-generic-x86_64-with-glibc2.35",
+      "architecture": "x86_64",
+      "fingerprint": "worker-runtime/python3.10.12/torch2.7.0/cuda12.8/driver570.148.08/v1",
+      "container_digest": null,
+      "runtime_versions": {
+        "python": "3.10.12",
+        "torch": "2.7.0",
+        "torch_cuda": "12.8",
+        "cudnn": "90800",
+        "pillow": "12.3.0",
+        "pyyaml": "6.0.3"
+      }
+    },
+    "hardware": {
+      "platform_role": "training_worker",
+      "summary": "Disposable Linux worker with 30 Intel Xeon Platinum 8358 vCPUs and one NVIDIA A10 GPU",
+      "cpu": "30 vCPU; Intel(R) Xeon(R) Platinum 8358 CPU @ 2.60GHz",
+      "gpu": "NVIDIA A10; 23696375808 bytes",
+      "memory_bytes": 238546477056,
+      "driver": "570.148.08",
+      "power_mode": null
+    }
+  },
+  "experiment": {
+    "hypothesis_id": "controlled-v5-translation-magnitude-loss/v1",
+    "candidate_family": "end_to_end_learned",
+    "candidate_name": "euroc-compact-vio-v5-magnitude",
+    "candidate_version": "v5",
+    "configuration": {
+      "path": "resolved-config.json",
+      "sha256": "228e48f0cce2882a7f4b066bb6eda0293d6cd5a4a7dfd478c4cbaf7413aebd93"
+    },
+    "seeds": [
+      20260828
+    ],
+    "parent_run_ids": [
+      "euroc-compact-vio-v2-stride-full-92aa329"
+    ]
+  },
+  "data": {
+    "datasets": [
+      {
+        "dataset_id": "EuRoC DOI 10.3929/ethz-b-000690084",
+        "dataset_version": "vicon_room1_sha256=fe73c27be6dc8ac00493b78b750d36b144daf49eea7fdf3163e934527c1b5297;vicon_room2_sha256=6daf2cbc2de9a6bc4e02866c99ed01c29a5c7c164756f06c4f72656192977cfc",
+        "registry_revision": "6c46b2f8ef719a7007eef72eebe13b34575aea93:a2b04afcf8409d1c766ec0a27c2c884d8279eb5b0615b851379d8e8a25335e0b",
+        "acquisition_manifest": {
+          "path": "provenance/acquisition-record.md",
+          "sha256": "74e973d7f1902e182e3e1f9e57c06e14f46a47df25240f8b99209d1e131cfbd4"
+        },
+        "splits": [
+          {
+            "name": "EuRoC Vicon development train",
+            "role": "train",
+            "manifest_path": "provenance/split-manifest.json",
+            "manifest_sha256": "96d609aca0877b8b37f78498df01cf28f66ba9458a7b9849c1e8cad035b789a0",
+            "source_group_policy": "source-sequence-disjoint/v1; membership is development_split.train"
+          },
+          {
+            "name": "EuRoC Vicon development validation",
+            "role": "validation",
+            "manifest_path": "provenance/split-manifest.json",
+            "manifest_sha256": "96d609aca0877b8b37f78498df01cf28f66ba9458a7b9849c1e8cad035b789a0",
+            "source_group_policy": "source-sequence-disjoint/v1; membership is development_split.validation"
+          },
+          {
+            "name": "EuRoC Vicon seen development test",
+            "role": "test",
+            "manifest_path": "provenance/split-manifest.json",
+            "manifest_sha256": "96d609aca0877b8b37f78498df01cf28f66ba9458a7b9849c1e8cad035b789a0",
+            "source_group_policy": "source-sequence-disjoint/v1; membership is development_split.test; not fresh confirmation"
+          }
+        ]
+      }
+    ],
+    "preprocessing": {
+      "path": "resolved-config.json",
+      "sha256": "228e48f0cce2882a7f4b066bb6eda0293d6cd5a4a7dfd478c4cbaf7413aebd93"
+    }
+  },
+  "evaluation": {
+    "configuration": {
+      "path": "provenance/evaluation-config.json",
+      "sha256": "ea3589b4434f35a1ce9306e9d43818b95bf8e174a74eaed9a69fcc45ac4edacd"
+    },
+    "metric_scale_claim": true,
+    "primary_alignment": "none",
+    "causal": true,
+    "metrics_artifact_id": "v5-test-metrics",
+    "coverage_artifact_id": "v5-test-metrics"
+  },
+  "artifacts": [
+    {
+      "artifact_id": "v5-environment",
+      "kind": "environment",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "environment.json",
+      "media_type": "application/json",
+      "byte_size": 993,
+      "sha256": "12a280c9dd1759d20a41e93f06a0935e7f62f7ecee8cc08d3f7e3f5056fbfc11"
+    },
+    {
+      "artifact_id": "v5-resolved-config",
+      "kind": "configuration",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "resolved-config.json",
+      "media_type": "application/json",
+      "byte_size": 709,
+      "sha256": "228e48f0cce2882a7f4b066bb6eda0293d6cd5a4a7dfd478c4cbaf7413aebd93"
+    },
+    {
+      "artifact_id": "v5-acquisition-record",
+      "kind": "configuration",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "provenance/acquisition-record.md",
+      "media_type": "text/markdown",
+      "byte_size": 2520,
+      "sha256": "74e973d7f1902e182e3e1f9e57c06e14f46a47df25240f8b99209d1e131cfbd4"
+    },
+    {
+      "artifact_id": "v5-dataset-registry",
+      "kind": "configuration",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "provenance/dataset-registry.yaml",
+      "media_type": "application/yaml",
+      "byte_size": 3887,
+      "sha256": "a2b04afcf8409d1c766ec0a27c2c884d8279eb5b0615b851379d8e8a25335e0b"
+    },
+    {
+      "artifact_id": "v5-evaluation-config",
+      "kind": "configuration",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "provenance/evaluation-config.json",
+      "media_type": "application/json",
+      "byte_size": 1161,
+      "sha256": "ea3589b4434f35a1ce9306e9d43818b95bf8e174a74eaed9a69fcc45ac4edacd"
+    },
+    {
+      "artifact_id": "v5-execution-record",
+      "kind": "report",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "provenance/execution-record.json",
+      "media_type": "application/json",
+      "byte_size": 2205,
+      "sha256": "ae3fb92c61ca1f28a6e810ea8c9b53231f4a88ad61dc40c05aa21c1e7fe703fd"
+    },
+    {
+      "artifact_id": "v5-split-manifest",
+      "kind": "configuration",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "provenance/split-manifest.json",
+      "media_type": "application/json",
+      "byte_size": 2034,
+      "sha256": "96d609aca0877b8b37f78498df01cf28f66ba9458a7b9849c1e8cad035b789a0"
+    },
+    {
+      "artifact_id": "v5-original-artifact-manifest",
+      "kind": "other",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "trainer-output/artifact-manifest.json",
+      "media_type": "application/json",
+      "byte_size": 845,
+      "sha256": "9628a7b93da229700b07aa9bb43c07e8b31f68bd4e9ee764b4d7ad06ac63b2f9"
+    },
+    {
+      "artifact_id": "v5-selected-checkpoint",
+      "kind": "checkpoint",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "trainer-output/checkpoint.pt",
+      "media_type": "application/x-pytorch",
+      "byte_size": 35922455,
+      "sha256": "f26267f2cb55962ba236257acda0a7ac97ad87f93ae0ecdcb585026fa21f0741"
+    },
+    {
+      "artifact_id": "v5-run-summary",
+      "kind": "report",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "trainer-output/run-summary.json",
+      "media_type": "application/json",
+      "byte_size": 6470,
+      "sha256": "f2bcf177994eb3ab478b80c8bb7c9716f5abe0660c3a49d4e41f8ffbf3044e07"
+    },
+    {
+      "artifact_id": "v5-test-metrics",
+      "kind": "metrics",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "trainer-output/test-metrics.json",
+      "media_type": "application/json",
+      "byte_size": 1735,
+      "sha256": "6121936ebca358ecabae2278ea37bb6ae6274e509d3691063c60c821b61df097"
+    },
+    {
+      "artifact_id": "v5-test-predictions",
+      "kind": "trajectory",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "trainer-output/test-predictions.jsonl",
+      "media_type": "application/x-ndjson",
+      "byte_size": 1098067,
+      "sha256": "e5b53d98be8715e1baa60580fec7277eea875fcf76ec355182b2e9d848bcf048"
+    },
+    {
+      "artifact_id": "v5-training-history",
+      "kind": "log",
+      "retention_class": "reproducibility_critical",
+      "rights_lane": "research_only",
+      "path": "trainer-output/training-history.json",
+      "media_type": "application/json",
+      "byte_size": 21300,
+      "sha256": "f9bd794036c958cae7776e6929bcf83e4cdff82b66135c9a803c80697d3785b4"
+    }
+  ],
+  "outcome": {
+    "summary": "The deterministic 30-epoch execution succeeded and selected epoch 29. Both frozen pre-MH02 validation guardrails failed, so v5 was rejected with no retry, inference export, or MH02 access.",
+    "exit_code": 0,
+    "failure_category": "none"
+  },
+  "protocol_deviations": [
+    "The trainer-output artifact manifest was created before a run manifest. This superseding governed wrapper preserves those immutable bytes and adds the missing run manifest, exact resolved configuration, environment projection, and execution records.",
+    "No standalone bounded worker-authorization record was created; the owner authorization exists in the governing Codex task and is recorded only as a limitation here."
+  ],
+  "notes": [
+    "The original trainer-output manifest is retained unchanged at trainer-output/artifact-manifest.json.",
+    "The current worker and local copies do not establish the unresolved independent-vault, backup, or restore gate.",
+    "The EuRoC rights statement restricts this bundle to the research_only lane pending a separate derived-weight rights decision.",
+    "The observed worker environment record was captured after execution and binds the known A10 runtime facts; it is not a container or lockfile digest."
+  ]
+}

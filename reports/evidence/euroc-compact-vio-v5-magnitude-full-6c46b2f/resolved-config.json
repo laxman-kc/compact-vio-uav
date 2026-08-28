@@ -1,0 +1,29 @@
+{
+  "batch_size": 64,
+  "data": {
+    "accelerometer_scale_m_s2": 9.80665,
+    "gyroscope_scale_rad_s": 1.0,
+    "image_mean": 0.5,
+    "image_std": 0.25
+  },
+  "deterministic": true,
+  "epochs": 30,
+  "gradient_clip_norm": 5.0,
+  "learning_rate": 0.0003,
+  "model": {
+    "dropout_probability": 0.1,
+    "fusion_hidden_dim": 256,
+    "image_height_px": 160,
+    "image_width_px": 256,
+    "imu_hidden_dim": 128,
+    "rotation_state_source": "shared-recurrent-fusion-state/v1",
+    "visual_feature_dim": 256
+  },
+  "num_workers": 8,
+  "rotation_loss_weight": 1.0,
+  "seed": 20260828,
+  "translation_loss_weight": 1.0,
+  "translation_magnitude_loss_weight": 1.0,
+  "use_amp": true,
+  "weight_decay": 0.00001
+}

@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import io
 import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from compact_vio.learning.errors import LearningError
 from compact_vio.learning.position_evaluate_cli import (
     CandidateDecisionInput,
     _enforce_validation_guardrail,
+    _validate_candidate_checkpoint_metadata,
     apply_position_decision_rule,
     build_parser,
     load_position_evaluation_protocol,
@@ -19,11 +22,28 @@ from compact_vio.learning.position_evaluate_cli import (
 )
 
 
+def _checkpoint_provenance(marker: str) -> dict[str, object]:
+    return {
+        "code_revision": marker * 40,
+        "split_id": f"synthetic-split-{marker}/v1",
+        "train_sequence_ids": ["V1_01_easy"],
+        "validation_sequence_ids": ["V2_01_easy"],
+        "source_sha256": {
+            "V1_01_easy": "1" * 64,
+            "V2_01_easy": "2" * 64,
+        },
+        "calibration_sha256": {
+            "V1_01_easy": "3" * 64,
+            "V2_01_easy": "4" * 64,
+        },
+    }
+
+
 def _protocol() -> dict[str, object]:
     return {
         "record_type": "euroc_position_only_checkpoint_evaluation",
-        "schema_version": "1.0.0",
-        "evaluation_id": "euroc-mh01-frozen-checkpoints-position-v1",
+        "schema_version": "2.0.0",
+        "evaluation_id": "euroc-mh01-frozen-checkpoints-position-v2",
         "dataset": {
             "doi": "10.3929/ethz-b-000690084",
             "rights_statement": "In Copyright - Non-Commercial Use Permitted",
@@ -67,16 +87,19 @@ def _protocol() -> dict[str, object]:
                 "candidate_id": "v2",
                 "checkpoint_sha256": "2" * 64,
                 "inference_policy_id": "independent-zero-state-per-pair/v1",
+                "checkpoint_provenance": _checkpoint_provenance("2"),
             },
             {
                 "candidate_id": "v3",
                 "checkpoint_sha256": "3" * 64,
                 "inference_policy_id": "stateful-contiguous-native-pairs/v1",
+                "checkpoint_provenance": _checkpoint_provenance("3"),
             },
             {
                 "candidate_id": "v4",
                 "checkpoint_sha256": "4" * 64,
                 "inference_policy_id": "stateful-contiguous-native-pairs/v1",
+                "checkpoint_provenance": _checkpoint_provenance("4"),
             },
         ],
     }
@@ -100,11 +123,13 @@ def _controlled_magnitude_protocol() -> dict[str, object]:
             "candidate_id": "v2",
             "checkpoint_sha256": "2" * 64,
             "inference_policy_id": "independent-zero-state-per-pair/v1",
+            "checkpoint_provenance": _checkpoint_provenance("2"),
         },
         {
             "candidate_id": "v5",
             "checkpoint_sha256": "5" * 64,
             "inference_policy_id": "independent-zero-state-per-pair/v1",
+            "checkpoint_provenance": _checkpoint_provenance("5"),
         },
     ]
     return value
@@ -127,16 +152,34 @@ class PositionEvaluationCliTests(unittest.TestCase):
             tuple(candidate.candidate_id for candidate in protocol.candidates),
             ("v2", "v3", "v4"),
         )
+        self.assertEqual(protocol.candidates[0].checkpoint_provenance.code_revision, "2" * 40)
+        self.assertEqual(
+            protocol.candidates[0].checkpoint_provenance.train_sequence_ids,
+            ("V1_01_easy",),
+        )
         self.assertEqual(len(protocol.source_sha256), 64)
         self.assertTrue(protocol.source_path.is_absolute())
 
-    def test_committed_machine_hall_protocol_binds_measured_sources_and_checkpoints(self) -> None:
+    def test_archival_v1_stays_immutable_and_is_not_executable(self) -> None:
         path = (
             Path(__file__).resolve().parent.parent
             / "configs/evaluation/euroc_mh01_frozen_checkpoints_position_v1.json"
         )
+        self.assertEqual(
+            hashlib.sha256(path.read_bytes()).hexdigest(),
+            "2610644fdcffaf2d44f327f3135de3795cfcaa91f7d9a8491d850035a7073425",
+        )
+        with self.assertRaisesRegex(LearningError, "unsupported evaluation protocol"):
+            load_position_evaluation_protocol(path)
+
+    def test_committed_machine_hall_v2_binds_exact_checkpoint_provenance(self) -> None:
+        path = (
+            Path(__file__).resolve().parent.parent
+            / "configs/evaluation/euroc_mh01_frozen_checkpoints_position_v2.json"
+        )
         protocol = load_position_evaluation_protocol(path)
 
+        self.assertEqual(protocol.evaluation_id, "euroc-mh01-frozen-checkpoints-position-v2")
         self.assertEqual(
             protocol.dataset.sensor_sources_sha256,
             "10dd5e711a8c063c16b65d2fe69baa979e8b39299bcaaf5643c5683f27a6977f",
@@ -150,6 +193,38 @@ class PositionEvaluationCliTests(unittest.TestCase):
                 "e775adb16aa4f9522aa577a32704a54db5c82c53685b0e97fb8d149402bf159d",
             ),
         )
+        self.assertEqual(
+            tuple(
+                candidate.checkpoint_provenance.code_revision for candidate in protocol.candidates
+            ),
+            (
+                "92aa3294002a9da5861961a314fe74e2bb1ada05",
+                "336e88c7e80f6841c7d25b7da311172b40f5a3ba",
+                "94d834a82bddb2e6185fb70ec289fd45017c325c",
+            ),
+        )
+        self.assertEqual(
+            protocol.candidates[0].checkpoint_provenance.split_id,
+            "euroc-compact-vio-v2-stride-augmented:"
+            "config=88792b038687442f5707dfa72fde12c5a05473aa0236dc4281543df85565cba4:"
+            "split=96d609aca0877b8b37f78498df01cf28f66ba9458a7b9849c1e8cad035b789a0:"
+            "strides=1,2:mode=full",
+        )
+        for candidate in protocol.candidates:
+            provenance = candidate.checkpoint_provenance
+            self.assertEqual(
+                provenance.train_sequence_ids,
+                ("V1_02_medium", "V2_01_easy", "V2_02_medium"),
+            )
+            self.assertEqual(provenance.validation_sequence_ids, ("V1_03_difficult",))
+            self.assertEqual(
+                dict(provenance.source_sha256)["V2_03_difficult"],
+                "4db6f13f464bb342af669e9b9fc3a494afec656bdd72a89824293c55ec83ab78",
+            )
+            self.assertEqual(
+                set(dict(provenance.source_sha256)),
+                set(dict(provenance.calibration_sha256)),
+            )
 
     def test_unknown_fields_bad_hash_duplicate_candidate_and_policy_fail(self) -> None:
         for mutate, message in (
@@ -179,6 +254,127 @@ class PositionEvaluationCliTests(unittest.TestCase):
             mutate(value)
             with self.subTest(message=message), self.assertRaisesRegex(LearningError, message):
                 self._load(value)
+
+    def test_checkpoint_provenance_schema_rejects_incomplete_or_ambiguous_identity(self) -> None:
+        def provenance(value: dict[str, object]) -> dict[str, object]:
+            return value["candidates"][0]["checkpoint_provenance"]  # type: ignore[index,return-value]
+
+        def remove_required_hash(value: dict[str, object]) -> None:
+            candidate_provenance = provenance(value)
+            for field in ("source_sha256", "calibration_sha256"):
+                candidate_provenance[field].pop("V1_01_easy")  # type: ignore[union-attr]
+
+        cases = (
+            (
+                lambda value: provenance(value).update({"unknown": "value"}),
+                "fields must equal",
+            ),
+            (
+                lambda value: provenance(value).pop("split_id"),
+                "fields must equal",
+            ),
+            (
+                lambda value: provenance(value).update({"code_revision": "not-a-commit"}),
+                "lowercase hexadecimal",
+            ),
+            (
+                lambda value: provenance(value).update({"train_sequence_ids": "V1_01_easy"}),
+                "non-empty JSON array",
+            ),
+            (
+                lambda value: provenance(value)["train_sequence_ids"].append("V1_01_easy"),  # type: ignore[union-attr]
+                "must not contain duplicates",
+            ),
+            (
+                lambda value: provenance(value)["validation_sequence_ids"].append(  # type: ignore[union-attr]
+                    "V1_01_easy"
+                ),
+                "membership overlaps",
+            ),
+            (
+                lambda value: provenance(value).update({"source_sha256": []}),
+                "non-empty JSON object",
+            ),
+            (
+                lambda value: provenance(value)["source_sha256"].update(  # type: ignore[union-attr]
+                    {"V1_01_easy": "A" * 64}
+                ),
+                "lowercase hexadecimal",
+            ),
+            (
+                lambda value: provenance(value)["source_sha256"].update(  # type: ignore[union-attr]
+                    {"extra": "5" * 64}
+                ),
+                "source/calibration sequence membership differs",
+            ),
+            (
+                lambda value: provenance(value)["source_sha256"].pop("V1_01_easy"),  # type: ignore[union-attr]
+                "source/calibration sequence membership differs",
+            ),
+            (remove_required_hash, "do not cover split membership"),
+            (
+                lambda value: value["dataset"].update({"sequence_id": "V1_01_easy"}),  # type: ignore[union-attr]
+                "appears in checkpoint",
+            ),
+        )
+        for mutate, message in cases:
+            value = _protocol()
+            mutate(value)
+            with self.subTest(message=message), self.assertRaisesRegex(LearningError, message):
+                self._load(value)
+
+    def test_checkpoint_metadata_must_match_every_frozen_provenance_field_exactly(self) -> None:
+        protocol = self._load()
+        candidate = protocol.candidates[0]
+        expected = candidate.checkpoint_provenance
+        values: dict[str, object] = {
+            "dataset_id": "EuRoC DOI 10.3929/ethz-b-000690084",
+            "code_revision": expected.code_revision,
+            "split_id": expected.split_id,
+            "train_sequence_ids": expected.train_sequence_ids,
+            "validation_sequence_ids": expected.validation_sequence_ids,
+            "source_sha256": expected.source_sha256,
+            "calibration_sha256": expected.calibration_sha256,
+        }
+
+        def metadata(**updates: object) -> SimpleNamespace:
+            return SimpleNamespace(provenance=SimpleNamespace(**{**values, **updates}))
+
+        _validate_candidate_checkpoint_metadata(
+            candidate=candidate,
+            metadata=metadata(),
+            evaluation_sequence_id="MH_01_easy",
+            expected_dataset_id="EuRoC DOI 10.3929/ethz-b-000690084",
+        )
+        mismatches = {
+            "dataset_id": "other dataset",
+            "code_revision": "f" * 40,
+            "split_id": "other split",
+            "train_sequence_ids": list(expected.train_sequence_ids),
+            "validation_sequence_ids": ("V1_03_difficult",),
+            "source_sha256": tuple(
+                (key, "f" * 64 if index == 0 else digest)
+                for index, (key, digest) in enumerate(expected.source_sha256)
+            ),
+            "calibration_sha256": tuple(
+                (key, "e" * 64 if index == 0 else digest)
+                for index, (key, digest) in enumerate(expected.calibration_sha256)
+            ),
+        }
+        for field, wrong_value in mismatches.items():
+            with (
+                self.subTest(field=field),
+                self.assertRaisesRegex(
+                    LearningError,
+                    f"provenance {field} differs from protocol",
+                ),
+            ):
+                _validate_candidate_checkpoint_metadata(
+                    candidate=candidate,
+                    metadata=metadata(**{field: wrong_value}),
+                    evaluation_sequence_id="MH_01_easy",
+                    expected_dataset_id="EuRoC DOI 10.3929/ethz-b-000690084",
+                )
 
     def test_decision_selects_only_full_coverage_candidate_beating_zero(self) -> None:
         protocol = self._load()

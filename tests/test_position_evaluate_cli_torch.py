@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import csv
 import hashlib
 import io
@@ -11,6 +12,8 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
+
+from compact_vio.learning.errors import LearningError
 
 try:
     import torch
@@ -225,7 +228,7 @@ class PositionEvaluationCliTorchTests(unittest.TestCase):
                 validation_sequence_ids=("V2_01_easy",),
                 source_sha256={"V1_01_easy": "1" * 64, "V2_01_easy": "2" * 64},
                 calibration_sha256={"V1_01_easy": "3" * 64, "V2_01_easy": "4" * 64},
-                code_revision="synthetic-test-revision",
+                code_revision="a" * 40,
             )
             checkpoint_paths: dict[str, Path] = {}
             checkpoint_hashes: dict[str, str] = {}
@@ -261,8 +264,8 @@ class PositionEvaluationCliTorchTests(unittest.TestCase):
             archive_bytes = archive.read_bytes()
             protocol_value = {
                 "record_type": "euroc_position_only_checkpoint_evaluation",
-                "schema_version": "1.0.0",
-                "evaluation_id": "synthetic-position-evaluation-smoke-v1",
+                "schema_version": "2.0.0",
+                "evaluation_id": "synthetic-position-evaluation-smoke-v2",
                 "dataset": {
                     "doi": "10.3929/ethz-b-000690084",
                     "rights_statement": "In Copyright - Non-Commercial Use Permitted",
@@ -295,6 +298,14 @@ class PositionEvaluationCliTorchTests(unittest.TestCase):
                             if candidate_id == "v2"
                             else "stateful-contiguous-native-pairs/v1"
                         ),
+                        "checkpoint_provenance": {
+                            "code_revision": provenance.code_revision,
+                            "split_id": provenance.split_id,
+                            "train_sequence_ids": list(provenance.train_sequence_ids),
+                            "validation_sequence_ids": list(provenance.validation_sequence_ids),
+                            "source_sha256": dict(provenance.source_sha256),
+                            "calibration_sha256": dict(provenance.calibration_sha256),
+                        },
                     }
                     for candidate_id in ("v2", "v3", "v4")
                 ],
@@ -304,6 +315,58 @@ class PositionEvaluationCliTorchTests(unittest.TestCase):
                 json.dumps(protocol_value, indent=2, sort_keys=True) + "\n",
                 encoding="utf-8",
             )
+            mismatched_value = copy.deepcopy(protocol_value)
+            mismatched_value["candidates"][0]["checkpoint_provenance"][  # type: ignore[index]
+                "code_revision"
+            ] = "b" * 40
+            mismatched_protocol = root / "mismatched-protocol.json"
+            mismatched_protocol.write_text(
+                json.dumps(mismatched_value, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            mismatched_output = root / "mismatched-output"
+            mismatched_arguments = build_parser().parse_args(
+                [
+                    "--protocol",
+                    str(mismatched_protocol),
+                    "--archive",
+                    str(archive),
+                    "--data-root",
+                    str(data_root),
+                    "--checkpoint",
+                    f"v2={checkpoint_paths['v2']}",
+                    "--checkpoint",
+                    f"v3={checkpoint_paths['v3']}",
+                    "--checkpoint",
+                    f"v4={checkpoint_paths['v4']}",
+                    "--output-dir",
+                    str(mismatched_output),
+                    "--device",
+                    "cpu",
+                ]
+            )
+            with (
+                patch(
+                    "compact_vio.learning.position_evaluate_cli._git_revision",
+                    return_value="a" * 40,
+                ),
+                patch("compact_vio.learning.position_evaluate_cli._archive_hashes") as hash_archive,
+                patch("compact_vio.data.euroc.load_euroc_sensor_sequence") as load_sensors,
+                patch(
+                    "compact_vio.data.euroc_position.load_euroc_position_reference"
+                ) as load_reference,
+                patch(
+                    "compact_vio.learning.position_evaluate_cli._candidate_predictions"
+                ) as predict_candidate,
+                self.assertRaisesRegex(LearningError, "provenance code_revision differs"),
+            ):
+                _run(mismatched_arguments)
+            hash_archive.assert_not_called()
+            load_sensors.assert_not_called()
+            load_reference.assert_not_called()
+            predict_candidate.assert_not_called()
+            self.assertFalse(mismatched_output.exists())
+
             output = root / "output"
             arguments = build_parser().parse_args(
                 [
@@ -390,6 +453,34 @@ class PositionEvaluationCliTorchTests(unittest.TestCase):
 
             for candidate in summary["candidates"]:
                 candidate_id = candidate["candidate_id"]
+                frozen_candidate = next(
+                    item
+                    for item in protocol_value["candidates"]  # type: ignore[union-attr]
+                    if item["candidate_id"] == candidate_id
+                )
+                frozen_provenance = frozen_candidate["checkpoint_provenance"]
+                observed_provenance = candidate["checkpoint"]["provenance"]
+                self.assertEqual(
+                    observed_provenance["code_revision"],
+                    frozen_provenance["code_revision"],
+                )
+                self.assertEqual(observed_provenance["split_id"], frozen_provenance["split_id"])
+                self.assertEqual(
+                    observed_provenance["train_sequence_ids"],
+                    frozen_provenance["train_sequence_ids"],
+                )
+                self.assertEqual(
+                    observed_provenance["validation_sequence_ids"],
+                    frozen_provenance["validation_sequence_ids"],
+                )
+                self.assertEqual(
+                    dict(observed_provenance["source_sha256"]),
+                    frozen_provenance["source_sha256"],
+                )
+                self.assertEqual(
+                    dict(observed_provenance["calibration_sha256"]),
+                    frozen_provenance["calibration_sha256"],
+                )
                 self.assertEqual(
                     candidate["coverage"],
                     {

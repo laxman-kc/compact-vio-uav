@@ -1,0 +1,76 @@
+{
+  "files": [
+    {
+      "bytes": 993,
+      "path": "environment.json",
+      "sha256": "12a280c9dd1759d20a41e93f06a0935e7f62f7ecee8cc08d3f7e3f5056fbfc11"
+    },
+    {
+      "bytes": 2520,
+      "path": "provenance/acquisition-record.md",
+      "sha256": "74e973d7f1902e182e3e1f9e57c06e14f46a47df25240f8b99209d1e131cfbd4"
+    },
+    {
+      "bytes": 3887,
+      "path": "provenance/dataset-registry.yaml",
+      "sha256": "a2b04afcf8409d1c766ec0a27c2c884d8279eb5b0615b851379d8e8a25335e0b"
+    },
+    {
+      "bytes": 1161,
+      "path": "provenance/evaluation-config.json",
+      "sha256": "ea3589b4434f35a1ce9306e9d43818b95bf8e174a74eaed9a69fcc45ac4edacd"
+    },
+    {
+      "bytes": 2205,
+      "path": "provenance/execution-record.json",
+      "sha256": "ae3fb92c61ca1f28a6e810ea8c9b53231f4a88ad61dc40c05aa21c1e7fe703fd"
+    },
+    {
+      "bytes": 2034,
+      "path": "provenance/split-manifest.json",
+      "sha256": "96d609aca0877b8b37f78498df01cf28f66ba9458a7b9849c1e8cad035b789a0"
+    },
+    {
+      "bytes": 709,
+      "path": "resolved-config.json",
+      "sha256": "228e48f0cce2882a7f4b066bb6eda0293d6cd5a4a7dfd478c4cbaf7413aebd93"
+    },
+    {
+      "bytes": 10666,
+      "path": "run-manifest.json",
+      "sha256": "aeeb4f573d7dcf590f4f0aaf3fd49e922498ec5e2c465fd87e7c00aabf272af4"
+    },
+    {
+      "bytes": 845,
+      "path": "trainer-output/artifact-manifest.json",
+      "sha256": "9628a7b93da229700b07aa9bb43c07e8b31f68bd4e9ee764b4d7ad06ac63b2f9"
+    },
+    {
+      "bytes": 35922455,
+      "path": "trainer-output/checkpoint.pt",
+      "sha256": "f26267f2cb55962ba236257acda0a7ac97ad87f93ae0ecdcb585026fa21f0741"
+    },
+    {
+      "bytes": 6470,
+      "path": "trainer-output/run-summary.json",
+      "sha256": "f2bcf177994eb3ab478b80c8bb7c9716f5abe0660c3a49d4e41f8ffbf3044e07"
+    },
+    {
+      "bytes": 1735,
+      "path": "trainer-output/test-metrics.json",
+      "sha256": "6121936ebca358ecabae2278ea37bb6ae6274e509d3691063c60c821b61df097"
+    },
+    {
+      "bytes": 1098067,
+      "path": "trainer-output/test-predictions.jsonl",
+      "sha256": "e5b53d98be8715e1baa60580fec7277eea875fcf76ec355182b2e9d848bcf048"
+    },
+    {
+      "bytes": 21300,
+      "path": "trainer-output/training-history.json",
+      "sha256": "f9bd794036c958cae7776e6929bcf83e4cdff82b66135c9a803c80697d3785b4"
+    }
+  ],
+  "hash_algorithm": "sha256",
+  "schema_version": 1
+}
