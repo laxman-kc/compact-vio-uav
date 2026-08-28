@@ -37,7 +37,15 @@ Current namespaces:
 - `data/` records exact source archives, sequence roles, split membership, and
   acquisition policies. The `MH_02_easy` record is prospective: it reserves one
   position-only v2-versus-v5 evaluation and does not claim extraction or a
-  result.
+  result. The TUM VI `room4` 512x512 record is a non-executable candidate
+  identity only: it binds the official request/redirect observation, observed
+  size, exact MD5-sidecar provenance, rights, and source capabilities while
+  leaving selection, acquisition, SHA-256, layout, calibration, ground-truth
+  schema, 16-bit preprocessing, adapter compatibility, and membership
+  unresolved. A strict exact-field loader and focused tests now validate the
+  non-executable record. Structural loading does not confer acquisition or
+  evaluation authority; a separate bounded transfer record/controller remains
+  required before network access.
 - `training/` contains the fully resolved v1-v5 experiment configurations.
   Each new candidate changes only the fields declared by its reviewed plan.
 - `evaluation/` contains frozen checkpoint-evaluation protocols after source,

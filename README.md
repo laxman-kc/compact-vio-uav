@@ -129,6 +129,18 @@ dataset membership, reference capabilities, controls, native classical
 backend, metrics, thresholds, and tie rule must be recorded before execution;
 none is silently selected here.
 
+The next full-pose lane now has a non-executable TUM VI `room4` 512x512
+candidate identity plus production archive primitives. The strict loader binds
+the official request/redirect observation, observed byte length, exact MD5
+sidecar, unresolved SHA-256, and lack of scientific authority. The downloader
+and TAR layer provide closed redirect validation, bounded resume, crash-safe
+single-writer locking, held-descriptor digest verification, SHA-pinned
+read-only inventory, hostile-member rejection, and atomic allowlisted
+extraction. No TUM VI archive bytes have been downloaded or extracted. A
+separate one-use transfer authorization/controller is required before network
+access, and a later selection/protocol freeze is required before checkpoint
+loading or inference.
+
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is
 preserved unchanged inside a governed wrapper at

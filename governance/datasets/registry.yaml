@@ -84,10 +84,16 @@ datasets:
     decision_status: candidate
     project_role: unresolved
     official_url: https://cvg.cit.tum.de/data/datasets/visual-inertial-dataset
+    candidate_record: configs/data/tumvi_room4_512_16_candidate_v1.json
+    candidate_evidence: governance/datasets/evidence/tumvi-room4-512-candidate-2026-08-28.md
+    identity_state: published_identity_only
+    proposed_lane: external_full_pose_generalization_candidate_only
     rights:
       status: recorded_from_official_source
       label: CC BY 4.0
       url: https://cvg.cit.tum.de/data/datasets/visual-inertial-dataset
     cautions:
+      - The room4 512x512 archive is identified only as a non-executable candidate; it is not selected, approved, downloaded, extracted, or evaluated.
+      - Archive SHA-256/layout, exact calibration and ground-truth schema, 16-bit preprocessing, adapter compatibility, and source membership remain unresolved.
       - The motion/domain is not a substitute for UAV-domain evidence.
       - Ground-truth availability varies and must be recorded per sequence.

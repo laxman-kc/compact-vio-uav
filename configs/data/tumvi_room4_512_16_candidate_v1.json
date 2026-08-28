@@ -1,0 +1,133 @@
+{
+  "record_type": "dataset_unit_candidate",
+  "schema_version": "1.0.0",
+  "record_status": "candidate_non_executable",
+  "identity_state": "published_identity_only",
+  "recorded_at": "2026-08-28",
+  "authority": {
+    "selects_dataset": false,
+    "approves_acquisition": false,
+    "approves_extraction": false,
+    "approves_training": false,
+    "approves_inference": false,
+    "approves_evaluation": false
+  },
+  "dataset": {
+    "dataset_id": "tum-vi",
+    "name": "TUM Visual-Inertial Dataset",
+    "publisher": "Technical University of Munich Computer Vision Group",
+    "landing_page": "https://cvg.cit.tum.de/data/datasets/visual-inertial-dataset",
+    "official_512_export_directory": "https://vision.in.tum.de/tumvi/exported/euroc/512_16/",
+    "dataset_doi": null,
+    "benchmark_publication_doi": "10.1109/IROS.2018.8593419",
+    "benchmark_publication_doi_scope": "benchmark_publication_not_dataset_deposit",
+    "rights": {
+      "data_label": "CC BY 4.0",
+      "data_url": "https://creativecommons.org/licenses/by/4.0/",
+      "code_label": "BSD-2-Clause",
+      "code_url": "https://opensource.org/license/bsd-2-clause",
+      "authoritative_statement_url": "https://cvg.cit.tum.de/data/datasets/visual-inertial-dataset"
+    }
+  },
+  "candidate_unit": {
+    "sequence_id": "room4",
+    "source_group_id": null,
+    "membership_role": null,
+    "distribution_format": "euroc_dso_tar",
+    "image_resolution": [
+      512,
+      512
+    ],
+    "published_image_bit_depth": 16,
+    "filename": "dataset-room4_512_16.tar",
+    "official_request_url": "https://cdn3.vision.in.tum.de/tumvi/exported/euroc/512_16/dataset-room4_512_16.tar",
+    "allowed_redirect_urls": [
+      "https://cdn2.vision.in.tum.de/tumvi/exported/euroc/512_16/dataset-room4_512_16.tar"
+    ],
+    "allowed_redirect_origins": [
+      "https://cdn2.vision.in.tum.de"
+    ],
+    "http_observations": {
+      "method": "HEAD",
+      "request_observed_at": "2026-08-28T14:05:09Z",
+      "request_status_code": 302,
+      "redirect_target": "https://cdn2.vision.in.tum.de/tumvi/exported/euroc/512_16/dataset-room4_512_16.tar",
+      "redirect_observed_at": "2026-08-28T14:05:19Z",
+      "redirect_status_code": 200,
+      "observed_content_length_bytes": 1356206080,
+      "last_modified": "Tue, 17 Apr 2018 22:54:49 GMT"
+    },
+    "md5_sidecar": {
+      "official_request_url": "https://cdn3.vision.in.tum.de/tumvi/exported/euroc/512_16/dataset-room4_512_16.tar.md5",
+      "allowed_redirect_urls": [
+        "https://cdn2.vision.in.tum.de/tumvi/exported/euroc/512_16/dataset-room4_512_16.tar.md5"
+      ],
+      "allowed_redirect_origins": [
+        "https://cdn2.vision.in.tum.de"
+      ],
+      "http_observations": {
+        "method": "GET",
+        "request_observed_at": "2026-08-28T14:11:43Z",
+        "request_status_code": 302,
+        "redirect_target": "https://cdn2.vision.in.tum.de/tumvi/exported/euroc/512_16/dataset-room4_512_16.tar.md5",
+        "redirect_observed_at": "2026-08-28T14:11:44Z",
+        "redirect_status_code": 200,
+        "observed_content_length_bytes": 59,
+        "last_modified": "Tue, 17 Apr 2018 22:54:52 GMT"
+      },
+      "exact_body": "8e2ec2c35ee40a54c9aaa5bc2b3c9d8c  dataset-room4_512_16.tar\n",
+      "published_md5": "8e2ec2c35ee40a54c9aaa5bc2b3c9d8c"
+    },
+    "received_size_bytes": null,
+    "received_md5": null,
+    "received_sha256": null,
+    "expanded_size_bytes": null,
+    "archive_layout_status": "unresolved_not_downloaded"
+  },
+  "published_capabilities": {
+    "capture_domain": "handheld_indoor_room",
+    "cameras": {
+      "count": 2,
+      "type": "monochrome_stereo",
+      "published_rate_hz": 20,
+      "hardware_synchronized_with_imu": true
+    },
+    "imu": {
+      "published_rate_hz": 200,
+      "accelerometer_axes": 3,
+      "gyroscope_axes": 3
+    },
+    "processed_sequence_statements": {
+      "consistent_camera_imu_ground_truth_timestamps": true,
+      "imu_scaling_and_axis_alignment_applied": true,
+      "ground_truth_pose_frame": "imu",
+      "room_ground_truth_coverage": "entire_trajectory",
+      "ground_truth_source": "motion_capture"
+    }
+  },
+  "candidate_intent": {
+    "proposed_lane": "external_full_pose_generalization_candidate_only",
+    "uav_domain_confirmation": false,
+    "publishable_superiority_claim": false,
+    "deployment_or_flight_claim": false
+  },
+  "unresolved": {
+    "owner_authorization_for_bounded_acquisition": true,
+    "evaluation_unit_selection_and_approval": true,
+    "archive_sha256_and_safe_layout": true,
+    "exact_calibration_artifact_and_hashes": true,
+    "ground_truth_schema_pose_convention_and_parser": true,
+    "image_16_bit_decoding_and_preprocessing": true,
+    "source_group_and_membership_role": true,
+    "adapter_compatibility": true,
+    "evaluation_protocol": true
+  },
+  "evidence": "governance/datasets/evidence/tumvi-room4-512-candidate-2026-08-28.md",
+  "notes": [
+    "No archive bytes were downloaded when this candidate record was created.",
+    "Observed archive Content-Length/Last-Modified headers and the exact official MD5 sidecar do not substitute for a received-byte SHA-256 and archive validation.",
+    "The benchmark DOI identifies the publication, not the dataset archive.",
+    "Candidate identity is not dataset selection or execution authority.",
+    "This non-executable candidate is parsed by a strict exact-field loader with focused tests; successful loading does not grant acquisition authority. A separate bounded acquisition record and controller remain required before any transfer."
+  ]
+}

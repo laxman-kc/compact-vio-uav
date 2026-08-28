@@ -997,29 +997,48 @@ Exit evidence:
 
 Execute these as separate small slices; do not combine them into one long phase:
 
-1. Completed at revision `6c46b2f8ef719a7007eef72eebe13b34575aea93`:
-   pass CI and 351 A10 tests, complete one structural v5 smoke and one bounded
-   30-epoch run, apply the frozen validation limits, reject v5 on both failed
-   comparisons, preserve the immutable trainer output inside a governed
-   run-manifest/configuration/environment wrapper, verify the original trainer
-   output at its worker/local paths, and validate the canonical governed-v2
-   wrapper locally.
+1. Executed at revision `6c46b2f8ef719a7007eef72eebe13b34575aea93`
+   and closed at revision
+   `26bd9faffd1ed30f2e8555f54a32988dd412480f`: pass CI and 351 A10 tests,
+   complete one structural v5 smoke and one bounded 30-epoch run, apply the
+   frozen validation limits, reject v5 on both failed comparisons, preserve the
+   immutable trainer output inside a governed run-manifest/configuration/
+   environment wrapper, verify the original trainer output at its worker/local
+   paths, and validate the canonical governed-v2 wrapper locally. The closeout
+   revision passed GitHub Actions run 33178215376 and all 367 project tests.
 2. Retain the failed-run evidence without retry, loss/threshold repair, v5
    inference export, deployment work, or `MH_02_easy` access. The unit was
    never extracted, opened, or inferred and remains unconsumed by v5.
-3. Independently select a rights-compatible new full-pose evaluation unit with
-   reference position and orientation. Record its exact source identity,
-   provenance, licence, membership role, reference capabilities, and leakage
-   review before any prediction is inspected.
-4. Freeze one full-pose protocol before any new model work: candidates and
+3. Candidate-screening evidence is recorded for the TUM VI `room4` 512x512
+   archive without selecting it. The record binds the official request and
+   closed observed redirect, observed byte length, exact official MD5-sidecar
+   transaction, rights, handheld room domain, stereo/IMU capabilities, and
+   full-trajectory MoCap claim. It authorizes no download, extraction,
+   inference, evaluation, or UAV-generalization claim. The JSON remains
+   parsed by a strict exact-field loader with focused tests; loading it does
+   not create authority. The same slice provides safe archive download,
+   identity verification, read-only TAR inventory, and atomic allowlisted
+   extraction primitives, but it does not itself authorize a real transfer.
+4. Before any transfer, obtain a separate bounded acquisition authorization
+   with the exact unit, official endpoint, destination, retention, capacity,
+   time/cost bound, and permitted operations. If authorized, acquire only that
+   unit, verify the received size and published MD5, compute SHA-256, inspect
+   the TAR safely, and validate exact calibration, ground-truth schema,
+   16-bit preprocessing, and adapter compatibility. Acquisition evidence alone
+   does not select the evaluation unit.
+5. Complete the independent unit-selection gate after that evidence exists.
+   Select or reject TUM VI `room4` without inspecting any candidate prediction,
+   then freeze its source group, leakage review, and membership role. A
+   different rights-compatible full-pose unit may be chosen instead.
+6. Freeze one full-pose protocol before any new model work: candidates and
    controls, native classical backend, association/alignment/scale semantics,
    ATE/RPE/rotation/drift measures, coverage and failure rules, latency/memory
    scope, primary metric, thresholds, tie handling, and stop rule.
-5. Only after that freeze, implement the minimum missing adapter/evaluator
+7. Only after that freeze, implement the minimum missing adapter/evaluator
    behavior and execute the protocol once. Publish complete coverage, failures,
    resource measurements, metrics, identities, and checksums without tuning
    from the outcome.
-6. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
+8. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
    flight work only after the frozen full-pose result and its separate
    deployment/safety decisions justify that step.
 

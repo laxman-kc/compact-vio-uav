@@ -273,7 +273,12 @@ the next decision boundary.
 
 ## Current implementation boundary
 
-Implemented now: repository/evidence tooling; the generic causal event-release,
+Implemented now: repository/evidence tooling; a strict non-executable TUM VI
+candidate loader; closed-redirect, resumable, identity-verified archive
+acquisition primitives; SHA-pinned read-only TAR inventory; and atomic
+allowlisted extraction with hostile-member rejection. The archive primitives
+do not themselves grant transfer or scientific authority. Also implemented are
+the generic causal event-release,
 estimator-envelope, execution-recorder, coverage, and payload-omitted trace
 boundaries; typed camera/IMU and trajectory records; raw exact-pair residual,
 RMSE, and SE(3) evaluation; and persisted calibration-profile/assessment
@@ -327,7 +332,7 @@ gate.
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
 | Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
-| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified acquisition; versioned Vicon and Machine Hall identities, hashes, calibration, split, and endpoint configurations | Other datasets or physical sensors require separate rights, calibration, provenance, and role records. |
+| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned TAR inventory; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity | TUM VI transfer still requires a bounded one-use authorization/controller; its received SHA/layout, 16-bit preprocessing, adapter, selection, and protocol remain unresolved. Other sources require separate rights, calibration, provenance, and role records. |
 | Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, five completed A10 runs, and a rejected controlled v5 loss ablation | No v5 retry or direct model work is authorized. A new full-pose unit/protocol must be selected and frozen independently before later model work. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
@@ -360,7 +365,7 @@ compact-vio-uav/
 │   ├── preflight.py                       [current]
 │   ├── repository_policy.py               [current]
 │   ├── contracts/                         [current: sensor payload/calibration-identity runtime records]
-│   ├── data/                              [current: verified EuRoC acquisition/full-state/sensor-only/Leica adapters]
+│   ├── data/                              [current: verified ZIP/TAR acquisition, inventory, full-state/sensor-only/Leica adapters]
 │   ├── geometry/                          [current: translation trajectory records]
 │   ├── evaluation/                        [current: residual/RMSE, SE(3), position magnitude, coverage/binding]
 │   ├── learning/                          [current: config/data/model/train/checkpoint/inference/evaluation CLIs]

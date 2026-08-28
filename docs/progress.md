@@ -1307,6 +1307,78 @@ result, and explicit remaining blockers.
   thresholds, tie handling, and stop rule. No exact unit or backend is selected
   by this entry.
 
+## 2026-08-28 — M9 TUM VI `room4` full-pose candidate identity recorded
+
+- The preceding failed-v5 evidence and governance hardening were committed as
+  revision `26bd9faffd1ed30f2e8555f54a32988dd412480f` and pushed to
+  `origin/main`; GitHub Actions run
+  [33178215376](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33178215376)
+  completed successfully.
+- Closeout validation at that immutable revision passed all 367 tests in the
+  PyTorch 2.13.0 project environment, the
+  `jsonschema[format-nongpl]==4.26.0` harness for 10 schemas and 7 templates,
+  repository policy for 151 files with zero violations, Ruff lint and format
+  checks with 109 Python files already formatted, and the governed-bundle
+  validator with `ok: true`.
+- Candidate-only records now identify the official TUM VI `room4` EuRoC/DSO
+  512x512 16-bit archive. A read-only `HEAD` observation bound the official
+  `cdn3` request, its `302` redirect to `cdn2`, redirected `200` response,
+  observed `1,356,206,080`-byte `Content-Length`, and
+  `Tue, 17 Apr 2018 22:54:49 GMT` `Last-Modified`. A separate `GET` of the
+  official 59-byte MD5 sidecar observed a `302` from `cdn3` at
+  `2026-08-28T14:11:43Z`, then `200` from the exact allowed `cdn2` final URL at
+  `2026-08-28T14:11:44Z`, `Last-Modified: Tue, 17 Apr 2018 22:54:52 GMT`, and
+  exact body
+  `8e2ec2c35ee40a54c9aaa5bc2b3c9d8c  dataset-room4_512_16.tar` followed by
+  one LF byte. Archive and sidecar redirects are restricted to their exact
+  recorded final URLs and the `https://cdn2.vision.in.tum.de` origin. No
+  archive bytes were downloaded and no SHA-256 was inferred.
+- The official source describes hardware-synchronized stereo monochrome
+  cameras and a 200 Hz IMU, processed timestamps/scaling/axes, poses in the IMU
+  frame, and full-trajectory MoCap poses for room sequences. The data licence
+  is CC BY 4.0 and accompanying code licence is BSD-2-Clause. DOI
+  `10.1109/IROS.2018.8593419` is recorded only as the benchmark-publication DOI,
+  not a dataset DOI.
+- This is not unit selection or execution authority. Exact received-byte
+  SHA-256/layout, calibration identities, ground-truth schema/conventions,
+  16-bit preprocessing, adapter compatibility, source-group/leakage review,
+  membership role, full-pose protocol, backend, candidates, metrics, and
+  thresholds remain unresolved. The proposed lane is external full-pose
+  generalization only; handheld TUM VI evidence cannot confirm the UAV domain.
+  No selection, approval, extraction, inference, training, or evaluation
+  occurred. The candidate JSON has identity state `published_identity_only`.
+  Its strict exact-field loader and focused tests are implemented, but
+  successful structural loading does not grant acquisition authority.
+
+## 2026-08-28 — M9 archive trust boundary implemented; no transfer
+
+- `src/compact_vio/data/archive.py` now loads the non-executable candidate and
+  separately loads exact identity/destination-scoped acquisition records.
+  Candidate records and direct construction cannot invoke the mutating
+  downloader. The implementation validates every HTTPS redirect hop, supports
+  bounded resume or safe full restart, holds a crash-safe POSIX advisory lock,
+  stages into a single-link `.part`, and rehashes the held file descriptor
+  before and after atomic no-overwrite publication.
+- Read-only TAR inventory requires a pinned SHA-256 and uncompressed `r:`
+  parsing. It rejects unsafe paths, normalization/topology collisions, links,
+  devices, FIFOs, sparse/unknown members, and declared expansion beyond
+  explicit limits before any write. The separate allowlisted extraction
+  primitive uses same-filesystem staging, per-file SHA-256 receipts, a mandatory
+  semantic validator, and atomic no-overwrite publication.
+- Focused archive tests cover exact candidate/authorization parsing, redirect
+  policy, resume semantics, concurrency and mutation races, hard-linked
+  partials, checksums, hostile TAR members, limits, staging validation, and
+  atomic publication. All 34 focused archive tests and all 401 repository tests
+  passed. Ruff 0.16.4 lint/format passed for 112 Python files; the schema
+  harness passed 10 schemas and 7 templates; repository policy checked 155
+  files with zero violations; compilation and `git diff --check` passed.
+- No network transfer, archive extraction, image decoding, checkpoint loading,
+  inference, training, evaluation, unit selection, or dataset approval occurred.
+  A complete one-use acquisition controller still needs candidate/tool hash
+  binding, expiry, capacity reserve, time/cost bounds, retention, immutable
+  claim/receipt behavior, and trusted review anchoring before the real archive
+  may be transferred.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
