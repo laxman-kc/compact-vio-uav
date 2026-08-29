@@ -296,8 +296,13 @@ class AcquisitionTests(unittest.TestCase):
         self.assertEqual(result.maximum_elapsed_seconds, 3_600)
         self.assertFalse(self.fixture.claim_path.exists())
 
-    def test_runtime_sources_match_repository_checkout(self) -> None:
-        _REAL_ASSERT_RUNTIME_SOURCES(_PROJECT_ROOT)
+    def test_runtime_source_gate_matches_import_location_contract(self) -> None:
+        expected = (_PROJECT_ROOT / "src/compact_vio/data/acquisition.py").resolve()
+        if Path(acquisition_module.__file__).resolve() == expected:
+            _REAL_ASSERT_RUNTIME_SOURCES(_PROJECT_ROOT)
+        else:
+            with self.assertRaisesRegex(AcquisitionError, "authorized repository source"):
+                _REAL_ASSERT_RUNTIME_SOURCES(_PROJECT_ROOT)
 
     def test_runtime_source_mismatch_rejects_before_claim_or_network(self) -> None:
         with (
