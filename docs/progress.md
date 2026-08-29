@@ -1462,6 +1462,30 @@ result, and explicit remaining blockers.
   following or extracting them. It must pass adversarial tests and receive a
   separate exact authorization before it touches the retained archive.
 
+## 2026-08-29 — M9 inert TAR structural-audit primitive implemented; not executed
+
+- `compact_vio.data.archive.audit_tar_structure` verifies an exact pinned
+  archive SHA-256 through a stable held descriptor, parses only uncompressed TAR
+  headers, preserves canonical path/topology/member/size bounds, and records
+  file, directory, symlink, hardlink, device, FIFO, sparse, and unknown
+  non-regular kinds as inert metadata. Link targets are recorded but never
+  followed; no member payload is extracted or decoded.
+- The existing `inventory_tar` and allowlisted extractor remain strict and
+  continue to reject every non-regular member. A structural-audit result with
+  any non-regular member explicitly reports
+  `strict_extraction_compatible: false`; it cannot authorize extraction or
+  scientific use.
+- Synthetic tests cover inert symlink/hardlink recording, strict-inventory
+  rejection of the same archive, traversal/topology/hash/member-limit failures,
+  no filesystem writes, and malformed public records. All 59 focused
+  archive/acquisition tests and all 426 repository tests passed; Ruff 0.16.4,
+  repository policy (160 files, zero violations), compilation, and
+  `git diff --check` passed.
+- This entry is implementation evidence only. The primitive has not inspected
+  the retained TUM VI archive. A separate exact, tracked, one-use structural
+  audit controller/authorization and success/failure evidence contract remain
+  required before that read-only operation.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

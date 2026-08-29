@@ -147,6 +147,10 @@ single-use claim, fixed capacity/time/cost limits, and an immutable success
 receipt. The failed transfer grants no extraction, dataset selection,
 checkpoint loading, inference, evaluation, or publication authority; a revised
 read-only archive policy and later selection/protocol freeze remain required.
+A separate header-only structural-audit primitive now records bounded inert
+member kinds and link targets without following them; it never marks special
+members extractable, and the original strict inventory/extractor still rejects
+them. This new primitive has not yet been applied to the retained archive.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is

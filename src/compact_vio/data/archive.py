@@ -857,6 +857,56 @@ class TarInventory:
 
 
 @dataclass(frozen=True, slots=True)
+class TarStructuralMemberRecord:
+    """Inert header metadata for one member; never an extraction instruction."""
+
+    path: str
+    kind: str
+    size_bytes: int
+    link_target: str | None
+
+    def __post_init__(self) -> None:
+        if type(self.path) is not str or not self.path:
+            raise ArchiveError("structural member path must be non-empty text")
+        if type(self.kind) is not str or self.kind not in {
+            "directory",
+            "file",
+            "symlink",
+            "hardlink",
+            "device",
+            "fifo",
+            "sparse",
+            "non_regular",
+        }:
+            raise ArchiveError("structural member kind is unsupported")
+        if type(self.size_bytes) is not int or self.size_bytes < 0:
+            raise ArchiveError("structural member size_bytes must be a non-negative integer")
+        if self.kind in {"symlink", "hardlink"}:
+            if type(self.link_target) is not str or not self.link_target:
+                raise ArchiveError("link structural member requires a non-empty link_target")
+            if "\x00" in self.link_target:
+                raise ArchiveError("link structural member target contains NUL")
+        elif self.link_target is not None:
+            raise ArchiveError("non-link structural member cannot declare a link_target")
+
+
+@dataclass(frozen=True, slots=True)
+class TarStructuralAudit:
+    """Bounded header-only evidence that never marks special members extractable."""
+
+    members: tuple[TarStructuralMemberRecord, ...]
+    regular_file_count: int
+    non_regular_member_count: int
+    expanded_regular_size_bytes: int
+    archive_sha256: str
+    strict_extraction_compatible: bool
+
+    @property
+    def member_count(self) -> int:
+        return len(self.members)
+
+
+@dataclass(frozen=True, slots=True)
 class TarExtractionReport:
     """Evidence returned after atomic extraction publication."""
 
@@ -1474,6 +1524,92 @@ def _classify_member(member: tarfile.TarInfo) -> tuple[str, int]:
     raise ArchiveError(f"{label} TAR member is prohibited: {member.name!r}")
 
 
+def _classify_structural_member(member: tarfile.TarInfo) -> tuple[str, int, str | None]:
+    if type(member.size) is not int or member.size < 0:
+        raise ArchiveError(f"TAR member has an invalid size: {member.name!r}")
+    if _is_sparse(member):
+        return "sparse", member.size, None
+    if member.isdir():
+        if member.size != 0:
+            raise ArchiveError(f"TAR directory has a non-zero size: {member.name!r}")
+        return "directory", 0, None
+    if member.isreg():
+        return "file", member.size, None
+    if member.issym():
+        return "symlink", member.size, member.linkname
+    if member.islnk():
+        return "hardlink", member.size, member.linkname
+    if member.ischr() or member.isblk():
+        return "device", member.size, None
+    if member.isfifo():
+        return "fifo", member.size, None
+    return "non_regular", member.size, None
+
+
+def _audit_open_tar_structure(
+    handle: BinaryIO,
+    *,
+    limits: TarLimits,
+    archive_sha256: str,
+) -> TarStructuralAudit:
+    handle.seek(0)
+    records: list[TarStructuralMemberRecord] = []
+    seen: set[PurePosixPath] = set()
+    leaf_paths: set[PurePosixPath] = set()
+    required_directories: set[PurePosixPath] = set()
+    expanded_regular_size = 0
+    regular_file_count = 0
+    non_regular_member_count = 0
+    try:
+        with tarfile.open(fileobj=handle, mode="r:") as source:
+            for member in source:
+                if len(records) >= limits.max_members:
+                    raise ArchiveError(f"TAR member count exceeds limit {limits.max_members}")
+                kind, size_bytes, link_target = _classify_structural_member(member)
+                path = _normalize_member_path(member.name, is_directory=kind == "directory")
+                if path in seen:
+                    raise ArchiveError(f"duplicate normalized TAR member path: {path}")
+                if size_bytes > limits.max_member_size_bytes:
+                    raise ArchiveError(
+                        f"TAR member {path} exceeds size limit {limits.max_member_size_bytes}"
+                    )
+                ancestors = tuple(parent for parent in path.parents if str(parent) != ".")
+                if any(parent in leaf_paths for parent in ancestors):
+                    raise ArchiveError(f"TAR leaf/directory topology conflicts at {path}")
+                if kind != "directory" and path in required_directories:
+                    raise ArchiveError(f"TAR leaf/directory topology conflicts at {path}")
+                seen.add(path)
+                required_directories.update(ancestors)
+                if kind == "file":
+                    next_expanded_size = expanded_regular_size + size_bytes
+                    if next_expanded_size > limits.max_expanded_size_bytes:
+                        raise ArchiveError(
+                            "TAR expanded regular-file size exceeds limit "
+                            f"{limits.max_expanded_size_bytes}"
+                        )
+                    expanded_regular_size = next_expanded_size
+                    regular_file_count += 1
+                elif kind != "directory":
+                    non_regular_member_count += 1
+                if kind != "directory":
+                    leaf_paths.add(path)
+                records.append(TarStructuralMemberRecord(str(path), kind, size_bytes, link_target))
+    except ArchiveError:
+        raise
+    except (OSError, EOFError, ValueError, tarfile.TarError) as exc:
+        raise ArchiveError(f"cannot audit TAR archive structure: {exc}") from exc
+    finally:
+        handle.seek(0)
+    return TarStructuralAudit(
+        members=tuple(records),
+        regular_file_count=regular_file_count,
+        non_regular_member_count=non_regular_member_count,
+        expanded_regular_size_bytes=expanded_regular_size,
+        archive_sha256=archive_sha256,
+        strict_extraction_compatible=non_regular_member_count == 0,
+    )
+
+
 def _inventory_open_tar(
     handle: BinaryIO,
     *,
@@ -1550,6 +1686,42 @@ def inventory_tar(
         if _metadata_signature(os.fstat(handle.fileno())) != _metadata_signature(initial_metadata):
             raise ArchiveError("archive changed while its SHA-256 was being verified")
         result = _inventory_open_tar(
+            handle,
+            limits=limits,
+            archive_sha256=actual_sha256,
+        )
+        _assert_path_is_open_file(archive, handle)
+        return result
+
+
+def audit_tar_structure(
+    archive_path: os.PathLike[str] | str,
+    *,
+    expected_sha256: str,
+    limits: TarLimits = DEFAULT_TAR_LIMITS,
+) -> TarStructuralAudit:
+    """Record bounded inert TAR headers without following links or extracting data.
+
+    Unlike :func:`inventory_tar`, this function records non-regular member kinds
+    as incompatibility evidence. It never treats them as safe for extraction.
+    """
+
+    expected_sha256 = _lower_hex(expected_sha256, length=64, field="expected_sha256")
+    if not isinstance(limits, TarLimits):
+        raise ArchiveError("limits must be a TarLimits instance")
+    archive = Path(archive_path)
+    if archive.suffix != ".tar":
+        raise ArchiveError("structural audit accepts only an uncompressed .tar archive")
+    handle, initial_metadata = _open_regular_readonly(archive)
+    with handle:
+        actual_sha256 = _digest_open(handle, "sha256")
+        if actual_sha256 != expected_sha256:
+            raise ArchiveError(
+                f"archive SHA-256 mismatch: expected {expected_sha256}, got {actual_sha256}"
+            )
+        if _metadata_signature(os.fstat(handle.fileno())) != _metadata_signature(initial_metadata):
+            raise ArchiveError("archive changed while its SHA-256 was being verified")
+        result = _audit_open_tar_structure(
             handle,
             limits=limits,
             archive_sha256=actual_sha256,

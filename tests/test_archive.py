@@ -18,7 +18,9 @@ from compact_vio.data.archive import (
     AuthorizedArchiveAcquisition,
     PublishedArchiveIdentity,
     TarLimits,
+    TarStructuralMemberRecord,
     _ExactRedirectHandler,
+    audit_tar_structure,
     download_archive,
     extract_tar,
     inventory_tar,
@@ -770,6 +772,77 @@ class TarInventoryTests(unittest.TestCase):
                         expected_sha256=_sha256(archive),
                         limits=limits,
                     )
+
+
+class TarStructuralAuditTests(unittest.TestCase):
+    def test_records_inert_links_without_following_or_marking_them_extractable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "archive.tar"
+            symlink = tarfile.TarInfo("dataset/dso/cam1/images")
+            symlink.type = tarfile.SYMTYPE
+            symlink.linkname = "../../cam0/images"
+            hardlink = tarfile.TarInfo("dataset/dso/cam1/times.txt")
+            hardlink.type = tarfile.LNKTYPE
+            hardlink.linkname = "dataset/dso/cam0/times.txt"
+            _write_tar(
+                archive,
+                [
+                    _directory("dataset/"),
+                    _file("dataset/mav0/cam0/data.csv", b"camera"),
+                    (symlink, None),
+                    (hardlink, None),
+                ],
+            )
+
+            audit = audit_tar_structure(archive, expected_sha256=_sha256(archive))
+
+            self.assertEqual(audit.member_count, 4)
+            self.assertEqual(audit.regular_file_count, 1)
+            self.assertEqual(audit.non_regular_member_count, 2)
+            self.assertEqual(audit.expanded_regular_size_bytes, 6)
+            self.assertFalse(audit.strict_extraction_compatible)
+            self.assertEqual(audit.members[2].kind, "symlink")
+            self.assertEqual(audit.members[2].link_target, "../../cam0/images")
+            self.assertEqual(audit.members[3].kind, "hardlink")
+            self.assertEqual(set(root.iterdir()), {archive})
+            with self.assertRaisesRegex(ArchiveError, "symlink"):
+                inventory_tar(archive, expected_sha256=_sha256(archive))
+
+    def test_still_rejects_unsafe_paths_topology_hash_and_limits(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "archive.tar"
+            unsafe = tarfile.TarInfo("../escape")
+            unsafe.type = tarfile.SYMTYPE
+            unsafe.linkname = "/outside"
+            _write_tar(archive, [(unsafe, None)])
+            with self.assertRaisesRegex(ArchiveError, "traversal"):
+                audit_tar_structure(archive, expected_sha256=_sha256(archive))
+
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / "archive.tar"
+            link = tarfile.TarInfo("root")
+            link.type = tarfile.SYMTYPE
+            link.linkname = "target"
+            _write_tar(archive, [(link, None), _file("root/child", b"x")])
+            with self.assertRaisesRegex(ArchiveError, "topology conflicts"):
+                audit_tar_structure(archive, expected_sha256=_sha256(archive))
+            with self.assertRaisesRegex(ArchiveError, "SHA-256 mismatch"):
+                audit_tar_structure(archive, expected_sha256="0" * 64)
+            with self.assertRaisesRegex(ArchiveError, "member count"):
+                audit_tar_structure(
+                    archive,
+                    expected_sha256=_sha256(archive),
+                    limits=TarLimits(1, 100, 100),
+                )
+
+    def test_structural_record_contract_rejects_malformed_values(self) -> None:
+        with self.assertRaisesRegex(ArchiveError, "kind"):
+            TarStructuralMemberRecord("member", [], 0, None)  # type: ignore[arg-type]
+        with self.assertRaisesRegex(ArchiveError, "link_target"):
+            TarStructuralMemberRecord("member", "symlink", 0, None)
+        with self.assertRaisesRegex(ArchiveError, "cannot declare"):
+            TarStructuralMemberRecord("member", "file", 0, "target")
 
 
 class TarExtractionTests(unittest.TestCase):

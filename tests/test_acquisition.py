@@ -303,7 +303,16 @@ class AcquisitionTests(unittest.TestCase):
         self.assertEqual(_sha256(_CANDIDATE_SOURCE), result.candidate_sha256)
         self.assertEqual(
             tuple((tool.path, tool.sha256) for tool in result.tool_files),
-            tuple((tool.path, _sha256(_PROJECT_ROOT / tool.path)) for tool in result.tool_files),
+            (
+                (
+                    "src/compact_vio/data/acquisition.py",
+                    "33bb9b47ad7db428ff0363ea0e6ed234a44d31bc3168bdf5d70d64fa627047e1",
+                ),
+                (
+                    "src/compact_vio/data/archive.py",
+                    "8798786502927732cdbadd5adf3a7eb390a41e767ff3c7830e8b16bde092e7a1",
+                ),
+            ),
         )
 
     def test_loads_exact_authorization_without_executing(self) -> None:

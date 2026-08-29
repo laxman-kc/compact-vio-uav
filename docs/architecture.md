@@ -284,7 +284,10 @@ expiry checks; it writes a claim before network access and a tracked receipt
 only after verified transfer and safe read-only inventory. Its first execution
 retained size/MD5/SHA-verified bytes but failed closed when strict inventory
 encountered a DSO-tree symbolic link; no success receipt or extraction exists,
-and the authorization is consumed. It grants no scientific authority. Also
+and the authorization is consumed. A separate bounded header-only structural
+audit can now record inert special-member metadata without following links;
+strict inventory and extraction remain unchanged and fail closed. The new audit
+has not run on the retained archive and grants no scientific authority. Also
 implemented are
 the generic causal event-release,
 estimator-envelope, execution-recorder, coverage, and payload-omitted trace
@@ -340,7 +343,7 @@ gate.
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
 | Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
-| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned TAR inventory; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer controller; retained TUM VI archive with verified size/MD5/SHA and a recorded failed strict-inventory attempt | TUM VI received-byte identity exists, but safe complete layout evidence does not: an official DSO-tree symlink stopped the inventory. No extraction, adapter, scientific selection, membership, or protocol is approved. Other sources require separate rights, calibration, provenance, and role records. |
+| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer controller; retained TUM VI archive with verified size/MD5/SHA and a recorded failed strict-inventory attempt | TUM VI received-byte identity exists, but safe complete layout evidence does not: an official DSO-tree symlink stopped strict inventory. The new structural audit remains unexecuted; no extraction, adapter, scientific selection, membership, or protocol is approved. Other sources require separate rights, calibration, provenance, and role records. |
 | Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, five completed A10 runs, and a rejected controlled v5 loss ablation | No v5 retry or direct model work is authorized. A new full-pose unit/protocol must be selected and frozen independently before later model work. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
