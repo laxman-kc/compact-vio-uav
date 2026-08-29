@@ -151,6 +151,11 @@ A separate header-only structural-audit primitive now records bounded inert
 member kinds and link targets without following them; it never marks special
 members extractable, and the original strict inventory/extractor still rejects
 them. This new primitive has not yet been applied to the retained archive.
+The `compact-vio-audit-archive-structure` controller adds clean-`HEAD`, exact
+runtime/source hashes, one-use claim, expiry, capacity, output-size, immutable
+archive, and receipt-last gates around that primitive. Its separate real
+authorization has not yet been created, so no second archive inspection has
+occurred.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is

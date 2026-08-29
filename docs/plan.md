@@ -1032,11 +1032,11 @@ Execute these as separate small slices; do not combine them into one long phase:
    evidence alone does
    not select the evaluation unit or permit decoding, extraction, checkpoint
    loading, inference, training, evaluation, publication, or deletion.
-   The new read-only structural-audit primitive may record but never follow or
-   extract bounded non-regular members, while the strict inventory/extractor
-   remains unchanged. Do not apply it to the retained archive until its exact
-   controller, output contract, code hashes, and one-use authorization are
-   committed and CI passes.
+   The new read-only structural-audit primitive and one-use controller may
+   record but never follow or extract bounded non-regular members, while the
+   strict inventory/extractor remains unchanged. Do not apply it to the retained
+   archive until the controller/output contract passes CI and a separate exact
+   authorization binding the resulting code hashes is committed and passes CI.
 5. Complete the independent unit-selection gate after that evidence exists.
    Select or reject TUM VI `room4` without inspecting any candidate prediction,
    then freeze its source group, leakage review, and membership role. A

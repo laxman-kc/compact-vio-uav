@@ -287,8 +287,10 @@ encountered a DSO-tree symbolic link; no success receipt or extraction exists,
 and the authorization is consumed. A separate bounded header-only structural
 audit can now record inert special-member metadata without following links;
 strict inventory and extraction remain unchanged and fail closed. The new audit
-has not run on the retained archive and grants no scientific authority. Also
-implemented are
+has a separate one-use controller with clean-`HEAD`, source/runtime, archive,
+expiry, capacity, immutable-output, and receipt-last gates. No real audit
+authorization exists yet, the audit has not run on the retained archive, and it
+grants no scientific authority. Also implemented are
 the generic causal event-release,
 estimator-envelope, execution-recorder, coverage, and payload-omitted trace
 boundaries; typed camera/IMU and trajectory records; raw exact-pair residual,

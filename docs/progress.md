@@ -1486,6 +1486,35 @@ result, and explicit remaining blockers.
   audit controller/authorization and success/failure evidence contract remain
   required before that read-only operation.
 
+## 2026-08-29 — M9 one-use structural-audit controller implemented; no real audit
+
+- `src/compact_vio/data/archive_audit.py` and the
+  `compact-vio-audit-archive-structure` CLI implement a distinct controller for
+  an already retained archive. Its exact authorization schema binds the
+  historical candidate and failed-attempt evidence, received size/MD5/SHA-256,
+  all three runtime modules, ignored archive/claim/audit paths, tracked receipt
+  path, a one-hour ceiling, zero paid-service authority, 2 GiB retained reserve,
+  bounded audit bytes, retention review, and one execution.
+- The closed permitted set is claim writing, size/MD5/SHA verification, inert
+  TAR-header audit, audit writing, and receipt writing. Download, archive
+  modification, extraction, decoding, sample loading, checkpoint/model access,
+  training, inference, evaluation, dataset selection/membership, publication,
+  and deletion are exact prohibited operations. The controller re-verifies the
+  unchanged archive and all tracked inputs before publishing its receipt last.
+- Eight synthetic controller tests cover exact no-access loading, real
+  header-audit execution with an inert symlink, zero extraction calls,
+  archive-byte preservation, frozen schema/operation sets, runtime-source
+  mismatch, wrong received SHA, post-audit archive mutation, output collision,
+  and structured CLI failure. All 67 focused acquisition/archive/audit tests
+  and all 434 repository tests passed; Ruff 0.16.4 passed for 117 Python files;
+  repository policy checked 162 files with zero violations; the schema harness
+  passed 10 schemas and 7 templates; compilation and `git diff --check` passed.
+- This controller has not touched the retained TUM VI archive. Its exact code
+  must first be committed/pushed and pass CI; only then may a separate active
+  authorization bind those immutable hashes. Strict extraction compatibility
+  remains false unless a complete observed audit proves otherwise, and even a
+  completed audit would not authorize extraction or scientific use.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
