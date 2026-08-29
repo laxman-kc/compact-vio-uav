@@ -2,7 +2,7 @@
 
 Status: Active training-first roadmap
 
-Last reviewed: 2026-08-28
+Last reviewed: 2026-08-29
 
 Requirements authority: [Project requirements](requirements/project-requirements.md)
 
@@ -49,9 +49,12 @@ The
 completed once at revision `6c46b2f8ef719a7007eef72eebe13b34575aea93`
 and failed both frozen selected-v2 validation limits. It is rejected; no retry,
 tuning, `MH_02_easy` access, fresh v5 evaluation, inference export, or
-deployment work is permitted. The immediate follow-up is independent selection
-and freeze of a new full-pose evaluation unit and protocol before any new model
-work.
+deployment work is permitted. The retained TUM VI `room4` candidate archive has
+now completed a bounded header-only structural audit without extraction. The
+immediate operational follow-up is a separately authorized regular-file
+allowlist extraction of only the required `mav0` members. This does not select a
+dataset; independent unit selection and protocol freeze remain required before
+any new model work.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -1032,27 +1035,35 @@ Execute these as separate small slices; do not combine them into one long phase:
    evidence alone does
    not select the evaluation unit or permit decoding, extraction, checkpoint
    loading, inference, training, evaluation, publication, or deletion.
-   The new read-only structural-audit primitive and one-use controller may
-   record but never follow or extract bounded non-regular members, while the
-   strict inventory/extractor remains unchanged. Do not apply it to the retained
-   archive until the controller/output contract passes CI and a separate exact
-   authorization binding the resulting code hashes is committed and passes CI.
-   Those prerequisites are now prepared; execute the authorization once, retain
-   its exact audit/receipt or failure evidence, and do not reinterpret recorded
-   special members as extraction permission.
-5. Complete the independent unit-selection gate after that evidence exists.
+   The separate header-only structural-audit authorization executed once from
+   revision `9709a101b28f291de23826ac8c9abec6a6eb9846` after GitHub Actions run
+   `33276534039` passed. It classified all 4,485 TAR headers as 4,472 regular
+   files, 11 directories, and two inert DSO-tree symbolic links; it followed no
+   links, extracted nothing, and preserved the archive SHA-256. The tracked
+   receipt records `strict_extraction_compatible: false` and no scientific
+   authority.
+5. Define, review, and separately authorize one exact regular-file allowlist
+   extraction under `dataset-room4_512_16/mav0/` only. Derive every selected
+   member from the completed audit, require its kind to be `file`, exclude the
+   entire `dso` tree and both links, retain per-file identity evidence, validate
+   the published output atomically, and prohibit download, model/checkpoint
+   access, training, inference, evaluation, dataset selection/membership,
+   publication, and deletion. No extraction may begin from the structural-audit
+   receipt alone.
+6. Complete the independent unit-selection gate after the bounded extraction
+   and format/calibration/ground-truth compatibility evidence exist.
    Select or reject TUM VI `room4` without inspecting any candidate prediction,
    then freeze its source group, leakage review, and membership role. A
    different rights-compatible full-pose unit may be chosen instead.
-6. Freeze one full-pose protocol before any new model work: candidates and
+7. Freeze one full-pose protocol before any new model work: candidates and
    controls, native classical backend, association/alignment/scale semantics,
    ATE/RPE/rotation/drift measures, coverage and failure rules, latency/memory
    scope, primary metric, thresholds, tie handling, and stop rule.
-7. Only after that freeze, implement the minimum missing adapter/evaluator
+8. Only after that freeze, implement the minimum missing adapter/evaluator
    behavior and execute the protocol once. Publish complete coverage, failures,
    resource measurements, metrics, identities, and checksums without tuning
    from the outcome.
-8. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
+9. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
    flight work only after the frozen full-pose result and its separate
    deployment/safety decisions justify that step.
 

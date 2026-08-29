@@ -1537,6 +1537,50 @@ result, and explicit remaining blockers.
   access, training, inference, evaluation, selection, publication, or deletion
   occurred.
 
+## 2026-08-29 — M9 retained TUM VI structural audit completed without extraction
+
+- Authorization revision
+  `9709a101b28f291de23826ac8c9abec6a6eb9846` passed GitHub Actions run
+  [33276534039](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33276534039)
+  on Python 3.10 and 3.12 before execution. The one-use audit began at
+  `2026-08-29T21:38:08Z`, completed in `5.107158124999842` seconds, incurred
+  zero controller-initiated paid-service cost, and published its tracked
+  receipt last.
+- The controller reverified the retained 1,356,206,080-byte archive at SHA-256
+  `2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68`
+  before and after the audit. The ignored 744,267-byte audit has SHA-256
+  `a75734de25567168eeb90a4b165361eb7df340ade2da5ed0382b6e9b228e6399`;
+  the consumed ignored claim has SHA-256
+  `c997ebdd4ff90aaee4044a17088c4de78ccf3dfa48c9089c300a01e70414a244`.
+- The inert header audit classified 4,485 members: 4,472 regular files, 11
+  directories, and two symbolic links. Declared expanded regular-file content
+  totals 1,352,747,205 bytes. The links are
+  `dataset-room4_512_16/dso/cam1/images` to `../../mav0/cam1/data` and
+  `dataset-room4_512_16/dso/cam0/images` to `../../mav0/cam0/data`. Neither was
+  followed. The recorded `mav0` tree contains 2,231 `cam0` entries, 2,231
+  `cam1` entries, two `imu0` entries, and two `mocap0` entries; the separate
+  `dso` tree contains 17 entries.
+- Because the archive contains two non-regular members, the audit records
+  `strict_extraction_compatible: false`; the existing strict inventory and
+  extraction policy remains unchanged. The tracked 3,273-byte receipt at
+  `governance/datasets/acquisitions/tumvi-room4-512-16-structural-audit-2026-08-29.receipt.json`
+  has SHA-256
+  `1e3216a7bf789ef3a6d5425fa64f5a7cfa0a712c905460f5b444b65f5e323a92`.
+  The focused archive/acquisition/audit suite passed all 69 tests after the
+  receipt fixture was added.
+- The [reviewed report](../reports/tumvi-room4-512-16-structural-audit-2026-08-29.md)
+  records the evidence and interpretation. The operation performed no download,
+  archive modification, extraction, image decoding, sample loading,
+  checkpoint/model access, training, inference, evaluation, dataset selection,
+  membership assignment, publication, or deletion. Its scientific authority is
+  `none`.
+- Next is a new review and one-use authorization for an exact regular-file
+  allowlist under the required `mav0` tree only. It must exclude `dso` and all
+  links, and it remains operational preparation rather than dataset selection.
+  Scientific selection, source membership, adapter/calibration/ground-truth
+  acceptance, and the full-pose protocol remain separate gates before model or
+  evaluation work.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

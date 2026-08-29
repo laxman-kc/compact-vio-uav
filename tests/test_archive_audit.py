@@ -25,6 +25,10 @@ _CHECKED_AUTHORIZATION = (
     _PROJECT_ROOT / "governance/datasets/acquisitions/"
     "tumvi-room4-512-16-structural-audit-2026-08-29.authorization.json"
 )
+_CHECKED_RECEIPT = (
+    _PROJECT_ROOT / "governance/datasets/acquisitions/"
+    "tumvi-room4-512-16-structural-audit-2026-08-29.receipt.json"
+)
 _NOW = datetime(2026, 8, 29, 22, 0, 0, tzinfo=timezone.utc)
 
 
@@ -287,6 +291,51 @@ class ArchiveAuditControllerTests(unittest.TestCase):
         self.assertEqual(
             _sha256(_PROJECT_ROOT / result.source_failure_path),
             result.source_failure_sha256,
+        )
+
+    def test_checked_receipt_binds_completed_real_audit_without_execution(self) -> None:
+        receipt = json.loads(_CHECKED_RECEIPT.read_text(encoding="utf-8"))
+        self.assertEqual(
+            _sha256(_CHECKED_RECEIPT),
+            "1e3216a7bf789ef3a6d5425fa64f5a7cfa0a712c905460f5b444b65f5e323a92",
+        )
+        self.assertEqual(receipt["outcome"], "completed")
+        self.assertEqual(receipt["scientific_authority"], "none")
+        self.assertEqual(
+            receipt["authorization"]["sha256"],
+            "cff468e9fd2702fb9c62176067e23db6a0d32b66502d5e92e37a42ea8324fbb8",
+        )
+        self.assertEqual(
+            receipt["archive"]["sha256"],
+            "2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68",
+        )
+        self.assertEqual(
+            receipt["claim"]["sha256"],
+            "c997ebdd4ff90aaee4044a17088c4de78ccf3dfa48c9089c300a01e70414a244",
+        )
+        self.assertEqual(
+            receipt["audit"]["sha256"],
+            "a75734de25567168eeb90a4b165361eb7df340ade2da5ed0382b6e9b228e6399",
+        )
+        self.assertEqual(receipt["audit"]["member_count"], 4_485)
+        self.assertEqual(receipt["audit"]["regular_file_count"], 4_472)
+        self.assertEqual(receipt["audit"]["non_regular_member_count"], 2)
+        self.assertFalse(receipt["audit"]["strict_extraction_compatible"])
+        self.assertEqual(
+            set(receipt["operations_not_performed"]),
+            {
+                "decode_images",
+                "delete_archive",
+                "download",
+                "evaluate",
+                "extract",
+                "infer",
+                "load_checkpoint",
+                "load_dataset_samples",
+                "modify_archive",
+                "select_dataset",
+                "train",
+            },
         )
 
     def test_loads_exact_authorization_without_archive_access(self) -> None:

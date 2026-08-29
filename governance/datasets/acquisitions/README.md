@@ -40,8 +40,9 @@ defense against a hostile same-user process racing directory entries. Failed
 claims and inventories are ignored local evidence; they are not remotely
 durable until separately reviewed and retained.
 
-The current `room4` authorization is based on the active workspace user's
-instruction to continue the immediate production execution plan. The record
+The `room4` transfer and structural-audit authorizations are based on the active
+workspace user's instruction to continue the immediate production execution
+plan. Each record
 states that the user's identity was not independently authenticated; it must
 not be presented as independent identity assurance or third-party approval.
 
@@ -54,12 +55,22 @@ Current records:
   audit binding the claim, retained archive identity, exact rejected symlink,
   absent inventory/receipt, and no-retry/no-scientific-authority boundary.
 - `tumvi-room4-512-16-structural-audit-2026-08-29.authorization.json` — one
-  active, header-only audit of the exact retained archive. It permits inert
-  metadata recording but no download, modification, extraction, decoding,
-  sample/model access, training, inference, evaluation, selection, publication,
-  or deletion; it is not yet executed when committed.
-- `tumvi-room4-512-16-structural-audit-2026-08-29.receipt.json` — reserved
-  tracked audit-receipt path; it must remain absent unless every audit gate
-  passes.
+  header-only audit of the exact retained archive. Its one execution completed
+  after the authorization revision passed CI, classified 4,485 members without
+  following links, extracting members, or decoding payloads, and consumed the
+  authorization.
+- `tumvi-room4-512-16-structural-audit-2026-08-29.receipt.json` — tracked
+  completed-audit receipt. It binds the unchanged archive SHA-256, ignored audit
+  and claim identities, 4,472 regular files, 11 directories, two symbolic
+  links, `strict_extraction_compatible: false`, zero paid-service cost, and
+  `scientific_authority: none`.
 - `tumvi-room4-512-16-transfer-2026-08-29.receipt.json` — reserved success
   receipt path. It does not exist because every success gate did not pass.
+
+The next operation is not authorized by any record in this directory. It
+requires a separate reviewed, one-use authorization that binds an exact
+allowlist of required regular files under `dataset-room4_512_16/mav0/`, excludes
+the full `dso` tree and both symbolic links, and preserves per-file evidence.
+Such extraction would remain operational preparation only; dataset selection,
+membership, model/checkpoint access, training, inference, evaluation,
+publication, and deletion stay outside its authority.

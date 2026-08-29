@@ -1,0 +1,89 @@
+{
+  "archive": {
+    "archive_id": "tum-vi-room4",
+    "filename": "dataset-room4_512_16.tar",
+    "md5": "8e2ec2c35ee40a54c9aaa5bc2b3c9d8c",
+    "path": "data/quarantine/tum-vi/room4-512-16/dataset-room4_512_16.tar",
+    "sha256": "2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68",
+    "size_bytes": 1356206080
+  },
+  "audit": {
+    "expanded_regular_size_bytes": 1352747205,
+    "maximum_serialized_bytes": 268435456,
+    "member_count": 4485,
+    "non_regular_member_count": 2,
+    "path": "data/quarantine/tum-vi/room4-512-16/tar-structural-audit.json",
+    "policy_id": "inert-tar-header-metadata-no-follow-no-extract/v1",
+    "regular_file_count": 4472,
+    "serialized_bytes": 744267,
+    "sha256": "a75734de25567168eeb90a4b165361eb7df340ade2da5ed0382b6e9b228e6399",
+    "strict_extraction_compatible": false
+  },
+  "authorization": {
+    "id": "tumvi-room4-512-16-structural-audit-2026-08-29",
+    "path": "governance/datasets/acquisitions/tumvi-room4-512-16-structural-audit-2026-08-29.authorization.json",
+    "sha256": "cff468e9fd2702fb9c62176067e23db6a0d32b66502d5e92e37a42ea8324fbb8"
+  },
+  "claim": {
+    "path": "data/quarantine/tum-vi/room4-512-16/structural-audit.claim.json",
+    "sha256": "c997ebdd4ff90aaee4044a17088c4de78ccf3dfa48c9089c300a01e70414a244"
+  },
+  "execution": {
+    "controller_initiated_paid_service_cost_usd": 0,
+    "elapsed_seconds": 5.107158124999842,
+    "git_revision": "9709a101b28f291de23826ac8c9abec6a6eb9846",
+    "maximum_elapsed_seconds": 3600,
+    "tool_files": [
+      {
+        "path": "src/compact_vio/data/archive_audit.py",
+        "sha256": "18ba5f76d11b113f0753cd89a3fae51863e2c9cc8abf3ac9719bb33d17d535d6"
+      },
+      {
+        "path": "src/compact_vio/data/acquisition.py",
+        "sha256": "33bb9b47ad7db428ff0363ea0e6ed234a44d31bc3168bdf5d70d64fa627047e1"
+      },
+      {
+        "path": "src/compact_vio/data/archive.py",
+        "sha256": "dd6823b35c254c57b8246a75035ddde68cd01950b01ea67336331628f7a13884"
+      }
+    ]
+  },
+  "operations_not_performed": [
+    "download",
+    "modify_archive",
+    "extract",
+    "decode_images",
+    "load_dataset_samples",
+    "select_dataset",
+    "train",
+    "infer",
+    "evaluate",
+    "load_checkpoint",
+    "delete_archive"
+  ],
+  "operations_performed": [
+    "write_claim",
+    "verify_size",
+    "verify_md5",
+    "verify_sha256",
+    "audit_tar_headers",
+    "write_audit",
+    "write_receipt"
+  ],
+  "outcome": "completed",
+  "receipt_prepared_at": "2026-08-29T21:38:14Z",
+  "record_type": "dataset_archive_structural_audit_receipt",
+  "retention": {
+    "deletion_authorized": false,
+    "policy": "retain_audit_evidence_until_review",
+    "review_at": "2026-09-06T21:33:00Z"
+  },
+  "schema_version": "1.0.0",
+  "scientific_authority": "none",
+  "scientific_limitations": "Header classification neither follows nor extracts links and does not approve extraction, dataset selection, model access, training, inference, evaluation, publication, deployment, UAV-domain, or superiority claims.",
+  "source_failure": {
+    "path": "governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.failure.json",
+    "sha256": "51979c3749e8a10187191ef43a355b72ebe456828d309703c22e0c6fccb0c75f"
+  },
+  "started_at": "2026-08-29T21:38:08Z"
+}

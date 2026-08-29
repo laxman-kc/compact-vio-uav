@@ -130,9 +130,10 @@ backend, metrics, thresholds, and tie rule must be recorded before execution;
 none is silently selected here.
 
 The next full-pose lane now has a non-executable TUM VI `room4` 512x512
-candidate identity plus production archive primitives. The strict loader binds
-the official request/redirect observation, observed byte length, exact MD5
-sidecar, unresolved SHA-256, and lack of scientific authority. The downloader
+candidate identity plus production archive primitives. The candidate and
+acquisition records bind the official request/redirect observation, observed
+byte length, exact MD5 sidecar, later received-byte SHA-256, and lack of
+scientific authority. The downloader
 and TAR layer provide closed redirect validation, bounded resume, crash-safe
 single-writer locking, held-descriptor digest verification, SHA-pinned
 read-only inventory, hostile-member rejection, and atomic allowlisted
@@ -147,15 +148,20 @@ single-use claim, fixed capacity/time/cost limits, and an immutable success
 receipt. The failed transfer grants no extraction, dataset selection,
 checkpoint loading, inference, evaluation, or publication authority; a revised
 read-only archive policy and later selection/protocol freeze remain required.
-A separate header-only structural-audit primitive now records bounded inert
-member kinds and link targets without following them; it never marks special
-members extractable, and the original strict inventory/extractor still rejects
-them. This new primitive has not yet been applied to the retained archive.
-The `compact-vio-audit-archive-structure` controller adds clean-`HEAD`, exact
-runtime/source hashes, one-use claim, expiry, capacity, output-size, immutable
-archive, and receipt-last gates around that primitive. Its separate real
-authorization now binds the exact retained SHA-256 and committed controller
-sources, but has not executed; no second archive inspection has occurred.
+A separate header-only structural audit then completed once from authorization
+revision `9709a101b28f291de23826ac8c9abec6a6eb9846`, after GitHub Actions run
+`33276534039` passed. It recorded 4,485 TAR members: 4,472 regular files, 11
+directories, and two inert DSO-tree symbolic links to the corresponding
+`mav0` camera data directories. It followed no link, extracted nothing, and
+reverified the unchanged archive SHA-256 before publishing its tracked receipt.
+The result is explicitly `strict_extraction_compatible: false`; the original
+strict inventory/extractor still rejects the archive. The
+[reviewed structural-audit report](reports/tumvi-room4-512-16-structural-audit-2026-08-29.md)
+records the exact layout, hashes, limits, and prohibited operations. The next
+operational slice is a separately reviewed and authorized extraction of an
+exact regular-file allowlist under the required `mav0` tree only. That future
+slice must ignore all links and `dso` members and still grants no dataset
+selection, membership, model, inference, evaluation, or publication authority.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is

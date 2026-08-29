@@ -23,6 +23,9 @@ its presence is not evidence that a run happened or that a hypothesis passed.
 
 ## Reviewed reports
 
+- [TUM VI room4 512x512 structural archive audit](tumvi-room4-512-16-structural-audit-2026-08-29.md)
+  — completed header-only classification of the retained archive; strict
+  extraction incompatible and scientific authority none.
 - [EuRoC compact VIO v5 controlled magnitude-loss result](euroc-compact-vio-v5-magnitude-result-2026-08-28.md)
   ([visual summary](assets/v5-magnitude-result.svg); [governed run-record
   mirror](evidence/euroc-compact-vio-v5-magnitude-full-6c46b2f/README.md))
