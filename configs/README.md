@@ -44,8 +44,13 @@ Current namespaces:
   schema, 16-bit preprocessing, adapter compatibility, and membership
   unresolved. A strict exact-field loader and focused tests now validate the
   non-executable record. Structural loading does not confer acquisition or
-  evaluation authority; a separate bounded transfer record/controller remains
-  required before network access.
+  evaluation authority. A separate one-use controller and
+  `governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.authorization.json`
+  bind one operational transfer/read-only inventory to exact tracked inputs,
+  runtime limits, and a quarantine destination. That authorization does not
+  modify the candidate record, select the unit, allow extraction, or confer
+  training, inference, evaluation, or publication authority; it has not yet
+  produced an execution receipt.
 - `training/` contains the fully resolved v1-v5 experiment configurations.
   Each new candidate changes only the fields declared by its reviewed plan.
 - `evaluation/` contains frozen checkpoint-evaluation protocols after source,

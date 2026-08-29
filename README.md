@@ -137,9 +137,13 @@ and TAR layer provide closed redirect validation, bounded resume, crash-safe
 single-writer locking, held-descriptor digest verification, SHA-pinned
 read-only inventory, hostile-member rejection, and atomic allowlisted
 extraction. No TUM VI archive bytes have been downloaded or extracted. A
-separate one-use transfer authorization/controller is required before network
-access, and a later selection/protocol freeze is required before checkpoint
-loading or inference.
+separate one-use controller and exact, time-limited operational authorization
+are now prepared for transfer plus read-only inventory. They require clean
+tracked `HEAD` inputs, an ignored quarantine destination, a pre-network
+single-use claim, fixed capacity/time/cost limits, and an immutable success
+receipt. The authorization has not executed and grants no extraction, dataset
+selection, checkpoint loading, inference, evaluation, or publication authority;
+a later selection/protocol freeze remains required.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is

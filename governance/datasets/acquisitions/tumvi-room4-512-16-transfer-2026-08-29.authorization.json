@@ -1,0 +1,102 @@
+{
+  "archive_identity": {
+    "allowed_redirect_origins": [
+      "https://cdn2.vision.in.tum.de"
+    ],
+    "allowed_redirect_urls": [
+      "https://cdn2.vision.in.tum.de/tumvi/exported/euroc/512_16/dataset-room4_512_16.tar"
+    ],
+    "archive_id": "tum-vi-room4",
+    "filename": "dataset-room4_512_16.tar",
+    "md5": "8e2ec2c35ee40a54c9aaa5bc2b3c9d8c",
+    "sha256": null,
+    "size_bytes": 1356206080,
+    "url": "https://cdn3.vision.in.tum.de/tumvi/exported/euroc/512_16/dataset-room4_512_16.tar"
+  },
+  "authority_basis": {
+    "captured_at": "2026-08-29T21:05:00Z",
+    "identity_authentication": "not_independently_authenticated",
+    "instruction_summary": "Continue the production execution plan with the bounded TUM VI transfer and read-only archive inventory; keep extraction, model access, training, inference, evaluation, selection, publication, and deletion outside this authorization.",
+    "kind": "active_workspace_user_instruction"
+  },
+  "authorization_id": "tumvi-room4-512-16-transfer-2026-08-29",
+  "authorized_at": "2026-08-29T21:05:00Z",
+  "candidate": {
+    "path": "configs/data/tumvi_room4_512_16_candidate_v1.json",
+    "sha256": "0de942674afcadd2f768385a82c52b8cb65eea14d5e8c4d17dc9e48262023740"
+  },
+  "destination": {
+    "archive_path": "data/quarantine/tum-vi/room4-512-16/dataset-room4_512_16.tar",
+    "initial_archive_state": "absent",
+    "initial_partial_state": "absent",
+    "minimum_initial_free_bytes": 3773173760,
+    "minimum_post_transfer_free_bytes": 2147483648,
+    "must_be_git_ignored": true
+  },
+  "execution": {
+    "maximum_elapsed_seconds": 14400,
+    "maximum_paid_compute_cost_usd": 0,
+    "requires_clean_worktree": true,
+    "tool_files": [
+      {
+        "path": "src/compact_vio/data/acquisition.py",
+        "sha256": "33bb9b47ad7db428ff0363ea0e6ed234a44d31bc3168bdf5d70d64fa627047e1"
+      },
+      {
+        "path": "src/compact_vio/data/archive.py",
+        "sha256": "8798786502927732cdbadd5adf3a7eb390a41e767ff3c7830e8b16bde092e7a1"
+      }
+    ]
+  },
+  "expires_at": "2026-08-30T21:05:00Z",
+  "inventory_limits": {
+    "max_expanded_size_bytes": 274877906944,
+    "max_member_size_bytes": 8589934592,
+    "max_members": 250000,
+    "maximum_inventory_bytes": 268435456
+  },
+  "max_executions": 1,
+  "outputs": {
+    "claim_path": "data/quarantine/tum-vi/room4-512-16/transfer.claim.json",
+    "inventory_path": "data/quarantine/tum-vi/room4-512-16/tar-inventory.json",
+    "receipt_path": "governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.receipt.json"
+  },
+  "permitted_operations": [
+    "write_claim",
+    "download",
+    "verify_size",
+    "verify_md5",
+    "compute_sha256",
+    "inventory_tar_headers",
+    "write_inventory",
+    "write_receipt"
+  ],
+  "prohibited_operations": [
+    "extract",
+    "decode_images",
+    "load_dataset_samples",
+    "select_dataset",
+    "train",
+    "infer",
+    "evaluate",
+    "load_checkpoint",
+    "delete_archive"
+  ],
+  "record_status": "approved",
+  "record_type": "dataset_archive_transfer_authorization",
+  "retention": {
+    "deletion_authorized": false,
+    "policy": "retain_in_quarantine_until_review",
+    "review_at": "2026-09-06T21:05:00Z"
+  },
+  "schema_version": "1.0.0",
+  "scope": "operational_byte_transfer_and_read_only_inventory_only",
+  "scientific_authority": {
+    "approves_evaluation": false,
+    "approves_inference": false,
+    "approves_publication": false,
+    "approves_training": false,
+    "assigns_membership": false,
+    "selects_dataset": false
+  }
+}

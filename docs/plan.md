@@ -1019,13 +1019,18 @@ Execute these as separate small slices; do not combine them into one long phase:
    not create authority. The same slice provides safe archive download,
    identity verification, read-only TAR inventory, and atomic allowlisted
    extraction primitives, but it does not itself authorize a real transfer.
-4. Before any transfer, obtain a separate bounded acquisition authorization
-   with the exact unit, official endpoint, destination, retention, capacity,
-   time/cost bound, and permitted operations. If authorized, acquire only that
-   unit, verify the received size and published MD5, compute SHA-256, inspect
-   the TAR safely, and validate exact calibration, ground-truth schema,
-   16-bit preprocessing, and adapter compatibility. Acquisition evidence alone
-   does not select the evaluation unit.
+4. A separate one-use operational authorization now binds the exact candidate,
+   official endpoint/redirects, tracked candidate and tool hashes, ignored
+   quarantine destination, retention review, capacity reserve, 24-hour
+   validity, zero paid-compute cost, elapsed-time bound, inventory limits, and
+   permitted/prohibited operations. It has not executed. After the record and
+   controller are committed and CI passes, execute it once while active: create
+   the exclusive claim, acquire only that archive, verify received size and
+   published MD5, compute SHA-256, inventory the TAR without extraction, and
+   write the receipt only after all success gates pass. A failed claimed attempt
+   is not retried under the same authorization. Transfer evidence alone does
+   not select the evaluation unit or permit decoding, extraction, checkpoint
+   loading, inference, training, evaluation, publication, or deletion.
 5. Complete the independent unit-selection gate after that evidence exists.
    Select or reject TUM VI `room4` without inspecting any candidate prediction,
    then freeze its source group, leakage review, and membership role. A

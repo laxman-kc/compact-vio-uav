@@ -31,6 +31,10 @@ from compact_vio.data.archive import (
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _CANDIDATE_SOURCE = _PROJECT_ROOT / "configs/data/tumvi_room4_512_16_candidate_v1.json"
+_CHECKED_AUTHORIZATION_SOURCE = (
+    _PROJECT_ROOT / "governance/datasets/acquisitions/"
+    "tumvi-room4-512-16-transfer-2026-08-29.authorization.json"
+)
 _NOW = datetime(2026, 8, 28, 15, 0, 0, tzinfo=timezone.utc)
 _REAL_ASSERT_RUNTIME_SOURCES = acquisition_module._assert_runtime_sources
 
@@ -284,6 +288,22 @@ class AcquisitionTests(unittest.TestCase):
                 return_value=types.SimpleNamespace(free=10_000_000_000),
             ),
             mock.patch("compact_vio.data.acquisition.download_archive", side_effect=download),
+        )
+
+    def test_checked_authorization_binds_exact_repository_inputs_without_execution(self) -> None:
+        result = load_transfer_authorization(
+            _CHECKED_AUTHORIZATION_SOURCE,
+            repo_root=_PROJECT_ROOT,
+        )
+        self.assertEqual(result.authorization_id, "tumvi-room4-512-16-transfer-2026-08-29")
+        self.assertEqual(
+            result.authorization_sha256,
+            "fb2108f7d1bb6bbf317bd8693c80cb55a5162f0ca297c562c7e89ccd460dbf19",
+        )
+        self.assertEqual(_sha256(_CANDIDATE_SOURCE), result.candidate_sha256)
+        self.assertEqual(
+            tuple((tool.path, tool.sha256) for tool in result.tool_files),
+            tuple((tool.path, _sha256(_PROJECT_ROOT / tool.path)) for tool in result.tool_files),
         )
 
     def test_loads_exact_authorization_without_executing(self) -> None:

@@ -1379,6 +1379,57 @@ result, and explicit remaining blockers.
   claim/receipt behavior, and trusted review anchoring before the real archive
   may be transferred.
 
+## 2026-08-29 — M9 one-use TUM VI operational transfer boundary prepared; no transfer
+
+- `src/compact_vio/data/acquisition.py` adds a strict controller and
+  `compact-vio-acquire-archive` CLI for one committed authorization. It accepts
+  only the closed operational scope
+  `operational_byte_transfer_and_read_only_inventory_only`; loading a candidate
+  or authorization performs no network access.
+- The separate authorization at
+  `governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.authorization.json`
+  is based on the active workspace user's instruction to continue the immediate
+  production execution plan. Its authority source explicitly records
+  `identity_authentication: not_independently_authenticated`. That caveat and
+  the user's instruction are operational provenance, not independent identity
+  assurance, dataset-use approval, or third-party review.
+- The authorization is limited to one execution during one exact 24-hour
+  window, requires a clean worktree and exact tracked-`HEAD` bytes for itself,
+  the historical candidate, and both controller modules, and binds the exact
+  official source identity and ignored quarantine archive path. It requires at
+  least 3,773,173,760 free bytes before the claim: the 1,356,206,080-byte
+  archive, a retained 2,147,483,648-byte post-transfer reserve, at most
+  268,435,456 bytes for inventory evidence, and at most 1,048,576 bytes for the
+  receipt. Paid-compute cost is fixed to zero.
+- The only permitted operations are writing the claim, download, received-size
+  and published-MD5 verification, SHA-256 computation, read-only TAR-header
+  inventory, and writing the inventory and receipt. Extraction, image decoding,
+  dataset-sample loading,
+  scientific selection or membership, checkpoint loading, training, inference,
+  evaluation, publication approval, archive deletion, and overwrite are
+  outside the authority.
+- Before network access, the controller checks the validity window, tracked
+  inputs, exact hashes, clean repository, absent archive/partial/evidence paths,
+  Git-ignore boundaries, real non-symlink quarantine ancestry, and free-space
+  gate, then creates an exclusive claim. A claimed failure consumes this
+  authorization and cannot be retried by deleting the claim. On success, the
+  controller writes the ignored canonical inventory and publishes the tracked
+  receipt last, after rechecking expiry, reserve, repository revision, tracked
+  inputs, archive/inventory identities, and bounded evidence sizes.
+- Controller checkpoint `674082bb63447a3c5752345dc187474aae9342ee`
+  passed GitHub Actions run `33275106056` on Python 3.10 and 3.12. The complete
+  authorization-preparation tree then passed 56 focused acquisition/archive
+  tests and all 423 repository tests; Ruff 0.16.4 lint/format passed for 115
+  Python files; the schema harness passed 10 schemas and 7 templates;
+  repository policy checked 159 files with zero violations; compilation and
+  `git diff --check` passed.
+- This entry records implementation and authorization preparation only. No
+  TUM VI archive request, claim, partial, archive, inventory, receipt,
+  extraction, decoding, checkpoint load, inference, training, evaluation,
+  scientific unit selection, membership assignment, publication approval, or
+  deletion occurred. The candidate JSON and its historical evidence remain
+  unchanged.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:
