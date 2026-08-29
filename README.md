@@ -163,14 +163,27 @@ two common regular PNG names from each camera: eight regular files totaling
 4,485-member audit, follows no link, excludes `dso`, publishes a new exact tree
 atomically, and writes its receipt last. Implementation commit
 `9ca97e04848fe08d14841470a7a7bf39b5edd725` passed GitHub Actions run
-`33279450649`. A separate one-use authorization is frozen in the current
-revision but has not executed against the retained archive. The
+`33279450649`. The separate one-use authorization revision
+`cfe863890ad040684ac837c1b5d7f346bc0159cc` then passed GitHub Actions run
+[`33279713875`](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33279713875)
+and executed once. It published the exact eight-file, 5,043,300-byte ignored
+tree and a 7,106-byte tracked receipt with SHA-256
+`a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820`.
+The controller ran for `8.26419195800554` seconds at zero paid-service cost.
+A read-only post-run walk reconfirmed eight directories below the destination,
+eight single-link regular files, no special files, and every receipt-recorded
+size and SHA-256 without parsing CSVs or decoding PNGs. The retained archive
+still has size 1,356,206,080 bytes, MD5
+`8e2ec2c35ee40a54c9aaa5bc2b3c9d8c`, and SHA-256
+`2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68`.
+The
 [reviewed structural-audit report](reports/tumvi-room4-512-16-structural-audit-2026-08-29.md)
-records the exact layout, hashes, limits, and prohibited operations. The next
-operational gate is green CI for the authorization revision, followed by its
-single bounded execution. The slice grants no
+records the source layout, and the
+[reviewed compatibility-slice report](reports/tumvi-room4-512-16-compatibility-slice-2026-08-29.md)
+records the exact execution and output identities. The slice grants no
 dataset selection, membership, payload interpretation, model, inference,
-evaluation, or publication authority.
+evaluation, or publication authority. Format, timestamp, calibration,
+ground-truth, preprocessing, and adapter checks remain separate future work.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is

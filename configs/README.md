@@ -57,10 +57,12 @@ Current namespaces:
   audit now binds a documentation-only compatibility allowlist at
   `data/tumvi_room4_512_16_compatibility_slice_v1.json`: four complete `mav0`
   CSV members plus two common PNG names from each camera, 8 regular files and
-  5,043,300 bytes. The associated controller is committed and CI-green, but
-  neither this configuration nor the audit grants extraction authority. The
-  current revision freezes a separate one-use authorization; it cannot execute
-  until that revision passes CI.
+  5,043,300 bytes. The associated controller and one-use authorization both
+  passed CI, and the authorization executed once to publish exactly those eight
+  regular members plus a tracked receipt. The authorization is consumed. This
+  configuration, audit, and operational output do not establish payload
+  validity, adapter compatibility, scientific dataset selection, membership,
+  model access, training, inference, evaluation, or publication authority.
 - `training/` contains the fully resolved v1-v5 experiment configurations.
   Each new candidate changes only the fields declared by its reviewed plan.
 - `evaluation/` contains frozen checkpoint-evaluation protocols after source,

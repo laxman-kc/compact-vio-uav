@@ -1,0 +1,183 @@
+{
+  "allowlist": {
+    "id": "tumvi-room4-512-16-compatibility-slice-v1",
+    "path": "configs/data/tumvi_room4_512_16_compatibility_slice_v1.json",
+    "sha256": "db8a24c18a62bb0e74140a20799d1e7414c34c5bbc75f284ec907736ae2dacd0"
+  },
+  "archive": {
+    "archive_id": "tum-vi-room4",
+    "md5": "8e2ec2c35ee40a54c9aaa5bc2b3c9d8c",
+    "path": "data/quarantine/tum-vi/room4-512-16/dataset-room4_512_16.tar",
+    "sha256": "2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68",
+    "size_bytes": 1356206080
+  },
+  "authorization": {
+    "id": "tumvi-room4-512-16-compatibility-slice-2026-08-29",
+    "path": "governance/datasets/acquisitions/tumvi-room4-512-16-compatibility-slice-2026-08-29.authorization.json",
+    "sha256": "f39ba7598eac1a0301ced5b13d835231c79757b26e096219145737a139f79e81"
+  },
+  "capacity": {
+    "authorized_minimum_free_bytes": 2154624100,
+    "free_bytes_before_receipt": 94949638144,
+    "initial_free_bytes": 94954934272,
+    "maximum_claim_bytes": 1048576,
+    "maximum_receipt_bytes": 1048576,
+    "post_slice_reserve_bytes": 2147483648,
+    "selected_expanded_size_bytes": 5043300
+  },
+  "claim": {
+    "path": "data/quarantine/tum-vi/room4-512-16/compatibility-slice.claim.json",
+    "sha256": "8e4e8a8ad8c58c96e10535600caacaed51776c173c3b6babec557c3f973c4271"
+  },
+  "claim_prepared_at": "2026-08-29T22:55:17Z",
+  "controller_started_at": "2026-08-29T22:55:17Z",
+  "execution": {
+    "controller_initiated_paid_service_cost_usd": 0,
+    "elapsed_seconds": 8.26419195800554,
+    "git_revision": "cfe863890ad040684ac837c1b5d7f346bc0159cc",
+    "maximum_elapsed_seconds": 3600,
+    "tool_files": [
+      {
+        "path": "src/compact_vio/data/archive_slice.py",
+        "sha256": "a9acdbb99711316161c395049b5d7c010e5855ca9d3f65776024962be7502abc"
+      },
+      {
+        "path": "src/compact_vio/data/acquisition.py",
+        "sha256": "33bb9b47ad7db428ff0363ea0e6ed234a44d31bc3168bdf5d70d64fa627047e1"
+      },
+      {
+        "path": "src/compact_vio/data/archive.py",
+        "sha256": "56b135a1b9f666c37b1102cdeba0c684667f85795eb6cc4eec7d9777691c2868"
+      }
+    ]
+  },
+  "operations_not_performed": [
+    "download",
+    "modify_archive",
+    "follow_links",
+    "copy_unselected_members",
+    "use_tar_extract",
+    "use_tar_extractall",
+    "decode_images",
+    "parse_sensor_csv",
+    "load_dataset_samples",
+    "assign_protocol_membership",
+    "select_dataset",
+    "load_checkpoint",
+    "train",
+    "infer",
+    "evaluate",
+    "publish_scientific_result",
+    "delete_source_evidence"
+  ],
+  "operations_performed": [
+    "write_claim",
+    "verify_bound_source_evidence",
+    "verify_archive_identity",
+    "compare_all_tar_headers_to_structural_audit",
+    "copy_allowlisted_regular_files",
+    "hash_selected_files",
+    "validate_exact_staging_tree",
+    "publish_slice_atomically_no_replace",
+    "write_receipt"
+  ],
+  "outcome": "completed",
+  "receipt_prepared_at": "2026-08-29T22:55:25Z",
+  "record_type": "dataset_archive_regular_slice_receipt",
+  "retention": {
+    "deletion_authorized": false,
+    "policy": "retain_slice_and_evidence_until_review",
+    "review_at": "2026-09-06T22:49:00Z"
+  },
+  "schema_version": "1.0.0",
+  "scientific_authority": "none",
+  "scientific_limitations": [
+    "does_not_select_a_dataset",
+    "does_not_assign_protocol_membership",
+    "does_not_validate_csv_membership",
+    "does_not_validate_camera_synchronization",
+    "does_not_approve_model_access_training_inference_evaluation_or_publication"
+  ],
+  "slice": {
+    "destination_path": "data/quarantine/tum-vi/room4-512-16/tumvi-room4-512-16-compatibility-slice-v1",
+    "expanded_size_bytes": 5043300,
+    "file_count": 8,
+    "files": [
+      {
+        "path": "dataset-room4_512_16/mav0/cam0/data.csv",
+        "sha256": "feff54e5a721df968901ae0ec5af1d6ca45c12e758ef8e9e965b812ca87c8d67",
+        "size_bytes": 98057
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/cam1/data.csv",
+        "sha256": "feff54e5a721df968901ae0ec5af1d6ca45c12e758ef8e9e965b812ca87c8d67",
+        "size_bytes": 98057
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/imu0/data.csv",
+        "sha256": "4249d4036b3c03c55b709f6f634d975d024999fb017ab3539cfa71580793a3be",
+        "size_bytes": 2232296
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/mocap0/data.csv",
+        "sha256": "073a3e957efa8ff638ea41402cac9654b40897631d566a3ffee090208597db2a",
+        "size_bytes": 1481244
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/cam0/data/1520531124150444163.png",
+        "sha256": "1c8371dd64a55790c561f98611f132a645a1944291da63f18c054263ed0c5963",
+        "size_bytes": 284188
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/cam1/data/1520531124150444163.png",
+        "sha256": "e5a853fc43776237e9536e90443fdbd2ae3f8349c6385cbea77133c66542be1f",
+        "size_bytes": 283001
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/cam0/data/1520531124200446163.png",
+        "sha256": "77f022fd752680fde1ad52d3347eb0c7548f7939ecd3742bc7be807984c38c65",
+        "size_bytes": 283946
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/cam1/data/1520531124200446163.png",
+        "sha256": "cb616c08af29f4a413577fc00ad189fc029597800cdead394435ef52ebf1dc42",
+        "size_bytes": 282511
+      }
+    ],
+    "policy_id": "exact-audit-bound-regular-slice-no-link-follow/v1"
+  },
+  "source_evidence": {
+    "candidate": {
+      "path": "configs/data/tumvi_room4_512_16_candidate_v1.json",
+      "sha256": "0de942674afcadd2f768385a82c52b8cb65eea14d5e8c4d17dc9e48262023740"
+    },
+    "structural_audit": {
+      "path": "data/quarantine/tum-vi/room4-512-16/tar-structural-audit.json",
+      "sha256": "a75734de25567168eeb90a4b165361eb7df340ade2da5ed0382b6e9b228e6399"
+    },
+    "structural_audit_authorization": {
+      "path": "governance/datasets/acquisitions/tumvi-room4-512-16-structural-audit-2026-08-29.authorization.json",
+      "sha256": "cff468e9fd2702fb9c62176067e23db6a0d32b66502d5e92e37a42ea8324fbb8"
+    },
+    "structural_audit_claim": {
+      "path": "data/quarantine/tum-vi/room4-512-16/structural-audit.claim.json",
+      "sha256": "c997ebdd4ff90aaee4044a17088c4de78ccf3dfa48c9089c300a01e70414a244"
+    },
+    "structural_audit_receipt": {
+      "path": "governance/datasets/acquisitions/tumvi-room4-512-16-structural-audit-2026-08-29.receipt.json",
+      "sha256": "1e3216a7bf789ef3a6d5425fa64f5a7cfa0a712c905460f5b444b65f5e323a92"
+    },
+    "transfer_authorization": {
+      "path": "governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.authorization.json",
+      "sha256": "fb2108f7d1bb6bbf317bd8693c80cb55a5162f0ca297c562c7e89ccd460dbf19"
+    },
+    "transfer_claim": {
+      "path": "data/quarantine/tum-vi/room4-512-16/transfer.claim.json",
+      "sha256": "1c6b9d54e763a9ec2c899461e7701f8652f550bf9a19bb03367b1555edc3abc0"
+    },
+    "transfer_failure": {
+      "path": "governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.failure.json",
+      "sha256": "51979c3749e8a10187191ef43a355b72ebe456828d309703c22e0c6fccb0c75f"
+    }
+  }
+}

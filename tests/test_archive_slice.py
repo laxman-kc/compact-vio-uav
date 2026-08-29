@@ -31,6 +31,10 @@ _CHECKED_AUTHORIZATION = (
     _PROJECT_ROOT / "governance/datasets/acquisitions/"
     "tumvi-room4-512-16-compatibility-slice-2026-08-29.authorization.json"
 )
+_CHECKED_RECEIPT = (
+    _PROJECT_ROOT / "governance/datasets/acquisitions/"
+    "tumvi-room4-512-16-compatibility-slice-2026-08-29.receipt.json"
+)
 _NOW = datetime(2026, 8, 29, 23, 0, 0, tzinfo=timezone.utc)
 
 
@@ -497,7 +501,7 @@ class ArchiveRegularSliceControllerTests(unittest.TestCase):
             ],
         )
 
-    def test_checked_authorization_binds_exact_real_inputs_without_execution(self) -> None:
+    def test_checked_authorization_and_receipt_bind_exact_real_execution(self) -> None:
         authorization = load_regular_slice_authorization(
             _CHECKED_AUTHORIZATION,
             repo_root=_PROJECT_ROOT,
@@ -510,11 +514,20 @@ class ArchiveRegularSliceControllerTests(unittest.TestCase):
         self.assertEqual(authorization.minimum_free_bytes, 2_154_624_100)
         self.assertEqual(len(authorization.allowlist.selected_files), 8)
         self.assertEqual(authorization.allowlist.selected_expanded_size_bytes, 5_043_300)
-        self.assertFalse(
-            (
-                _PROJECT_ROOT / "data/quarantine/tum-vi/room4-512-16/compatibility-slice.claim.json"
-            ).exists()
+        claim = _PROJECT_ROOT / "data/quarantine/tum-vi/room4-512-16/compatibility-slice.claim.json"
+        self.assertEqual(
+            _sha256(claim),
+            "8e4e8a8ad8c58c96e10535600caacaed51776c173c3b6babec557c3f973c4271",
         )
+        self.assertEqual(
+            _sha256(_CHECKED_RECEIPT),
+            "a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820",
+        )
+        receipt = json.loads(_CHECKED_RECEIPT.read_text(encoding="utf-8"))
+        self.assertEqual(receipt["outcome"], "completed")
+        self.assertEqual(receipt["scientific_authority"], "none")
+        self.assertEqual(receipt["slice"]["file_count"], 8)
+        self.assertEqual(receipt["slice"]["expanded_size_bytes"], 5_043_300)
 
     def test_loads_exact_authorization_without_reading_archive(self) -> None:
         original_read_bytes = Path.read_bytes

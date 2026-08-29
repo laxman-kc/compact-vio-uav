@@ -1659,3 +1659,53 @@ Append—do not rewrite prior observations—with:
 
 Do not record percentages of project completion or silently convert a proposed
 recommendation into a decision.
+
+## 2026-08-29 — M9 exact TUM VI regular-file compatibility slice completed operationally
+
+- Authorization/execution revision
+  `cfe863890ad040684ac837c1b5d7f346bc0159cc` passed GitHub Actions run
+  [33279713875](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33279713875)
+  before execution. The controller implementation had already passed at commit
+  `9ca97e04848fe08d14841470a7a7bf39b5edd725` in run `33279450649`; the
+  superseded run `33279337811` failed only the Python 3.10 isolation of one test
+  double, not the production controller.
+- The one-use authorization executed once. It created ignored claim SHA-256
+  `8e4e8a8ad8c58c96e10535600caacaed51776c173c3b6babec557c3f973c4271`,
+  compared all 4,485 live TAR headers with the frozen audit, copied only the
+  eight exact allowlisted regular members, and atomically published the ignored
+  5,043,300-byte output tree. It followed no link and copied no `dso`, special,
+  or unlisted member.
+- The controller started and prepared its claim at `2026-08-29T22:55:17Z`,
+  prepared the receipt at `2026-08-29T22:55:25Z`, and recorded elapsed time
+  `8.26419195800554` seconds and controller-initiated paid-service cost USD 0.
+  Initial free space was 94,954,934,272 bytes; the pre-receipt observation was
+  94,949,638,144 bytes against the exact 2,154,624,100-byte authorized minimum
+  and 2,147,483,648-byte retained reserve.
+- The new 7,106-byte receipt at
+  `governance/datasets/acquisitions/tumvi-room4-512-16-compatibility-slice-2026-08-29.receipt.json`
+  has SHA-256
+  `a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820`.
+  It binds the unchanged 1,356,206,080-byte archive at MD5
+  `8e2ec2c35ee40a54c9aaa5bc2b3c9d8c` and SHA-256
+  `2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68`,
+  the consumed claim, complete source-evidence chain, allowlist, tool hashes,
+  capacity observations, and every selected file size/SHA-256.
+- A separate read-only raw-byte walk at `2026-08-29T22:57:26Z` found exactly
+  eight directories below the destination, eight regular files, 5,043,300
+  bytes, no symbolic link or special file, no `dso` entry, and link count one
+  for every file; all paths, sizes, and SHA-256 values matched the receipt. A
+  read-only archive check completed by `2026-08-29T22:58:36Z` and reconfirmed
+  its size, MD5, and SHA-256. Independent post-run review found no P0, P1, or
+  P2 issue.
+- The [reviewed execution report](../reports/tumvi-room4-512-16-compatibility-slice-2026-08-29.md)
+  records the exact files, hashes, timing, capacity, CI, method, and limitations.
+  No CSV was parsed and no PNG was decoded. No format, timestamp,
+  synchronization, calibration, ground-truth, preprocessing, adapter,
+  scientific-selection, membership, model, training, inference, evaluation,
+  publication, or UAV-domain claim was established. Scientific authority is
+  `none`, and the ignored claim and tree have no independent recovery copy
+  recorded here.
+- Protocol deviation: none. This completed only the authorized operational
+  extraction boundary. Any payload-semantic compatibility check, unit
+  selection, leakage/membership decision, and full-pose protocol remains a
+  separate future gate before model or evaluation access.

@@ -50,11 +50,13 @@ completed once at revision `6c46b2f8ef719a7007eef72eebe13b34575aea93`
 and failed both frozen selected-v2 validation limits. It is rejected; no retry,
 tuning, `MH_02_easy` access, fresh v5 evaluation, inference export, or
 deployment work is permitted. The retained TUM VI `room4` candidate archive has
-now completed a bounded header-only structural audit without extraction. The
-immediate operational follow-up is a separately authorized regular-file
-allowlist extraction of only the required `mav0` members. This does not select a
-dataset; independent unit selection and protocol freeze remain required before
-any new model work.
+now completed a bounded header-only structural audit and a separately
+authorized exact eight-file regular-member slice. The latter copied 5,043,300
+bytes under `mav0` without following links, parsing CSVs, or decoding PNGs.
+Neither operation selects a dataset or establishes format, calibration,
+ground-truth, preprocessing, synchronization, or adapter compatibility.
+Independent compatibility evidence, unit selection, and protocol freeze remain
+required before any new model work.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -1043,20 +1045,25 @@ Execute these as separate small slices; do not combine them into one long phase:
    receipt records `strict_extraction_compatible: false` and no scientific
    authority.
 5. The exact audit-bound regular-file compatibility-slice controller and
-   allowlist are implemented and locally verified. The allowlist contains four
+   allowlist were implemented and verified. The allowlist contains four
    complete `mav0` CSV members plus the earliest two common regular PNG names
-   from each camera: 8 files and 5,043,300 bytes. The controller requires exact
-   equality with the completed 4,485-member audit, excludes the full `dso` tree
-   and all links, retains per-file identity evidence, validates the new output
-   tree atomically, and prohibits download, payload parsing/decoding,
-   model/checkpoint access, training, inference, evaluation, dataset
-   selection/membership, publication, and source deletion. Implementation
-   commit `9ca97e04848fe08d14841470a7a7bf39b5edd725` passed GitHub Actions
-   run `33279450649`. A separate one-use authorization is frozen in the current
-   revision; that revision must pass CI before execution. No extraction may
-   begin from the structural-audit receipt or the allowlist alone.
-6. Complete the independent unit-selection gate after the bounded extraction
-   and format/calibration/ground-truth compatibility evidence exist.
+   from each camera: 8 files and 5,043,300 bytes. Implementation commit
+   `9ca97e04848fe08d14841470a7a7bf39b5edd725` passed GitHub Actions run
+   `33279450649`. The one-use authorization revision
+   `cfe863890ad040684ac837c1b5d7f346bc0159cc` passed run `33279713875` and
+   executed once. The controller required exact equality with the completed
+   4,485-member audit, excluded the full `dso` tree and all links, retained
+   per-file size/SHA-256 evidence, validated the new output tree atomically,
+   and published receipt SHA-256
+   `a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820`.
+   It performed no download, payload parsing/decoding, model/checkpoint access,
+   training, inference, evaluation, dataset selection/membership, publication,
+   or source deletion. The authorization is consumed; its operational output
+   is not scientific compatibility or selection evidence.
+6. Define and execute separately governed format, timestamp, calibration,
+   ground-truth, preprocessing, and adapter checks without model access. Then
+   complete the independent unit-selection gate only if sufficient
+   compatibility evidence exists.
    Select or reject TUM VI `room4` without inspecting any candidate prediction,
    then freeze its source group, leakage review, and membership role. A
    different rights-compatible full-pose unit may be chosen instead.

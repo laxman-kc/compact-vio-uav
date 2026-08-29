@@ -96,6 +96,14 @@ datasets:
     structural_audit_sha256: a75734de25567168eeb90a4b165361eb7df340ade2da5ed0382b6e9b228e6399
     structural_audit_member_count: 4485
     structural_audit_non_regular_member_count: 2
+    compatibility_slice_allowlist: configs/data/tumvi_room4_512_16_compatibility_slice_v1.json
+    compatibility_slice_authorization: governance/datasets/acquisitions/tumvi-room4-512-16-compatibility-slice-2026-08-29.authorization.json
+    compatibility_slice_receipt: governance/datasets/acquisitions/tumvi-room4-512-16-compatibility-slice-2026-08-29.receipt.json
+    compatibility_slice_report: reports/tumvi-room4-512-16-compatibility-slice-2026-08-29.md
+    compatibility_slice_state: completed_operational_regular_file_slice_no_scientific_authority
+    compatibility_slice_receipt_sha256: a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820
+    compatibility_slice_file_count: 8
+    compatibility_slice_expanded_size_bytes: 5043300
     received_archive_sha256: 2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68
     identity_state: published_identity_only
     proposed_lane: external_full_pose_generalization_candidate_only
@@ -107,7 +115,7 @@ datasets:
       - The room4 512x512 unit remains a non-executable scientific candidate; the separate one-use operational transfer authorization does not select or approve it for dataset use.
       - The one-use transfer retained publisher-size/MD5-verified bytes and computed SHA-256, then strict TAR inventory rejected an official DSO-tree symbolic link; the authorization is consumed and no success receipt exists.
       - The completed header-only audit recorded 4,472 regular files, 11 directories, and two inert DSO-tree symlinks without following or extracting them; strict extraction compatibility is false and scientific authority is none.
-      - The exact eight-file mav0 compatibility allowlist and audit-bound regular-slice controller are committed and CI-green; a separate one-use authorization is frozen but not executed and the audit receipt or allowlist alone grants no extraction authority.
-      - Payload validity, exact calibration and ground-truth schema, 16-bit preprocessing, adapter compatibility, scientific selection, and source membership remain unresolved; no extraction or evaluation occurred.
+      - The audit-bound one-use operation copied exactly the eight allowlisted regular mav0 files, totaling 5,043,300 bytes, after its authorization revision passed CI; it excluded dso, followed no link, and is consumed with a tracked receipt.
+      - The compatibility-slice name denotes an operational input boundary, not a compatibility result. No CSV was parsed and no PNG was decoded; payload validity, exact calibration and ground-truth schema, 16-bit preprocessing, synchronization, adapter compatibility, scientific selection, and source membership remain unresolved, and no evaluation occurred.
       - The motion/domain is not a substitute for UAV-domain evidence.
       - Ground-truth availability varies and must be recorded per sequence.

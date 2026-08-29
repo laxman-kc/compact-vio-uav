@@ -21,11 +21,14 @@ fresh position evaluation. The retained TUM VI `room4` archive now has a
 completed, receipt-backed header-only structural audit. The regular-file
 compatibility-slice controller and its exact eight-file `mav0` allowlist are
 implemented at commit `9ca97e04848fe08d14841470a7a7bf39b5edd725`, whose
-GitHub Actions run `33279450649` passed. A separate one-use authorization is
-frozen in the current revision but not executed; its revision must pass CI
-before the single bounded operation. That operation cannot select the dataset or
-interpret payload semantics. Independent unit selection and protocol freeze
-remain mandatory before any new model work.
+GitHub Actions run `33279450649` passed. The separate one-use authorization at
+revision `cfe863890ad040684ac837c1b5d7f346bc0159cc` passed GitHub Actions run
+`33279713875` and executed once. It published only the exact eight regular
+members and a receipt bound to their sizes and SHA-256 values. The operation
+did not parse CSVs, decode PNGs, select the dataset, assign membership, or
+interpret payload semantics. Independent format/calibration/ground-truth
+review, unit selection, and protocol freeze remain mandatory before any new
+model work.
 
 ## Planes
 
@@ -299,7 +302,17 @@ from revision `9709a101b28f291de23826ac8c9abec6a6eb9846`: it classified 4,485
 headers as 4,472 regular files, 11 directories, and two inert symbolic links,
 preserved the exact archive SHA-256, and reported
 `strict_extraction_compatible: false`. The tracked receipt grants no scientific
-authority. Also implemented are
+authority. A distinct audit-bound controller then consumed its own CI-green
+one-use authorization and published an ignored eight-file regular-member tree
+under `dataset-room4_512_16/mav0/`. The tree contains four complete CSV member
+bytes and two common PNG basenames per camera, totaling 5,043,300 bytes. Its
+tracked 7,106-byte receipt has SHA-256
+`a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820`;
+a separate raw-byte walk reconfirmed the exact single-link file tree. No link,
+DSO member, or unlisted member was copied, and no payload was parsed or decoded.
+This is operational staging evidence with scientific authority `none`, not
+format acceptance, adapter compatibility, membership, or dataset selection.
+Also implemented are
 the generic causal event-release,
 estimator-envelope, execution-recorder, coverage, and payload-omitted trace
 boundaries; typed camera/IMU and trajectory records; raw exact-pair residual,
@@ -354,7 +367,7 @@ gate.
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
 | Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
-| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer and structural-audit controllers; retained TUM VI archive with verified size/MD5/SHA; recorded failed strict inventory; completed receipt-backed 4,485-member header classification; and a CI-green audit-bound eight-file compatibility-slice controller | The TUM VI header layout is recorded, including two inert DSO symlinks, so strict extraction compatibility is false. No extraction, payload decoding, adapter validation, scientific selection, membership, or protocol is approved. A separate one-use authorization is frozen but must pass CI before the exact `mav0` compatibility slice can execute. Other sources require separate rights, calibration, provenance, and role records. |
+| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer, structural-audit, and regular-slice controllers; retained TUM VI archive with verified size/MD5/SHA; recorded failed strict inventory; completed receipt-backed 4,485-member header classification; and the completed receipt-backed eight-file `mav0` operational slice | The TUM VI header layout is recorded, including two inert DSO symlinks, so strict whole-archive extraction compatibility is false. Only the exact eight regular allowlisted members were copied. No payload parsing/decoding, format or adapter validation, scientific selection, membership, or protocol is approved. Other sources and any later TUM VI use require separate rights, calibration, provenance, semantic-compatibility, and role records. |
 | Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, five completed A10 runs, and a rejected controlled v5 loss ablation | No v5 retry or direct model work is authorized. A new full-pose unit/protocol must be selected and frozen independently before later model work. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |

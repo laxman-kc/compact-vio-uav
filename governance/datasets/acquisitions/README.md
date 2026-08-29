@@ -66,17 +66,27 @@ Current records:
   `scientific_authority: none`.
 - `tumvi-room4-512-16-compatibility-slice-2026-08-29.authorization.json` — one
   bounded extraction of the exact eight regular `mav0` members in the checked
-  compatibility allowlist. It is frozen but not executed and requires green CI
-  for its own revision before the claim may be created.
+  compatibility allowlist. Its revision passed CI, its one execution completed,
+  and the authorization is consumed.
+- `tumvi-room4-512-16-compatibility-slice-2026-08-29.receipt.json` — tracked
+  completed-slice receipt. It binds execution revision
+  `cfe863890ad040684ac837c1b5d7f346bc0159cc`, the unchanged archive and source
+  evidence, consumed claim, exact eight-file output tree, 5,043,300 selected
+  bytes, per-file SHA-256 values, bounded capacity/time, zero paid-service cost,
+  and `scientific_authority: none`. Its own SHA-256 is
+  `a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820`.
 - `tumvi-room4-512-16-transfer-2026-08-29.receipt.json` — reserved success
   receipt path. It does not exist because every success gate did not pass.
 
 The exact eight-file compatibility-slice controller is committed and CI-green.
-The current revision adds a reviewed one-use authorization binding those
-immutable code and allowlist identities; it has not executed and its revision
-must pass CI first. The slice is restricted to regular files under
+The reviewed one-use authorization revision passed GitHub Actions run
+`33279713875` and executed once. The slice is restricted to regular files under
 `dataset-room4_512_16/mav0/`, excludes the full `dso` tree and both symbolic
-links, and preserves per-file evidence. It remains operational preparation
-only; payload interpretation, dataset selection, membership, model/checkpoint
-access, training, inference, evaluation, publication, and source deletion stay
-outside its authority.
+links, and preserves per-file evidence. A post-run raw-byte walk observed eight
+directories below the destination, eight single-link regular files, no special
+files, and exact agreement with the receipt. The ignored claim and output tree
+remain local evidence rather than an independent recovery copy. The completed
+slice remains operational preparation only; CSV parsing, PNG decoding, payload
+interpretation, format/calibration/ground-truth or adapter acceptance, dataset
+selection, membership, model/checkpoint access, training, inference,
+evaluation, publication, and source deletion stay outside its authority.

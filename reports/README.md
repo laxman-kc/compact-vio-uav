@@ -23,6 +23,9 @@ its presence is not evidence that a run happened or that a hypothesis passed.
 
 ## Reviewed reports
 
+- [TUM VI room4 512x512 audit-bound regular-file compatibility slice](tumvi-room4-512-16-compatibility-slice-2026-08-29.md)
+  — completed exact eight-file operational extraction; payloads uninterpreted
+  and scientific authority none.
 - [TUM VI room4 512x512 structural archive audit](tumvi-room4-512-16-structural-audit-2026-08-29.md)
   — completed header-only classification of the retained archive; strict
   extraction incompatible and scientific authority none.
