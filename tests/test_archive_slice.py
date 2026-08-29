@@ -514,11 +514,6 @@ class ArchiveRegularSliceControllerTests(unittest.TestCase):
         self.assertEqual(authorization.minimum_free_bytes, 2_154_624_100)
         self.assertEqual(len(authorization.allowlist.selected_files), 8)
         self.assertEqual(authorization.allowlist.selected_expanded_size_bytes, 5_043_300)
-        claim = _PROJECT_ROOT / "data/quarantine/tum-vi/room4-512-16/compatibility-slice.claim.json"
-        self.assertEqual(
-            _sha256(claim),
-            "8e4e8a8ad8c58c96e10535600caacaed51776c173c3b6babec557c3f973c4271",
-        )
         self.assertEqual(
             _sha256(_CHECKED_RECEIPT),
             "a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820",
@@ -526,6 +521,13 @@ class ArchiveRegularSliceControllerTests(unittest.TestCase):
         receipt = json.loads(_CHECKED_RECEIPT.read_text(encoding="utf-8"))
         self.assertEqual(receipt["outcome"], "completed")
         self.assertEqual(receipt["scientific_authority"], "none")
+        self.assertEqual(
+            receipt["claim"],
+            {
+                "path": ("data/quarantine/tum-vi/room4-512-16/compatibility-slice.claim.json"),
+                "sha256": ("8e4e8a8ad8c58c96e10535600caacaed51776c173c3b6babec557c3f973c4271"),
+            },
+        )
         self.assertEqual(receipt["slice"]["file_count"], 8)
         self.assertEqual(receipt["slice"]["expanded_size_bytes"], 5_043_300)
 
