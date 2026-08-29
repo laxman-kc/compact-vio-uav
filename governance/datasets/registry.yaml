@@ -89,6 +89,8 @@ datasets:
     acquisition_authorization: governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.authorization.json
     acquisition_failure: governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.failure.json
     acquisition_state: verified_archive_retained_strict_inventory_failed_authorization_consumed
+    structural_audit_authorization: governance/datasets/acquisitions/tumvi-room4-512-16-structural-audit-2026-08-29.authorization.json
+    structural_audit_state: authorized_not_executed
     received_archive_sha256: 2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68
     identity_state: published_identity_only
     proposed_lane: external_full_pose_generalization_candidate_only

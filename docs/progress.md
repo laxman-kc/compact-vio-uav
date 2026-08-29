@@ -1515,6 +1515,28 @@ result, and explicit remaining blockers.
   remains false unless a complete observed audit proves otherwise, and even a
   completed audit would not authorize extraction or scientific use.
 
+## 2026-08-29 — M9 structural-audit authorization frozen; not executed
+
+- Controller commit `354967901deff93aa241a5ec06294224ca17ab4f`
+  passed GitHub Actions run `33276318236` on Python 3.10 and 3.12. The separate
+  authorization at
+  `governance/datasets/acquisitions/tumvi-room4-512-16-structural-audit-2026-08-29.authorization.json`
+  binds controller SHA-256 `18ba5f76…d535d6`, acquisition-helper SHA-256
+  `33bb9b47…7047e1`, archive-layer SHA-256 `dd6823b3…a13884`, candidate SHA-256
+  `0de94267…23740`, failed-transfer evidence SHA-256 `51979c37…c0c75f`, and
+  retained archive SHA-256 `2c363340…9f2e68`.
+- The authorization is active from `2026-08-29T21:33:00Z` through
+  `2026-08-30T21:33:00Z`, permits one execution with a one-hour hard ceiling and
+  zero paid-service authority, and requires at least 2,416,967,680 free bytes.
+  Its canonical record SHA-256 is
+  `cff468e9fd2702fb9c62176067e23db6a0d32b66502d5e92e37a42ea8324fbb8`.
+- The real record and all frozen inputs are covered by the focused loader test.
+  All 68 focused acquisition/archive/audit tests and all 435 repository tests
+  passed before execution. This entry records authorization only: no new claim,
+  audit, receipt, archive modification, extraction, decoding, sample/model
+  access, training, inference, evaluation, selection, publication, or deletion
+  occurred.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

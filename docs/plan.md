@@ -1037,6 +1037,9 @@ Execute these as separate small slices; do not combine them into one long phase:
    strict inventory/extractor remains unchanged. Do not apply it to the retained
    archive until the controller/output contract passes CI and a separate exact
    authorization binding the resulting code hashes is committed and passes CI.
+   Those prerequisites are now prepared; execute the authorization once, retain
+   its exact audit/receipt or failure evidence, and do not reinterpret recorded
+   special members as extraction permission.
 5. Complete the independent unit-selection gate after that evidence exists.
    Select or reject TUM VI `room4` without inspecting any candidate prediction,
    then freeze its source group, leakage review, and membership role. A

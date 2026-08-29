@@ -53,5 +53,13 @@ Current records:
 - `tumvi-room4-512-16-transfer-2026-08-29.failure.json` — post-failure local
   audit binding the claim, retained archive identity, exact rejected symlink,
   absent inventory/receipt, and no-retry/no-scientific-authority boundary.
+- `tumvi-room4-512-16-structural-audit-2026-08-29.authorization.json` — one
+  active, header-only audit of the exact retained archive. It permits inert
+  metadata recording but no download, modification, extraction, decoding,
+  sample/model access, training, inference, evaluation, selection, publication,
+  or deletion; it is not yet executed when committed.
+- `tumvi-room4-512-16-structural-audit-2026-08-29.receipt.json` — reserved
+  tracked audit-receipt path; it must remain absent unless every audit gate
+  passes.
 - `tumvi-room4-512-16-transfer-2026-08-29.receipt.json` — reserved success
   receipt path. It does not exist because every success gate did not pass.

@@ -21,6 +21,10 @@ from compact_vio.data.archive_audit import (
 )
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
+_CHECKED_AUTHORIZATION = (
+    _PROJECT_ROOT / "governance/datasets/acquisitions/"
+    "tumvi-room4-512-16-structural-audit-2026-08-29.authorization.json"
+)
 _NOW = datetime(2026, 8, 29, 22, 0, 0, tzinfo=timezone.utc)
 
 
@@ -260,6 +264,29 @@ class ArchiveAuditControllerTests(unittest.TestCase):
                 "compact_vio.data.archive_audit._disk_usage",
                 return_value=types.SimpleNamespace(free=10_000_000_000),
             ),
+        )
+
+    def test_checked_authorization_binds_frozen_real_inputs_without_execution(self) -> None:
+        result = load_structural_audit_authorization(
+            _CHECKED_AUTHORIZATION,
+            repo_root=_PROJECT_ROOT,
+        )
+        self.assertEqual(
+            result.authorization_id,
+            "tumvi-room4-512-16-structural-audit-2026-08-29",
+        )
+        self.assertEqual(
+            result.authorization_sha256,
+            "cff468e9fd2702fb9c62176067e23db6a0d32b66502d5e92e37a42ea8324fbb8",
+        )
+        self.assertEqual(
+            result.archive_identity.sha256,
+            "2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68",
+        )
+        self.assertEqual(_sha256(_PROJECT_ROOT / result.candidate_path), result.candidate_sha256)
+        self.assertEqual(
+            _sha256(_PROJECT_ROOT / result.source_failure_path),
+            result.source_failure_sha256,
         )
 
     def test_loads_exact_authorization_without_archive_access(self) -> None:

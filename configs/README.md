@@ -52,6 +52,10 @@ Current namespaces:
   training, inference, evaluation, or publication authority. Its one execution
   retained verified bytes but failed strict inventory on an official DSO-tree
   symlink, so it produced no success receipt and cannot be retried.
+  A separate structural-audit authorization may only re-verify those retained
+  bytes and record inert TAR headers. It grants no download, extraction,
+  decoding, model, evaluation, selection, or publication authority and has not
+  executed.
 - `training/` contains the fully resolved v1-v5 experiment configurations.
   Each new candidate changes only the fields declared by its reviewed plan.
 - `evaluation/` contains frozen checkpoint-evaluation protocols after source,

@@ -1,0 +1,106 @@
+{
+  "archive_identity": {
+    "allowed_redirect_origins": [
+      "https://cdn2.vision.in.tum.de"
+    ],
+    "allowed_redirect_urls": [
+      "https://cdn2.vision.in.tum.de/tumvi/exported/euroc/512_16/dataset-room4_512_16.tar"
+    ],
+    "archive_id": "tum-vi-room4",
+    "filename": "dataset-room4_512_16.tar",
+    "md5": "8e2ec2c35ee40a54c9aaa5bc2b3c9d8c",
+    "sha256": "2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68",
+    "size_bytes": 1356206080,
+    "url": "https://cdn3.vision.in.tum.de/tumvi/exported/euroc/512_16/dataset-room4_512_16.tar"
+  },
+  "archive_path": "data/quarantine/tum-vi/room4-512-16/dataset-room4_512_16.tar",
+  "audit_limits": {
+    "max_expanded_size_bytes": 274877906944,
+    "max_member_size_bytes": 8589934592,
+    "max_members": 250000,
+    "maximum_audit_bytes": 268435456
+  },
+  "authority_basis": {
+    "captured_at": "2026-08-29T21:33:00Z",
+    "identity_authentication": "not_independently_authenticated",
+    "instruction_summary": "Continue the production execution plan by re-verifying the retained TUM VI archive and performing one inert read-only TAR-header structural audit; do not download, modify, follow links, extract, decode, load models or samples, train, infer, evaluate, select, publish, or delete.",
+    "kind": "active_workspace_user_instruction"
+  },
+  "authorization_id": "tumvi-room4-512-16-structural-audit-2026-08-29",
+  "authorized_at": "2026-08-29T21:33:00Z",
+  "candidate": {
+    "path": "configs/data/tumvi_room4_512_16_candidate_v1.json",
+    "sha256": "0de942674afcadd2f768385a82c52b8cb65eea14d5e8c4d17dc9e48262023740"
+  },
+  "execution": {
+    "maximum_elapsed_seconds": 3600,
+    "maximum_paid_compute_cost_usd": 0,
+    "minimum_free_bytes": 2416967680,
+    "requires_clean_worktree": true,
+    "tool_files": [
+      {
+        "path": "src/compact_vio/data/archive_audit.py",
+        "sha256": "18ba5f76d11b113f0753cd89a3fae51863e2c9cc8abf3ac9719bb33d17d535d6"
+      },
+      {
+        "path": "src/compact_vio/data/acquisition.py",
+        "sha256": "33bb9b47ad7db428ff0363ea0e6ed234a44d31bc3168bdf5d70d64fa627047e1"
+      },
+      {
+        "path": "src/compact_vio/data/archive.py",
+        "sha256": "dd6823b35c254c57b8246a75035ddde68cd01950b01ea67336331628f7a13884"
+      }
+    ]
+  },
+  "expires_at": "2026-08-30T21:33:00Z",
+  "max_executions": 1,
+  "outputs": {
+    "audit_path": "data/quarantine/tum-vi/room4-512-16/tar-structural-audit.json",
+    "claim_path": "data/quarantine/tum-vi/room4-512-16/structural-audit.claim.json",
+    "receipt_path": "governance/datasets/acquisitions/tumvi-room4-512-16-structural-audit-2026-08-29.receipt.json"
+  },
+  "permitted_operations": [
+    "write_claim",
+    "verify_size",
+    "verify_md5",
+    "verify_sha256",
+    "audit_tar_headers",
+    "write_audit",
+    "write_receipt"
+  ],
+  "prohibited_operations": [
+    "download",
+    "modify_archive",
+    "extract",
+    "decode_images",
+    "load_dataset_samples",
+    "select_dataset",
+    "train",
+    "infer",
+    "evaluate",
+    "load_checkpoint",
+    "delete_archive"
+  ],
+  "record_status": "approved",
+  "record_type": "dataset_archive_structural_audit_authorization",
+  "retention": {
+    "deletion_authorized": false,
+    "policy": "retain_audit_evidence_until_review",
+    "review_at": "2026-09-06T21:33:00Z"
+  },
+  "schema_version": "1.0.0",
+  "scope": "retained_archive_read_only_structural_audit_only",
+  "scientific_authority": {
+    "approves_evaluation": false,
+    "approves_extraction": false,
+    "approves_inference": false,
+    "approves_publication": false,
+    "approves_training": false,
+    "assigns_membership": false,
+    "selects_dataset": false
+  },
+  "source_failure": {
+    "path": "governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.failure.json",
+    "sha256": "51979c3749e8a10187191ef43a355b72ebe456828d309703c22e0c6fccb0c75f"
+  }
+}
