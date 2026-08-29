@@ -1613,6 +1613,40 @@ result, and explicit remaining blockers.
   deletion occurred. Commit/push and green CI are required before a separate
   exact one-use authorization can be frozen.
 
+## 2026-08-29 — M9 compatibility-slice controller CI green; one-use authorization frozen, not executed
+
+- Implementation commit `9ca97e04848fe08d14841470a7a7bf39b5edd725`
+  passed GitHub Actions run
+  [33279450649](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33279450649)
+  on Python 3.10 and 3.12. The earlier run `33279337811` exposed a Python
+  3.10-only mock-isolation defect in one no-archive-access test; the production
+  controller passed, the test double was narrowed, and the replacement matrix
+  passed completely.
+- The authorization at
+  `governance/datasets/acquisitions/tumvi-room4-512-16-compatibility-slice-2026-08-29.authorization.json`
+  has canonical SHA-256
+  `f39ba7598eac1a0301ced5b13d835231c79757b26e096219145737a139f79e81`.
+  It binds the exact archive, candidate, failed transfer evidence, structural
+  audit/claim/authorization/receipt, eight-file allowlist, and committed hashes
+  of the controller, acquisition helper, and archive primitive. It permits one
+  execution from `2026-08-29T22:49:00Z` through
+  `2026-08-30T22:49:00Z`, with a one-hour total controller bound, zero
+  paid-service authority, and an exact 2,154,624,100-byte free-space floor.
+- The authorization permits only evidence verification, complete live-header
+  comparison, exact regular-member copying, hashing, staging validation,
+  no-replace publication, receipt publication, and narrowly scoped rollback of
+  this run's exact new receipt if a final truth gate fails. It prohibits
+  network download, link following, DSO/unlisted copying, TAR extraction APIs,
+  payload parsing/decoding, sample/model/checkpoint access, training, inference,
+  evaluation, dataset selection/membership, scientific publication, and source
+  deletion. Scientific authority remains `none`.
+- The authorization fixture raised the focused controller count to 16 and the
+  complete repository count to 457; Ruff checked 120 files, repository policy
+  checked 169 files with zero violations, the schema harness passed 10 schemas
+  and 7 templates, and compilation, formatting, and diff checks passed. This
+  entry records the frozen authorization only: no compatibility claim,
+  destination, receipt, payload access, or scientific operation has occurred.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

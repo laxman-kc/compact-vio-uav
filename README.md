@@ -161,12 +161,14 @@ verified. They select only four complete `mav0` CSV members and the earliest
 two common regular PNG names from each camera: eight regular files totaling
 5,043,300 bytes. The controller compares every live TAR header with the frozen
 4,485-member audit, follows no link, excludes `dso`, publishes a new exact tree
-atomically, and writes its receipt last. This implementation has not yet been
-committed, authorized, or executed against the retained archive. The
+atomically, and writes its receipt last. Implementation commit
+`9ca97e04848fe08d14841470a7a7bf39b5edd725` passed GitHub Actions run
+`33279450649`. A separate one-use authorization is frozen in the current
+revision but has not executed against the retained archive. The
 [reviewed structural-audit report](reports/tumvi-room4-512-16-structural-audit-2026-08-29.md)
 records the exact layout, hashes, limits, and prohibited operations. The next
-operational gate is to commit this implementation, obtain green CI, and freeze
-a separate one-use authorization before any extraction. The slice grants no
+operational gate is green CI for the authorization revision, followed by its
+single bounded execution. The slice grants no
 dataset selection, membership, payload interpretation, model, inference,
 evaluation, or publication authority.
 

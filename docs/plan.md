@@ -1050,10 +1050,11 @@ Execute these as separate small slices; do not combine them into one long phase:
    and all links, retains per-file identity evidence, validates the new output
    tree atomically, and prohibits download, payload parsing/decoding,
    model/checkpoint access, training, inference, evaluation, dataset
-   selection/membership, publication, and source deletion. Commit/push and
-   green CI are now required before a separate one-use authorization can be
-   created; no extraction may begin from the structural-audit receipt or the
-   allowlist alone.
+   selection/membership, publication, and source deletion. Implementation
+   commit `9ca97e04848fe08d14841470a7a7bf39b5edd725` passed GitHub Actions
+   run `33279450649`. A separate one-use authorization is frozen in the current
+   revision; that revision must pass CI before execution. No extraction may
+   begin from the structural-audit receipt or the allowlist alone.
 6. Complete the independent unit-selection gate after the bounded extraction
    and format/calibration/ground-truth compatibility evidence exist.
    Select or reject TUM VI `room4` without inspecting any candidate prediction,

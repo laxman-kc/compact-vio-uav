@@ -40,9 +40,9 @@ defense against a hostile same-user process racing directory entries. Failed
 claims and inventories are ignored local evidence; they are not remotely
 durable until separately reviewed and retained.
 
-The `room4` transfer and structural-audit authorizations are based on the active
-workspace user's instruction to continue the immediate production execution
-plan. Each record
+The `room4` transfer, structural-audit, and compatibility-slice authorizations
+are based on the active workspace user's instruction to continue the immediate
+production execution plan. Each record
 states that the user's identity was not independently authenticated; it must
 not be presented as independent identity assurance or third-party approval.
 
@@ -64,14 +64,17 @@ Current records:
   and claim identities, 4,472 regular files, 11 directories, two symbolic
   links, `strict_extraction_compatible: false`, zero paid-service cost, and
   `scientific_authority: none`.
+- `tumvi-room4-512-16-compatibility-slice-2026-08-29.authorization.json` — one
+  bounded extraction of the exact eight regular `mav0` members in the checked
+  compatibility allowlist. It is frozen but not executed and requires green CI
+  for its own revision before the claim may be created.
 - `tumvi-room4-512-16-transfer-2026-08-29.receipt.json` — reserved success
   receipt path. It does not exist because every success gate did not pass.
 
-The next operation is not authorized by any record in this directory. Its
-controller and documentation-only exact eight-file allowlist are implemented
-and locally verified, but must first be committed, pushed, and pass CI. Only a
-later reviewed one-use authorization may bind those immutable code and
-allowlist identities. The slice is restricted to regular files under
+The exact eight-file compatibility-slice controller is committed and CI-green.
+The current revision adds a reviewed one-use authorization binding those
+immutable code and allowlist identities; it has not executed and its revision
+must pass CI first. The slice is restricted to regular files under
 `dataset-room4_512_16/mav0/`, excludes the full `dso` tree and both symbolic
 links, and preserves per-file evidence. It remains operational preparation
 only; payload interpretation, dataset selection, membership, model/checkpoint

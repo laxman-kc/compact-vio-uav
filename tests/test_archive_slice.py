@@ -27,6 +27,10 @@ from compact_vio.data.archive_slice import (
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _CHECKED_ALLOWLIST = _PROJECT_ROOT / "configs/data/tumvi_room4_512_16_compatibility_slice_v1.json"
+_CHECKED_AUTHORIZATION = (
+    _PROJECT_ROOT / "governance/datasets/acquisitions/"
+    "tumvi-room4-512-16-compatibility-slice-2026-08-29.authorization.json"
+)
 _NOW = datetime(2026, 8, 29, 23, 0, 0, tzinfo=timezone.utc)
 
 
@@ -491,6 +495,25 @@ class ArchiveRegularSliceControllerTests(unittest.TestCase):
                 "1520531124200446163.png",
                 "1520531124200446163.png",
             ],
+        )
+
+    def test_checked_authorization_binds_exact_real_inputs_without_execution(self) -> None:
+        authorization = load_regular_slice_authorization(
+            _CHECKED_AUTHORIZATION,
+            repo_root=_PROJECT_ROOT,
+        )
+        self.assertEqual(
+            authorization.authorization_sha256,
+            "f39ba7598eac1a0301ced5b13d835231c79757b26e096219145737a139f79e81",
+        )
+        self.assertEqual(authorization.maximum_elapsed_seconds, 3_600)
+        self.assertEqual(authorization.minimum_free_bytes, 2_154_624_100)
+        self.assertEqual(len(authorization.allowlist.selected_files), 8)
+        self.assertEqual(authorization.allowlist.selected_expanded_size_bytes, 5_043_300)
+        self.assertFalse(
+            (
+                _PROJECT_ROOT / "data/quarantine/tum-vi/room4-512-16/compatibility-slice.claim.json"
+            ).exists()
         )
 
     def test_loads_exact_authorization_without_reading_archive(self) -> None:
