@@ -1,0 +1,68 @@
+{
+  "allowed_root": "dataset-room4_512_16/mav0",
+  "allowlist_id": "tumvi-room4-512-16-compatibility-slice-v1",
+  "archive": {
+    "path": "data/quarantine/tum-vi/room4-512-16/dataset-room4_512_16.tar",
+    "sha256": "2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68"
+  },
+  "record_type": "dataset_archive_regular_slice_allowlist",
+  "schema_version": "1.0.0",
+  "selected_expanded_size_bytes": 5043300,
+  "selected_file_count": 8,
+  "selected_files": [
+    {
+      "path": "dataset-room4_512_16/mav0/cam0/data.csv",
+      "size_bytes": 98057
+    },
+    {
+      "path": "dataset-room4_512_16/mav0/cam1/data.csv",
+      "size_bytes": 98057
+    },
+    {
+      "path": "dataset-room4_512_16/mav0/imu0/data.csv",
+      "size_bytes": 2232296
+    },
+    {
+      "path": "dataset-room4_512_16/mav0/mocap0/data.csv",
+      "size_bytes": 1481244
+    },
+    {
+      "path": "dataset-room4_512_16/mav0/cam0/data/1520531124150444163.png",
+      "size_bytes": 284188
+    },
+    {
+      "path": "dataset-room4_512_16/mav0/cam1/data/1520531124150444163.png",
+      "size_bytes": 283001
+    },
+    {
+      "path": "dataset-room4_512_16/mav0/cam0/data/1520531124200446163.png",
+      "size_bytes": 283946
+    },
+    {
+      "path": "dataset-room4_512_16/mav0/cam1/data/1520531124200446163.png",
+      "size_bytes": 282511
+    }
+  ],
+  "selection_basis": "The four mav0 CSV paths are exact audited regular files; the two PNG basenames are the lexicographically earliest two filenames in the exact intersection of audited regular-image paths under cam0/data and cam1/data.",
+  "selection_purpose": "tumvi_format_compatibility_smoke_only",
+  "scientific_limitations": [
+    "does_not_select_a_dataset",
+    "does_not_assign_protocol_membership",
+    "does_not_validate_csv_membership",
+    "does_not_validate_camera_synchronization",
+    "does_not_approve_model_access_training_inference_evaluation_or_publication"
+  ],
+  "structural_audit": {
+    "authorization_path": "governance/datasets/acquisitions/tumvi-room4-512-16-structural-audit-2026-08-29.authorization.json",
+    "authorization_sha256": "cff468e9fd2702fb9c62176067e23db6a0d32b66502d5e92e37a42ea8324fbb8",
+    "claim_path": "data/quarantine/tum-vi/room4-512-16/structural-audit.claim.json",
+    "claim_sha256": "c997ebdd4ff90aaee4044a17088c4de78ccf3dfa48c9089c300a01e70414a244",
+    "member_count": 4485,
+    "path": "data/quarantine/tum-vi/room4-512-16/tar-structural-audit.json",
+    "receipt_path": "governance/datasets/acquisitions/tumvi-room4-512-16-structural-audit-2026-08-29.receipt.json",
+    "receipt_sha256": "1e3216a7bf789ef3a6d5425fa64f5a7cfa0a712c905460f5b444b65f5e323a92",
+    "sha256": "a75734de25567168eeb90a4b165361eb7df340ade2da5ed0382b6e9b228e6399",
+    "source_failure_path": "governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.failure.json",
+    "source_failure_sha256": "51979c3749e8a10187191ef43a355b72ebe456828d309703c22e0c6fccb0c75f"
+  }
+}

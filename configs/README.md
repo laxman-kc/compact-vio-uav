@@ -52,10 +52,14 @@ Current namespaces:
   training, inference, evaluation, or publication authority. Its one execution
   retained verified bytes but failed strict inventory on an official DSO-tree
   symlink, so it produced no success receipt and cannot be retried.
-  A separate structural-audit authorization may only re-verify those retained
-  bytes and record inert TAR headers. It grants no download, extraction,
-  decoding, model, evaluation, selection, or publication authority and has not
-  executed.
+  The separate structural-audit authorization executed once and recorded all
+  4,485 TAR headers without following links or extracting payloads. Its exact
+  audit now binds a documentation-only compatibility allowlist at
+  `data/tumvi_room4_512_16_compatibility_slice_v1.json`: four complete `mav0`
+  CSV members plus two common PNG names from each camera, 8 regular files and
+  5,043,300 bytes. The associated controller is locally verified, but neither
+  this configuration nor the audit grants extraction authority. A separate
+  one-use authorization is still required after immutable commit and green CI.
 - `training/` contains the fully resolved v1-v5 experiment configurations.
   Each new candidate changes only the fields declared by its reviewed plan.
 - `evaluation/` contains frozen checkpoint-evaluation protocols after source,

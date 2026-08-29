@@ -67,10 +67,13 @@ Current records:
 - `tumvi-room4-512-16-transfer-2026-08-29.receipt.json` — reserved success
   receipt path. It does not exist because every success gate did not pass.
 
-The next operation is not authorized by any record in this directory. It
-requires a separate reviewed, one-use authorization that binds an exact
-allowlist of required regular files under `dataset-room4_512_16/mav0/`, excludes
-the full `dso` tree and both symbolic links, and preserves per-file evidence.
-Such extraction would remain operational preparation only; dataset selection,
-membership, model/checkpoint access, training, inference, evaluation,
-publication, and deletion stay outside its authority.
+The next operation is not authorized by any record in this directory. Its
+controller and documentation-only exact eight-file allowlist are implemented
+and locally verified, but must first be committed, pushed, and pass CI. Only a
+later reviewed one-use authorization may bind those immutable code and
+allowlist identities. The slice is restricted to regular files under
+`dataset-room4_512_16/mav0/`, excludes the full `dso` tree and both symbolic
+links, and preserves per-file evidence. It remains operational preparation
+only; payload interpretation, dataset selection, membership, model/checkpoint
+access, training, inference, evaluation, publication, and source deletion stay
+outside its authority.

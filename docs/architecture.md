@@ -18,11 +18,13 @@ closure, flight control, and target deployment are outside the current core.
 The single controlled v5 loss ablation against the retained v2 checkpoint has
 completed and failed both frozen validation guardrails. It was rejected before
 fresh position evaluation. The retained TUM VI `room4` archive now has a
-completed, receipt-backed header-only structural audit. The immediate
-operational extension is a separately authorized regular-file allowlist
-extraction of only the required `mav0` members. That operation cannot select the
-dataset. Independent unit selection and protocol freeze remain mandatory before
-any new model work.
+completed, receipt-backed header-only structural audit. The regular-file
+compatibility-slice controller and its exact eight-file `mav0` allowlist are
+implemented and locally verified but not yet authorized or executed. The
+immediate operational gate is immutable commit/CI evidence followed by a
+separate one-use authorization. That operation cannot select the dataset or
+interpret payload semantics. Independent unit selection and protocol freeze
+remain mandatory before any new model work.
 
 ## Planes
 
@@ -351,7 +353,7 @@ gate.
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
 | Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
-| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer and structural-audit controllers; retained TUM VI archive with verified size/MD5/SHA; recorded failed strict inventory; and completed receipt-backed 4,485-member header classification | The TUM VI header layout is recorded, including two inert DSO symlinks, so strict extraction compatibility is false. No extraction, payload decoding, adapter validation, scientific selection, membership, or protocol is approved. The next operational boundary is a separately authorized exact allowlist of required regular files under `mav0` only. Other sources require separate rights, calibration, provenance, and role records. |
+| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer and structural-audit controllers; retained TUM VI archive with verified size/MD5/SHA; recorded failed strict inventory; completed receipt-backed 4,485-member header classification; and a locally verified audit-bound eight-file compatibility-slice controller | The TUM VI header layout is recorded, including two inert DSO symlinks, so strict extraction compatibility is false. No extraction, payload decoding, adapter validation, scientific selection, membership, or protocol is approved. The next operational boundary is immutable commit/CI evidence and a separate one-use authorization for the exact `mav0` compatibility slice. Other sources require separate rights, calibration, provenance, and role records. |
 | Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, five completed A10 runs, and a rejected controlled v5 loss ablation | No v5 retry or direct model work is authorized. A new full-pose unit/protocol must be selected and frozen independently before later model work. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |

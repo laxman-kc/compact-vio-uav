@@ -1042,14 +1042,18 @@ Execute these as separate small slices; do not combine them into one long phase:
    links, extracted nothing, and preserved the archive SHA-256. The tracked
    receipt records `strict_extraction_compatible: false` and no scientific
    authority.
-5. Define, review, and separately authorize one exact regular-file allowlist
-   extraction under `dataset-room4_512_16/mav0/` only. Derive every selected
-   member from the completed audit, require its kind to be `file`, exclude the
-   entire `dso` tree and both links, retain per-file identity evidence, validate
-   the published output atomically, and prohibit download, model/checkpoint
-   access, training, inference, evaluation, dataset selection/membership,
-   publication, and deletion. No extraction may begin from the structural-audit
-   receipt alone.
+5. The exact audit-bound regular-file compatibility-slice controller and
+   allowlist are implemented and locally verified. The allowlist contains four
+   complete `mav0` CSV members plus the earliest two common regular PNG names
+   from each camera: 8 files and 5,043,300 bytes. The controller requires exact
+   equality with the completed 4,485-member audit, excludes the full `dso` tree
+   and all links, retains per-file identity evidence, validates the new output
+   tree atomically, and prohibits download, payload parsing/decoding,
+   model/checkpoint access, training, inference, evaluation, dataset
+   selection/membership, publication, and source deletion. Commit/push and
+   green CI are now required before a separate one-use authorization can be
+   created; no extraction may begin from the structural-audit receipt or the
+   allowlist alone.
 6. Complete the independent unit-selection gate after the bounded extraction
    and format/calibration/ground-truth compatibility evidence exist.
    Select or reject TUM VI `room4` without inspecting any candidate prediction,

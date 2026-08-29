@@ -155,13 +155,20 @@ directories, and two inert DSO-tree symbolic links to the corresponding
 `mav0` camera data directories. It followed no link, extracted nothing, and
 reverified the unchanged archive SHA-256 before publishing its tracked receipt.
 The result is explicitly `strict_extraction_compatible: false`; the original
-strict inventory/extractor still rejects the archive. The
+strict inventory/extractor still rejects the archive. A separate audit-bound
+regular-slice controller and exact allowlist are now implemented and locally
+verified. They select only four complete `mav0` CSV members and the earliest
+two common regular PNG names from each camera: eight regular files totaling
+5,043,300 bytes. The controller compares every live TAR header with the frozen
+4,485-member audit, follows no link, excludes `dso`, publishes a new exact tree
+atomically, and writes its receipt last. This implementation has not yet been
+committed, authorized, or executed against the retained archive. The
 [reviewed structural-audit report](reports/tumvi-room4-512-16-structural-audit-2026-08-29.md)
 records the exact layout, hashes, limits, and prohibited operations. The next
-operational slice is a separately reviewed and authorized extraction of an
-exact regular-file allowlist under the required `mav0` tree only. That future
-slice must ignore all links and `dso` members and still grants no dataset
-selection, membership, model, inference, evaluation, or publication authority.
+operational gate is to commit this implementation, obtain green CI, and freeze
+a separate one-use authorization before any extraction. The slice grants no
+dataset selection, membership, payload interpretation, model, inference,
+evaluation, or publication authority.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is

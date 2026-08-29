@@ -41,6 +41,7 @@ jobs:
           compact-vio-artifacts --help
           compact-vio-acquire-archive --help
           compact-vio-audit-archive-structure --help
+          compact-vio-extract-regular-slice --help
           compact-vio-copy-audit --help
           set +e
           compact-vio-preflight > /tmp/compact-vio-preflight.json

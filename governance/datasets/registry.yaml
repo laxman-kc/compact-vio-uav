@@ -107,7 +107,7 @@ datasets:
       - The room4 512x512 unit remains a non-executable scientific candidate; the separate one-use operational transfer authorization does not select or approve it for dataset use.
       - The one-use transfer retained publisher-size/MD5-verified bytes and computed SHA-256, then strict TAR inventory rejected an official DSO-tree symbolic link; the authorization is consumed and no success receipt exists.
       - The completed header-only audit recorded 4,472 regular files, 11 directories, and two inert DSO-tree symlinks without following or extracting them; strict extraction compatibility is false and scientific authority is none.
-      - A separately reviewed and authorized exact regular-file allowlist under the required mav0 tree is the next operational boundary; the audit receipt itself grants no extraction authority.
+      - The exact eight-file mav0 compatibility allowlist and audit-bound regular-slice controller are locally verified but not yet committed, authorized, or executed; the audit receipt and allowlist grant no extraction authority.
       - Payload validity, exact calibration and ground-truth schema, 16-bit preprocessing, adapter compatibility, scientific selection, and source membership remain unresolved; no extraction or evaluation occurred.
       - The motion/domain is not a substitute for UAV-domain evidence.
       - Ground-truth availability varies and must be recorded per sequence.

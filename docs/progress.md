@@ -1581,6 +1581,38 @@ result, and explicit remaining blockers.
   acceptance, and the full-pose protocol remain separate gates before model or
   evaluation work.
 
+## 2026-08-29 — M9 exact TUM VI compatibility-slice implementation locally verified; not authorized
+
+- Added a distinct audit-bound regular-file extraction primitive and the
+  `compact-vio-extract-regular-slice` controller/CLI. The original strict TAR
+  inventory and extractor remain unchanged and continue to reject the official
+  symlinks. The new path fresh-compares all 4,485 live TAR headers to the frozen
+  structural audit, follows no link, copies only exact authorized regular
+  members, verifies an exact single-link output tree, publishes without
+  replacement, and writes its tracked receipt last.
+- The checked allowlist
+  `configs/data/tumvi_room4_512_16_compatibility_slice_v1.json` contains four
+  complete `mav0` CSV members and the lexicographically earliest two common
+  regular PNG basenames from each camera: 8 files totaling 5,043,300 bytes.
+  This deterministic operational sample does not establish CSV membership,
+  camera synchronization, payload semantics, calibration compatibility,
+  scientific dataset selection, or protocol membership.
+- Adversarial coverage includes complete-audit equality, inert unselected link
+  handling, no link resolution, DSO/special-member rejection, staging and
+  published-root identity checks, exact file/link-count verification,
+  one-use claim and output collisions, source/archive/receipt truth gates,
+  bounded capacity/deadline behavior, and exact post-publication Git state.
+  The final local gate passed 57 focused archive/controller tests and all 456
+  repository tests; Ruff 0.16.4 lint and format checked 120 files, repository
+  policy checked 168 files with zero violations, the schema harness passed 10
+  schemas and 7 templates, and compilation, CLI help, and `git diff --check`
+  passed.
+- No real compatibility slice, claim, destination, receipt, payload parsing or
+  decoding, model/checkpoint access, training, inference, evaluation, dataset
+  selection, membership assignment, scientific publication, or source
+  deletion occurred. Commit/push and green CI are required before a separate
+  exact one-use authorization can be frozen.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

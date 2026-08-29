@@ -5,11 +5,13 @@ import hashlib
 import io
 import json
 import os
+import shutil
 import stat
 import tarfile
 import tempfile
 import unittest
 import urllib.request
+from dataclasses import replace
 from pathlib import Path
 from unittest import mock
 
@@ -18,11 +20,14 @@ from compact_vio.data.archive import (
     AuthorizedArchiveAcquisition,
     PublishedArchiveIdentity,
     TarLimits,
+    TarRegularSliceMember,
+    TarStructuralAudit,
     TarStructuralMemberRecord,
     _ExactRedirectHandler,
     audit_tar_structure,
     download_archive,
     extract_tar,
+    extract_tar_regular_slice,
     inventory_tar,
     load_authorized_archive_acquisition,
     load_dataset_archive_candidate,
@@ -994,6 +999,205 @@ class TarExtractionTests(unittest.TestCase):
                     validate_staging=mutate,
                 )
             self.assertFalse((root / "mutated").exists())
+
+
+class TarRegularSliceExtractionTests(unittest.TestCase):
+    def _archive_with_inert_link(self, root: Path) -> tuple[Path, object]:
+        archive = root / "archive.tar"
+        link = tarfile.TarInfo("dataset/dso/cam1/images")
+        link.type = tarfile.SYMTYPE
+        link.linkname = "../../cam0/images"
+        _write_tar(
+            archive,
+            [
+                _directory("dataset/"),
+                _file("dataset/mav0/cam0/data.csv", b"camera-index"),
+                _file("dataset/mav0/cam0/data/frame.png", b"pixels"),
+                _file("dataset/mav0/ignored.txt", b"ignored"),
+                (link, None),
+            ],
+        )
+        return archive, audit_tar_structure(archive, expected_sha256=_sha256(archive))
+
+    def test_copies_regular_slice_with_unselected_special_member_inert(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive, audit = self._archive_with_inert_link(root)
+            output = root / "published"
+            selected = (
+                TarRegularSliceMember("dataset/mav0/cam0/data.csv", 12),
+                TarRegularSliceMember("dataset/mav0/cam0/data/frame.png", 6),
+            )
+            with (
+                mock.patch.object(
+                    tarfile.TarFile,
+                    "extract",
+                    side_effect=AssertionError("TarFile.extract must not run"),
+                ) as extract,
+                mock.patch.object(
+                    tarfile.TarFile,
+                    "extractall",
+                    side_effect=AssertionError("TarFile.extractall must not run"),
+                ) as extractall,
+            ):
+                report = extract_tar_regular_slice(
+                    archive,
+                    output,
+                    expected_sha256=_sha256(archive),
+                    expected_structure=audit,
+                    allowed_root="dataset/mav0",
+                    selected_files=selected,
+                    validate_staging=_accept_staging,
+                )
+
+            extract.assert_not_called()
+            extractall.assert_not_called()
+            self.assertEqual(report.expanded_size_bytes, 18)
+            self.assertEqual(
+                (output / "dataset/mav0/cam0/data.csv").read_bytes(),
+                b"camera-index",
+            )
+            self.assertEqual(
+                (output / "dataset/mav0/cam0/data/frame.png").read_bytes(),
+                b"pixels",
+            )
+            self.assertFalse((output / "dataset/mav0/ignored.txt").exists())
+            self.assertFalse((output / "dataset/dso/cam1/images").exists())
+
+    def test_rejects_any_live_header_difference_before_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive, audit = self._archive_with_inert_link(root)
+            members = list(audit.members)
+            members[-1] = replace(members[-1], link_target="../different")
+            mismatched = replace(audit, members=tuple(members))
+            output = root / "published"
+
+            with self.assertRaisesRegex(ArchiveError, "do not exactly equal"):
+                extract_tar_regular_slice(
+                    archive,
+                    output,
+                    expected_sha256=_sha256(archive),
+                    expected_structure=mismatched,
+                    allowed_root="dataset/mav0",
+                    selected_files=(TarRegularSliceMember("dataset/mav0/cam0/data.csv", 12),),
+                    validate_staging=_accept_staging,
+                )
+            self.assertFalse(output.exists())
+            self.assertFalse(any(root.glob(".published.staging-*")))
+
+    def test_rejects_dso_outside_root_special_and_wrong_size_selections(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive, audit = self._archive_with_inert_link(root)
+            cases = (
+                (TarRegularSliceMember("dataset/dso/file", 1), "DSO tree"),
+                (TarRegularSliceMember("dataset/other/file", 1), "outside allowed_root"),
+                (TarRegularSliceMember("dataset/dso/cam1/images", 0), "DSO tree"),
+                (TarRegularSliceMember("dataset/mav0/cam0/data.csv", 11), "size differs"),
+            )
+            for index, (selected, expected) in enumerate(cases):
+                with (
+                    self.subTest(selected=selected.path),
+                    self.assertRaisesRegex(ArchiveError, expected),
+                ):
+                    extract_tar_regular_slice(
+                        archive,
+                        root / f"output-{index}",
+                        expected_sha256=_sha256(archive),
+                        expected_structure=audit,
+                        allowed_root="dataset/mav0",
+                        selected_files=(selected,),
+                        validate_staging=_accept_staging,
+                    )
+
+    def test_deep_revalidates_forged_structural_records_and_aggregates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive, audit = self._archive_with_inert_link(root)
+            selected = (TarRegularSliceMember("dataset/mav0/cam0/data.csv", 12),)
+
+            forged = object.__new__(TarStructuralMemberRecord)
+            object.__setattr__(forged, "path", "dataset/mav0/cam0/data.csv")
+            object.__setattr__(forged, "kind", "forged")
+            object.__setattr__(forged, "size_bytes", [])
+            object.__setattr__(forged, "link_target", None)
+            malformed_record_audit = replace(audit, members=(forged, *audit.members[1:]))
+            malformed_aggregate_audit = TarStructuralAudit(
+                members=audit.members,
+                regular_file_count=True,
+                non_regular_member_count=audit.non_regular_member_count,
+                expanded_regular_size_bytes=audit.expanded_regular_size_bytes,
+                archive_sha256=audit.archive_sha256,
+                strict_extraction_compatible=audit.strict_extraction_compatible,
+            )
+            for index, (candidate, expected) in enumerate(
+                (
+                    (malformed_record_audit, "member 0 is malformed"),
+                    (malformed_aggregate_audit, "regular_file_count"),
+                    (replace(audit, archive_sha256=[]), "archive_sha256"),
+                )
+            ):
+                with (
+                    self.subTest(expected=expected),
+                    self.assertRaisesRegex(ArchiveError, expected),
+                ):
+                    extract_tar_regular_slice(
+                        archive,
+                        root / f"malformed-{index}",
+                        expected_sha256=_sha256(archive),
+                        expected_structure=candidate,
+                        allowed_root="dataset/mav0",
+                        selected_files=selected,
+                        validate_staging=_accept_staging,
+                    )
+
+            forged_selection = object.__new__(TarRegularSliceMember)
+            object.__setattr__(
+                forged_selection,
+                "path",
+                "dataset/mav0/cam0/data.csv",
+            )
+            object.__setattr__(forged_selection, "size_bytes", [])
+            with self.assertRaisesRegex(ArchiveError, r"selected_files\[0\] is malformed"):
+                extract_tar_regular_slice(
+                    archive,
+                    root / "forged-selection",
+                    expected_sha256=_sha256(archive),
+                    expected_structure=audit,
+                    allowed_root="dataset/mav0",
+                    selected_files=(forged_selection,),
+                    validate_staging=_accept_staging,
+                )
+
+    def test_rejects_staging_root_replaced_by_symlink(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive, audit = self._archive_with_inert_link(root)
+            external = root / "external"
+            external.mkdir()
+            external_file = external / "dataset/mav0/cam0/data.csv"
+            external_file.parent.mkdir(parents=True)
+            external_file.write_bytes(b"camera-index")
+            output = root / "published"
+
+            def replace_root(staging: Path, _receipts: tuple[object, ...]) -> None:
+                shutil.rmtree(staging)
+                staging.symlink_to(external, target_is_directory=True)
+
+            with self.assertRaisesRegex(ArchiveError, "staging root identity changed"):
+                extract_tar_regular_slice(
+                    archive,
+                    output,
+                    expected_sha256=_sha256(archive),
+                    expected_structure=audit,
+                    allowed_root="dataset/mav0",
+                    selected_files=(TarRegularSliceMember("dataset/mav0/cam0/data.csv", 12),),
+                    validate_staging=replace_root,
+                )
+            self.assertFalse(output.exists())
+            self.assertFalse(any(root.glob(".published.staging-*")))
+            self.assertEqual(external_file.read_bytes(), b"camera-index")
 
 
 if __name__ == "__main__":

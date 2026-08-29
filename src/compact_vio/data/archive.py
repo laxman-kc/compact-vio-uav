@@ -907,6 +907,20 @@ class TarStructuralAudit:
 
 
 @dataclass(frozen=True, slots=True)
+class TarRegularSliceMember:
+    """One exact regular-file member selected from a bound structural audit."""
+
+    path: str
+    size_bytes: int
+
+    def __post_init__(self) -> None:
+        if type(self.path) is not str or not self.path:
+            raise ArchiveError("regular slice member path must be non-empty text")
+        if type(self.size_bytes) is not int or self.size_bytes < 0:
+            raise ArchiveError("regular slice member size_bytes must be a non-negative integer")
+
+
+@dataclass(frozen=True, slots=True)
 class TarExtractionReport:
     """Evidence returned after atomic extraction publication."""
 
@@ -1745,6 +1759,166 @@ def _normalize_allowlist(allowed_files: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(normalized)
 
 
+def _validate_bound_structural_audit(
+    audit: TarStructuralAudit,
+    *,
+    expected_sha256: str,
+    limits: TarLimits,
+) -> None:
+    """Validate that an in-memory structural audit is internally exact and bounded."""
+
+    if type(audit) is not TarStructuralAudit:
+        raise ArchiveError("expected_structure must be a TarStructuralAudit")
+    try:
+        audit_sha256 = _lower_hex(
+            audit.archive_sha256,
+            length=64,
+            field="expected_structure.archive_sha256",
+        )
+    except AttributeError as exc:
+        raise ArchiveError("expected_structure is malformed") from exc
+    if audit_sha256 != expected_sha256:
+        raise ArchiveError("bound structural audit SHA-256 does not match expected archive")
+    if type(audit.members) is not tuple:
+        raise ArchiveError("bound structural audit members must be a tuple")
+    for field in (
+        "regular_file_count",
+        "non_regular_member_count",
+        "expanded_regular_size_bytes",
+    ):
+        value = getattr(audit, field, None)
+        if type(value) is not int or value < 0:
+            raise ArchiveError(f"bound structural audit {field} must be a non-negative integer")
+    if type(audit.strict_extraction_compatible) is not bool:
+        raise ArchiveError("bound structural audit strict_extraction_compatible must be a boolean")
+    if len(audit.members) > limits.max_members:
+        raise ArchiveError(f"bound structural audit exceeds member limit {limits.max_members}")
+
+    seen: set[PurePosixPath] = set()
+    leaf_paths: set[PurePosixPath] = set()
+    required_directories: set[PurePosixPath] = set()
+    regular_file_count = 0
+    non_regular_member_count = 0
+    expanded_regular_size = 0
+    for index, record in enumerate(audit.members):
+        if type(record) is not TarStructuralMemberRecord:
+            raise ArchiveError(f"bound structural audit member {index} is not a structural record")
+        try:
+            record = TarStructuralMemberRecord(
+                path=record.path,
+                kind=record.kind,
+                size_bytes=record.size_bytes,
+                link_target=record.link_target,
+            )
+        except (ArchiveError, AttributeError) as exc:
+            raise ArchiveError(
+                f"bound structural audit member {index} is malformed: {exc}"
+            ) from exc
+        path = _normalize_member_path(
+            record.path,
+            is_directory=record.kind == "directory",
+        )
+        if str(path) != record.path:
+            raise ArchiveError(f"bound structural audit path is not canonical: {record.path!r}")
+        if path in seen:
+            raise ArchiveError(f"duplicate bound structural audit path: {path}")
+        if record.size_bytes > limits.max_member_size_bytes:
+            raise ArchiveError(
+                f"bound structural audit member {path} exceeds size limit "
+                f"{limits.max_member_size_bytes}"
+            )
+        ancestors = tuple(parent for parent in path.parents if str(parent) != ".")
+        if any(parent in leaf_paths for parent in ancestors):
+            raise ArchiveError(f"bound structural audit topology conflicts at {path}")
+        if record.kind != "directory" and path in required_directories:
+            raise ArchiveError(f"bound structural audit topology conflicts at {path}")
+        seen.add(path)
+        required_directories.update(ancestors)
+        if record.kind == "file":
+            regular_file_count += 1
+            expanded_regular_size += record.size_bytes
+            if expanded_regular_size > limits.max_expanded_size_bytes:
+                raise ArchiveError(
+                    "bound structural audit expanded regular-file size exceeds limit "
+                    f"{limits.max_expanded_size_bytes}"
+                )
+        elif record.kind != "directory":
+            non_regular_member_count += 1
+        if record.kind != "directory":
+            leaf_paths.add(path)
+
+    expected_values = (
+        ("regular_file_count", audit.regular_file_count, regular_file_count),
+        (
+            "non_regular_member_count",
+            audit.non_regular_member_count,
+            non_regular_member_count,
+        ),
+        (
+            "expanded_regular_size_bytes",
+            audit.expanded_regular_size_bytes,
+            expanded_regular_size,
+        ),
+        (
+            "strict_extraction_compatible",
+            audit.strict_extraction_compatible,
+            non_regular_member_count == 0,
+        ),
+    )
+    for field, actual, expected in expected_values:
+        if type(actual) is not type(expected) or actual != expected:
+            raise ArchiveError(
+                f"bound structural audit {field} mismatch: expected {expected!r}, got {actual!r}"
+            )
+
+
+def _normalize_regular_slice(
+    selected_files: tuple[TarRegularSliceMember, ...],
+    *,
+    audit: TarStructuralAudit,
+    allowed_root: str,
+) -> tuple[TarRegularSliceMember, ...]:
+    root = _normalize_member_path(allowed_root, is_directory=True)
+    if str(root) != allowed_root:
+        raise ArchiveError("allowed_root must already be one canonical TAR directory path")
+    if type(selected_files) is not tuple or not selected_files:
+        raise ArchiveError("selected_files must be a non-empty tuple")
+    selected: list[TarRegularSliceMember] = []
+    for index, item in enumerate(selected_files):
+        if type(item) is not TarRegularSliceMember:
+            raise ArchiveError(f"selected_files[{index}] must be a TarRegularSliceMember")
+        try:
+            item = TarRegularSliceMember(path=item.path, size_bytes=item.size_bytes)
+        except (ArchiveError, AttributeError) as exc:
+            raise ArchiveError(f"selected_files[{index}] is malformed: {exc}") from exc
+        path = _normalize_member_path(item.path)
+        if str(path) != item.path:
+            raise ArchiveError(f"selected regular path must already be canonical: {item.path!r}")
+        if "dso" in path.parts:
+            raise ArchiveError(f"selected regular path under a DSO tree is prohibited: {item.path}")
+        if path == root or root not in path.parents:
+            raise ArchiveError(
+                f"selected regular path is outside allowed_root {allowed_root!r}: {item.path}"
+            )
+        selected.append(item)
+    if len({item.path for item in selected}) != len(selected):
+        raise ArchiveError("selected_files must not contain duplicate paths")
+
+    audited_by_path = {record.path: record for record in audit.members}
+    for item in selected:
+        record = audited_by_path.get(item.path)
+        if record is None:
+            raise ArchiveError(f"selected regular TAR member is absent from audit: {item.path}")
+        if record.kind != "file":
+            raise ArchiveError(f"selected TAR member is not audited as a regular file: {item.path}")
+        if record.size_bytes != item.size_bytes:
+            raise ArchiveError(
+                f"selected TAR member size differs from audit for {item.path}: "
+                f"expected {item.size_bytes}, got {record.size_bytes}"
+            )
+    return tuple(selected)
+
+
 def _atomic_publish_directory_no_replace(staged: Path, destination: Path) -> None:
     """Atomically rename a directory while failing if destination exists."""
 
@@ -1871,6 +2045,58 @@ def _verify_staging_tree(
         raise ArchiveError(f"staging validator removed extracted files: {sorted(missing)!r}")
 
 
+def _open_staging_directory(path: Path) -> tuple[int, tuple[int, int, int]]:
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+        metadata = os.fstat(descriptor)
+    except OSError as exc:
+        raise ArchiveError(f"cannot bind regular-slice staging directory {path}: {exc}") from exc
+    if not stat.S_ISDIR(metadata.st_mode):
+        os.close(descriptor)
+        raise ArchiveError("regular-slice staging root must be a real directory")
+    return descriptor, (metadata.st_dev, metadata.st_ino, metadata.st_mode)
+
+
+def _assert_same_staging_directory(
+    path: Path,
+    descriptor: int,
+    expected: tuple[int, int, int],
+) -> None:
+    try:
+        path_metadata = os.lstat(path)
+        open_metadata = os.fstat(descriptor)
+    except OSError as exc:
+        raise ArchiveError(f"regular-slice staging root changed: {exc}") from exc
+    path_identity = (path_metadata.st_dev, path_metadata.st_ino, path_metadata.st_mode)
+    open_identity = (open_metadata.st_dev, open_metadata.st_ino, open_metadata.st_mode)
+    if (
+        stat.S_ISLNK(path_metadata.st_mode)
+        or not stat.S_ISDIR(path_metadata.st_mode)
+        or path_identity != expected
+        or open_identity != expected
+    ):
+        raise ArchiveError("regular-slice staging root identity changed")
+
+
+def _remove_regular_slice_staging(path: Path) -> None:
+    """Remove only the staging entry itself; never traverse a substituted link."""
+
+    try:
+        metadata = os.lstat(path)
+    except FileNotFoundError:
+        return
+    except OSError:
+        return
+    if stat.S_ISDIR(metadata.st_mode) and not stat.S_ISLNK(metadata.st_mode):
+        shutil.rmtree(path, ignore_errors=True)
+        return
+    try:
+        path.unlink()
+    except OSError:
+        return
+
+
 def extract_tar(
     archive_path: os.PathLike[str] | str,
     destination: os.PathLike[str] | str,
@@ -1975,6 +2201,160 @@ def extract_tar(
         finally:
             if staging is not None:
                 shutil.rmtree(staging, ignore_errors=True)
+
+    return TarExtractionReport(
+        archive_sha256=expected_sha256,
+        destination=str(output),
+        extracted_files=receipts,
+        expanded_size_bytes=sum(member.size_bytes for member in receipts),
+    )
+
+
+def extract_tar_regular_slice(
+    archive_path: os.PathLike[str] | str,
+    destination: os.PathLike[str] | str,
+    *,
+    expected_sha256: str,
+    expected_structure: TarStructuralAudit,
+    allowed_root: str,
+    selected_files: tuple[TarRegularSliceMember, ...],
+    validate_staging: Callable[[Path, tuple[ExtractedFileReceipt, ...]], None],
+    limits: TarLimits = DEFAULT_TAR_LIMITS,
+) -> TarExtractionReport:
+    """Copy exact regular files only when every live TAR header matches an audit.
+
+    Non-selected special members are compared as inert header metadata. They are
+    never opened, followed, copied, or interpreted as filesystem instructions.
+    The stricter :func:`extract_tar` policy remains unchanged.
+    """
+
+    expected_sha256 = _lower_hex(expected_sha256, length=64, field="expected_sha256")
+    if not isinstance(limits, TarLimits):
+        raise ArchiveError("limits must be a TarLimits instance")
+    if not callable(validate_staging):
+        raise ArchiveError("validate_staging must be a callable semantic gate")
+    _validate_bound_structural_audit(
+        expected_structure,
+        expected_sha256=expected_sha256,
+        limits=limits,
+    )
+    selection = _normalize_regular_slice(
+        selected_files,
+        audit=expected_structure,
+        allowed_root=allowed_root,
+    )
+
+    output = Path(destination)
+    if not output.name or output.name in (".", ".."):
+        raise ArchiveError("regular-slice destination must name one new directory")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    parent_metadata = os.lstat(output.parent)
+    if stat.S_ISLNK(parent_metadata.st_mode) or not stat.S_ISDIR(parent_metadata.st_mode):
+        raise ArchiveError("regular-slice destination parent must be a real directory")
+    if _lexists(output):
+        raise ArchiveError(f"refusing to overwrite regular-slice destination: {output}")
+
+    archive = Path(archive_path)
+    if archive.suffix != ".tar":
+        raise ArchiveError("regular-slice extraction accepts only an uncompressed .tar archive")
+    handle, initial_metadata = _open_regular_readonly(archive)
+    staging: Path | None = None
+    staging_descriptor: int | None = None
+    with handle:
+        first_sha256 = _digest_open(handle, "sha256")
+        if first_sha256 != expected_sha256:
+            raise ArchiveError(
+                f"archive SHA-256 mismatch: expected {expected_sha256}, got {first_sha256}"
+            )
+        if _metadata_signature(os.fstat(handle.fileno())) != _metadata_signature(initial_metadata):
+            raise ArchiveError("archive changed while its SHA-256 was being verified")
+
+        live_structure = _audit_open_tar_structure(
+            handle,
+            limits=limits,
+            archive_sha256=first_sha256,
+        )
+        if live_structure != expected_structure:
+            raise ArchiveError("live TAR headers do not exactly equal the bound structural audit")
+
+        staging = Path(tempfile.mkdtemp(prefix=f".{output.name}.staging-", dir=output.parent))
+        selected_by_path = {item.path: item for item in selection}
+        copied: dict[str, ExtractedFileReceipt] = {}
+        live_member_count = 0
+        try:
+            staging_descriptor, staging_identity = _open_staging_directory(staging)
+            handle.seek(0)
+            with tarfile.open(fileobj=handle, mode="r:") as source:
+                for index, member in enumerate(source):
+                    if index >= len(expected_structure.members):
+                        raise ArchiveError(
+                            "live TAR gained a member after structural-audit comparison"
+                        )
+                    kind, size_bytes, link_target = _classify_structural_member(member)
+                    path = str(
+                        _normalize_member_path(member.name, is_directory=kind == "directory")
+                    )
+                    live_record = TarStructuralMemberRecord(
+                        path=path,
+                        kind=kind,
+                        size_bytes=size_bytes,
+                        link_target=link_target,
+                    )
+                    if live_record != expected_structure.members[index]:
+                        raise ArchiveError(
+                            f"live TAR header {index} changed from the bound structural audit"
+                        )
+                    live_member_count += 1
+                    selected = selected_by_path.get(path)
+                    if selected is None:
+                        continue
+                    if kind != "file" or size_bytes != selected.size_bytes or path in copied:
+                        raise ArchiveError(
+                            f"selected regular TAR member changed during copy: {path}"
+                        )
+                    copied[path] = _copy_exact_member(
+                        source,
+                        member,
+                        staging / Path(*PurePosixPath(path).parts),
+                        canonical_path=path,
+                    )
+            if live_member_count != len(expected_structure.members):
+                raise ArchiveError("live TAR lost members after structural-audit comparison")
+            missing = set(selected_by_path) - set(copied)
+            if missing:
+                raise ArchiveError(
+                    f"selected regular TAR members disappeared during copy: {sorted(missing)!r}"
+                )
+            receipts = tuple(copied[item.path] for item in selection)
+            try:
+                validate_staging(staging, receipts)
+            except ArchiveError:
+                raise
+            except Exception as exc:
+                raise ArchiveError(f"regular-slice staging validation failed: {exc}") from exc
+            _assert_same_staging_directory(staging, staging_descriptor, staging_identity)
+            _verify_staging_tree(staging, receipts)
+            _assert_same_staging_directory(staging, staging_descriptor, staging_identity)
+            final_sha256 = _digest_open(handle, "sha256")
+            if final_sha256 != expected_sha256:
+                raise ArchiveError("archive changed while the regular slice was being copied")
+            if _metadata_signature(os.fstat(handle.fileno())) != _metadata_signature(
+                initial_metadata
+            ):
+                raise ArchiveError("archive metadata changed while the regular slice was copied")
+            _assert_path_is_open_file(archive, handle)
+            _assert_same_staging_directory(staging, staging_descriptor, staging_identity)
+            _atomic_publish_directory_no_replace(staging, output)
+            staging = None
+        except ArchiveError:
+            raise
+        except (OSError, EOFError, ValueError, tarfile.TarError) as exc:
+            raise ArchiveError(f"cannot copy regular TAR slice: {exc}") from exc
+        finally:
+            if staging_descriptor is not None:
+                os.close(staging_descriptor)
+            if staging is not None:
+                _remove_regular_slice_staging(staging)
 
     return TarExtractionReport(
         archive_sha256=expected_sha256,
