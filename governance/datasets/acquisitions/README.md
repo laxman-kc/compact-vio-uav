@@ -48,8 +48,10 @@ not be presented as independent identity assurance or third-party approval.
 Current records:
 
 - `tumvi-room4-512-16-transfer-2026-08-29.authorization.json` — one bounded TUM
-  VI `room4` 512x512 archive transfer and read-only inventory. Approved for its
-  exact operational scope; not yet executed when committed.
+  VI `room4` 512x512 archive transfer and read-only inventory. Its one execution
+  retained verified archive bytes but failed strict inventory; it is consumed.
+- `tumvi-room4-512-16-transfer-2026-08-29.failure.json` — post-failure local
+  audit binding the claim, retained archive identity, exact rejected symlink,
+  absent inventory/receipt, and no-retry/no-scientific-authority boundary.
 - `tumvi-room4-512-16-transfer-2026-08-29.receipt.json` — reserved success
-  receipt path. It must not exist before execution and is created only after
-  every success gate passes.
+  receipt path. It does not exist because every success gate did not pass.

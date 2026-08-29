@@ -1,0 +1,67 @@
+{
+  "archive": {
+    "archive_id": "tum-vi-room4",
+    "filename": "dataset-room4_512_16.tar",
+    "md5": "8e2ec2c35ee40a54c9aaa5bc2b3c9d8c",
+    "path": "data/quarantine/tum-vi/room4-512-16/dataset-room4_512_16.tar",
+    "publisher_size_and_md5_verified": true,
+    "sha256": "2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68",
+    "size_bytes": 1356206080
+  },
+  "artifacts": {
+    "archive_present": true,
+    "inventory_present": false,
+    "partial_present": false,
+    "success_receipt_present": false
+  },
+  "authorization": {
+    "id": "tumvi-room4-512-16-transfer-2026-08-29",
+    "path": "governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.authorization.json",
+    "sha256": "fb2108f7d1bb6bbf317bd8693c80cb55a5162f0ca297c562c7e89ccd460dbf19"
+  },
+  "claim": {
+    "path": "data/quarantine/tum-vi/room4-512-16/transfer.claim.json",
+    "sha256": "1c6b9d54e763a9ec2c899461e7701f8652f550bf9a19bb03367b1555edc3abc0",
+    "started_at": "2026-08-29T21:09:25Z"
+  },
+  "failure": {
+    "error_code": "archive_acquisition_failed",
+    "error_message": "read-only TAR inventory failed: symlink TAR member is prohibited: 'dataset-room4_512_16/dso/cam1/images'",
+    "error_type": "AcquisitionError",
+    "member_kind": "symlink",
+    "member_path": "dataset-room4_512_16/dso/cam1/images",
+    "phase": "read_only_tar_inventory"
+  },
+  "git_revision": "04097e6aa1906c0ea8bc5f53158f452b87d70f78",
+  "observed_at": "2026-08-29T21:15:35Z",
+  "operations_completed": [
+    "write_claim",
+    "download",
+    "verify_size",
+    "verify_md5",
+    "compute_sha256"
+  ],
+  "operations_not_performed": [
+    "write_inventory",
+    "write_receipt",
+    "extract",
+    "decode_images",
+    "load_dataset_samples",
+    "select_dataset",
+    "train",
+    "infer",
+    "evaluate",
+    "load_checkpoint",
+    "delete_archive"
+  ],
+  "outcome": "failed",
+  "record_origin": "post_failure_local_audit_not_controller_success_receipt",
+  "record_type": "dataset_archive_acquisition_failure",
+  "retry": {
+    "claim_removal_authorized": false,
+    "same_authorization_reusable": false
+  },
+  "schema_version": "1.0.0",
+  "scientific_authority": "none",
+  "scientific_limitations": "Verified archive bytes and a failed structural inventory do not select the dataset, approve extraction, validate calibration or ground truth, authorize model access, or support training, inference, evaluation, publication, deployment, UAV-domain, or superiority claims."
+}

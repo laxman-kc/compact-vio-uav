@@ -1430,6 +1430,38 @@ result, and explicit remaining blockers.
   deletion occurred. The candidate JSON and its historical evidence remain
   unchanged.
 
+## 2026-08-29 — M9 TUM VI transfer verified bytes; strict inventory failed closed
+
+- GitHub Actions run `33275290330` passed for authorization revision
+  `04097e6aa1906c0ea8bc5f53158f452b87d70f78` on Python 3.10 and 3.12 before
+  execution. Preflight observed exact repository runtime modules, a clean
+  worktree, all archive/partial/claim/inventory/receipt paths absent,
+  96,691,183,616 free bytes against the 3,773,173,760-byte minimum, and an
+  active authorization expiring at `2026-08-30T21:05:00Z`.
+- The one-use claim began at `2026-08-29T21:09:25Z`; claim SHA-256 is
+  `1c6b9d54e763a9ec2c899461e7701f8652f550bf9a19bb03367b1555edc3abc0`.
+  The retained archive is exactly 1,356,206,080 bytes, matches publisher MD5
+  `8e2ec2c35ee40a54c9aaa5bc2b3c9d8c`, and has received SHA-256
+  `2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68`.
+- Strict read-only inventory failed closed with `AcquisitionError` because TAR
+  member `dataset-room4_512_16/dso/cam1/images` is a symbolic link. The archive
+  remains in ignored quarantine; the partial is absent. No inventory or success
+  receipt was published. The authorization is consumed, claim deletion is not
+  authorized, and no retry will occur under it.
+- The exact negative evidence is retained in
+  `governance/datasets/acquisitions/tumvi-room4-512-16-transfer-2026-08-29.failure.json`.
+  Its SHA-256 is
+  `51979c3749e8a10187191ef43a355b72ebe456828d309703c22e0c6fccb0c75f`.
+  This is received-byte and incompatibility evidence only: no extraction,
+  decoding, sample loading, calibration/ground-truth validation, model or
+  checkpoint access, training, inference, evaluation, scientific selection,
+  membership assignment, publication, deletion, UAV-domain, deployment, or
+  superiority claim occurred.
+- Next safe work is code and policy only: design a bounded read-only structural
+  audit that can record explicitly classified non-regular members without
+  following or extracting them. It must pass adversarial tests and receive a
+  separate exact authorization before it touches the retained archive.
+
 ## Recording rule for the next entry
 
 Append—do not rewrite prior observations—with:

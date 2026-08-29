@@ -1023,14 +1023,18 @@ Execute these as separate small slices; do not combine them into one long phase:
    official endpoint/redirects, tracked candidate and tool hashes, ignored
    quarantine destination, retention review, capacity reserve, 24-hour
    validity, zero paid-compute cost, elapsed-time bound, inventory limits, and
-   permitted/prohibited operations. It has not executed. After the record and
-   controller are committed and CI passes, execute it once while active: create
-   the exclusive claim, acquire only that archive, verify received size and
-   published MD5, compute SHA-256, inventory the TAR without extraction, and
-   write the receipt only after all success gates pass. A failed claimed attempt
-   is not retried under the same authorization. Transfer evidence alone does
+   permitted/prohibited operations. That authorization executed once after its
+   controller and CI gates passed. It created the exclusive claim, acquired the
+   exact archive, verified received size and published MD5, and computed
+   SHA-256; strict read-only inventory then rejected an official DSO-tree
+   symbolic link. No inventory or success receipt was published. The failed
+   claimed attempt is not retried under the same authorization. Transfer
+   evidence alone does
    not select the evaluation unit or permit decoding, extraction, checkpoint
    loading, inference, training, evaluation, publication, or deletion.
+   Define and review a new read-only structural-audit policy that may record but
+   never follow or extract explicitly bounded non-regular members; do not apply
+   it to the retained archive until separately authorized.
 5. Complete the independent unit-selection gate after that evidence exists.
    Select or reject TUM VI `room4` without inspecting any candidate prediction,
    then freeze its source group, leakage review, and membership role. A

@@ -49,8 +49,9 @@ Current namespaces:
   bind one operational transfer/read-only inventory to exact tracked inputs,
   runtime limits, and a quarantine destination. That authorization does not
   modify the candidate record, select the unit, allow extraction, or confer
-  training, inference, evaluation, or publication authority; it has not yet
-  produced an execution receipt.
+  training, inference, evaluation, or publication authority. Its one execution
+  retained verified bytes but failed strict inventory on an official DSO-tree
+  symlink, so it produced no success receipt and cannot be retried.
 - `training/` contains the fully resolved v1-v5 experiment configurations.
   Each new candidate changes only the fields declared by its reviewed plan.
 - `evaluation/` contains frozen checkpoint-evaluation protocols after source,

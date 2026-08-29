@@ -136,14 +136,17 @@ sidecar, unresolved SHA-256, and lack of scientific authority. The downloader
 and TAR layer provide closed redirect validation, bounded resume, crash-safe
 single-writer locking, held-descriptor digest verification, SHA-pinned
 read-only inventory, hostile-member rejection, and atomic allowlisted
-extraction. No TUM VI archive bytes have been downloaded or extracted. A
-separate one-use controller and exact, time-limited operational authorization
-are now prepared for transfer plus read-only inventory. They require clean
+extraction. The one-use TUM VI transfer executed once: the received archive
+passed the official size and MD5 checks and was retained under SHA-256
+`2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68`,
+but strict TAR inventory rejected an official `dso/cam1/images` symbolic-link
+member. No inventory or success receipt was published, no extraction occurred,
+and that authorization is consumed. The controller requires clean
 tracked `HEAD` inputs, an ignored quarantine destination, a pre-network
 single-use claim, fixed capacity/time/cost limits, and an immutable success
-receipt. The authorization has not executed and grants no extraction, dataset
-selection, checkpoint loading, inference, evaluation, or publication authority;
-a later selection/protocol freeze remains required.
+receipt. The failed transfer grants no extraction, dataset selection,
+checkpoint loading, inference, evaluation, or publication authority; a revised
+read-only archive policy and later selection/protocol freeze remain required.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is
