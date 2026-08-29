@@ -494,7 +494,19 @@ class ArchiveRegularSliceControllerTests(unittest.TestCase):
         )
 
     def test_loads_exact_authorization_without_reading_archive(self) -> None:
-        with mock.patch.object(Path, "read_bytes", autospec=True, wraps=Path.read_bytes) as read:
+        original_read_bytes = Path.read_bytes
+
+        def guarded_read_bytes(path: Path) -> bytes:
+            if path == self.fixture.archive_path:
+                raise AssertionError("authorization loading must not read archive bytes")
+            return original_read_bytes(path)
+
+        with mock.patch.object(
+            Path,
+            "read_bytes",
+            autospec=True,
+            side_effect=guarded_read_bytes,
+        ) as read:
             result = load_regular_slice_authorization(
                 self.fixture.authorization_relative,
                 repo_root=self.fixture.root,
