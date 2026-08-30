@@ -23,6 +23,12 @@ its presence is not evidence that a run happened or that a hypothesis passed.
 
 ## Reviewed reports
 
+- [TUM VI room4 512x512 synthetic parser Gate 2](tumvi-room4-512-16-synthetic-parser-gate2-2026-08-29.md)
+  ([gate-status visual](assets/tumvi-gate2-parser-status.svg)) — bounded
+  synthetic `BytesIO` parsers pushed and CI-green; no real data opened, the
+  parser-assigned scope does not authenticate origin, 2 engineering gates
+  verified and 5 blocked, every
+  readiness flag false, and scientific authority none.
 - [TUM VI room4 512x512 adapter-contract Gate 1](tumvi-room4-512-16-adapter-contract-v1-2026-08-29.md)
   — strict grammar/source-labelled-output policy and loader implemented and
   CI-green on Python 3.10 and 3.12; no payload parser or adapter, every

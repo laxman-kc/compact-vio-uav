@@ -95,11 +95,23 @@ Current namespaces:
   `load_tumvi_adapter_contract`; this is a policy loader, not a real-payload
   parser or adapter. It reads no dataset payload, calibration, image, learning,
   or model path. Every readiness flag remains false and scientific authority is
-  `none`. Gate 2 is a pure synthetic parser slice with positive and adversarial
-  negative fixtures. Minimal calibration metadata may be opened only under a
-  later separate authorization if a reviewed dependency proves it necessary.
-  The EuRoC adapter, real payloads, segment production, and all model work remain
-  closed.
+  `none`. Gate 2 is implemented at pushed commit
+  `3379060f83801230e5fe8c52e7bd0c3c288e5253`; GitHub Actions
+  [run 33289072534](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33289072534)
+  passed on Python 3.10 and 3.12. The module
+  `src/compact_vio/data/tumvi_adapter_parser.py` parses only exact caller-supplied
+  synthetic `io.BytesIO` fixtures under the frozen contract. It verifies
+  claimed byte size/SHA-256, preserves source lexemes, enforces resource and
+  stereo-byte rules, and denies the known inspected real CSV hashes before any
+  read. Its `synthetic-fixture-only-origin-not-authenticated/v1` label is not
+  authenticated provenance. No filesystem/CLI/package-level data export,
+  calibration, image, EuRoC, learning/model, or segment path was added, and no
+  real data was opened by Gate 2. Every operational readiness flag remains
+  false and scientific authority remains `none`. Gate 3 must separately review
+  calibration-metadata evidence and a one-use real-payload adapter probe as
+  alternatives; this configuration documentation selects and authorizes neither.
+  Real payloads, segment production, dataset membership, and all model work
+  remain closed.
 - `training/` contains the fully resolved v1-v5 experiment configurations.
   Each new candidate changes only the fields declared by its reviewed plan.
 - `evaluation/` contains frozen checkpoint-evaluation protocols after source,

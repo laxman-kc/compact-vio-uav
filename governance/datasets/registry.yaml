@@ -123,6 +123,23 @@ datasets:
     adapter_contract_github_actions_url: https://github.com/laxman-kc/compact-vio-uav/actions/runs/33286985057
     adapter_contract_ci_state: passed_python_3_10_and_3_12
     adapter_contract_state: implemented_pushed_ci_green_contract_only_no_scientific_authority
+    synthetic_parser: src/compact_vio/data/tumvi_adapter_parser.py
+    synthetic_parser_sha256: 4d5186a9559a4c111edda6df3d49a1484952ab6028a9269904ce4577efdc99e1
+    synthetic_parser_tests: tests/test_tumvi_adapter_parser.py
+    synthetic_parser_tests_sha256: 9ba2ca8157af4a9e83a44d4e57e6737d272de845b6932bf6e84db0d8371cb69c
+    synthetic_parser_report: reports/tumvi-room4-512-16-synthetic-parser-gate2-2026-08-29.md
+    synthetic_parser_status_graph: reports/assets/tumvi-gate2-parser-status.svg
+    synthetic_parser_status_graph_sha256: 7de56ac3e38ab9e70be85b4e746640bbafbcc75c77242f9d25c2ca6648568e48
+    synthetic_parser_implementation_revision: 3379060f83801230e5fe8c52e7bd0c3c288e5253
+    synthetic_parser_github_actions_run: 33289072534
+    synthetic_parser_github_actions_url: https://github.com/laxman-kc/compact-vio-uav/actions/runs/33289072534
+    synthetic_parser_ci_state: passed_python_3_10_and_3_12
+    synthetic_parser_focused_tests: 20
+    synthetic_parser_full_suite_tests: 537
+    synthetic_parser_full_suite_optional_skips: 54
+    synthetic_parser_independent_p0_p1_reviews: 2
+    synthetic_parser_state: implemented_pushed_ci_green_synthetic_only_origin_unauthenticated_no_scientific_authority
+    real_payload_parser_ready: false
     adapter_ready: false
     calibration_ready: false
     clock_mapping_ready: false
@@ -150,6 +167,8 @@ datasets:
       - The compatibility-slice name denotes an operational input boundary, not a compatibility result. Its later bounded format inspection parsed only CSV structure and exactly four PNG signature/IHDR records; it completed with does_not_conform because the observed eight-column mocap header does not match either current 17-column EuRoC full-state target and the first selected camera timestamp falls before both observed IMU and mocap ranges.
       - The format receipt does not establish units, frames, synchronization correction, calibration, ground-truth meaning, whole-file PNG validity/decodability, full image existence, scientific selection, or source membership. The EuRoC adapter must not be reused. At that point, the receipt identified a TUM-VI-specific adapter contract and, only if justified, separately authorized minimal calibration metadata as future gates before any model work.
       - The pushed and CI-green adapter contract is a strict grammar and source-labelled output-policy record, not a payload parser or adapter. Its interval comparisons order integer timestamp tokens without asserting a common clock; segment, pose-association, decoding, preprocessing, and all readiness decisions remain blocked. It reads no real payload, calibration, image, learning, or model path and grants no scientific authority.
-      - Gate 2 is restricted to pure synthetic parsers and adversarial fixtures. Any real-payload or calibration read requires a later exact authorization after the dependency is independently reviewed.
+      - Gate 2 is implemented, pushed, and CI-green as an exact synthetic BytesIO parser boundary. It opened no real data, denies the known inspected real CSV hashes before reading, and adds no filesystem loader, CLI, package-level data export, calibration/image/EuRoC/learning/model dependency, or segment constructor.
+      - Gate 2 assigns a fixed synthetic-only source_scope label to caller-supplied bytes; the label does not authenticate external origin. Size/SHA verification proves identity of supplied bytes but not where they came from; successful parsing grants no real-payload, adapter, dataset, or scientific authority.
+      - Gate 3 remains a separate reviewed design decision between calibration-metadata evidence and a one-use real-payload adapter probe. Neither alternative is selected or authorized by this registry.
       - The motion/domain is not a substitute for UAV-domain evidence.
       - Ground-truth availability varies and must be recorded per sequence.

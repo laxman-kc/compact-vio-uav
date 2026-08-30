@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="660" viewBox="0 0 1200 660" role="img" aria-labelledby="title description">
+  <title id="title">TUM-VI gate status after synthetic parser verification</title>
+  <desc id="description">Horizontal status comparison of seven engineering gates. Gate 1 contract and Gate 2 synthetic parser are verified. Real-payload parser, calibration metadata, image decode, segment construction, and model access are blocked.</desc>
+  <style>
+    .sans { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+    .title { font-size: 27px; font-weight: 700; fill: #172033; }
+    .subtitle { font-size: 14px; fill: #526075; }
+    .header { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; fill: #68758a; }
+    .label { font-size: 16px; font-weight: 600; fill: #263248; }
+    .status { font-size: 13px; font-weight: 700; letter-spacing: 0.05em; }
+    .verified-text { fill: #1d4ed8; }
+    .blocked-text { fill: #64748b; }
+    .note { font-size: 13px; fill: #526075; }
+  </style>
+
+  <rect width="1200" height="660" fill="#ffffff"/>
+  <text class="sans title" x="42" y="48">TUM-VI gate status after synthetic parser verification</text>
+  <text class="sans subtitle" x="42" y="76">Engineering scope at commit 3379060 • 7 declared gates • scientific authority: none</text>
+
+  <rect x="922" y="28" width="104" height="56" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+  <text class="mono verified-text" x="974" y="52" text-anchor="middle" font-size="20" font-weight="700">2</text>
+  <text class="sans verified-text" x="974" y="71" text-anchor="middle" font-size="11" font-weight="700">VERIFIED</text>
+  <rect x="1038" y="28" width="120" height="56" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text class="mono blocked-text" x="1098" y="52" text-anchor="middle" font-size="20" font-weight="700">5</text>
+  <text class="sans blocked-text" x="1098" y="71" text-anchor="middle" font-size="11" font-weight="700">BLOCKED</text>
+
+  <text class="sans header" x="42" y="122">GATE</text>
+  <text class="sans header" x="365" y="122">STATUS BAND</text>
+  <text class="sans header" x="1018" y="122">RESULT</text>
+  <line x1="42" y1="132" x2="1158" y2="132" stroke="#dbe3ee"/>
+
+  <g aria-label="Gate 1 contract verified">
+    <text class="sans label" x="42" y="171">Gate 1 contract</text>
+    <rect x="365" y="146" width="620" height="40" rx="6" fill="#2563eb" stroke="#1d4ed8"/>
+    <text class="sans" x="385" y="171" fill="#ffffff" font-size="13" font-weight="700">FROZEN CONTRACT + STRICT LOADER</text>
+    <text class="sans status verified-text" x="1018" y="171">VERIFIED</text>
+  </g>
+
+  <g aria-label="Gate 2 synthetic parser verified">
+    <text class="sans label" x="42" y="233">Gate 2 synthetic parser</text>
+    <rect x="365" y="208" width="620" height="40" rx="6" fill="#2563eb" stroke="#1d4ed8"/>
+    <text class="sans" x="385" y="233" fill="#ffffff" font-size="13" font-weight="700">SYNTHETIC BYTESIO PARSERS + NEGATIVE TESTS</text>
+    <text class="sans status verified-text" x="1018" y="233">VERIFIED</text>
+  </g>
+
+  <g aria-label="Real-payload parser blocked">
+    <text class="sans label" x="42" y="295">Real-payload parser</text>
+    <rect x="365" y="270" width="620" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
+    <text class="sans blocked-text" x="385" y="295" font-size="13" font-weight="600">NO REAL SOURCE OR FILESYSTEM ENTRY POINT</text>
+    <text class="sans status blocked-text" x="1018" y="295">BLOCKED</text>
+  </g>
+
+  <g aria-label="Calibration metadata blocked">
+    <text class="sans label" x="42" y="357">Calibration metadata</text>
+    <rect x="365" y="332" width="620" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
+    <text class="sans blocked-text" x="385" y="357" font-size="13" font-weight="600">NO METADATA READ OR SEMANTIC ASSIGNMENT</text>
+    <text class="sans status blocked-text" x="1018" y="357">BLOCKED</text>
+  </g>
+
+  <g aria-label="Image decode blocked">
+    <text class="sans label" x="42" y="419">Image decode</text>
+    <rect x="365" y="394" width="620" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
+    <text class="sans blocked-text" x="385" y="419" font-size="13" font-weight="600">NO PNG READ, DECODE, OR PREPROCESSING</text>
+    <text class="sans status blocked-text" x="1018" y="419">BLOCKED</text>
+  </g>
+
+  <g aria-label="Segment construction blocked">
+    <text class="sans label" x="42" y="481">Segment construction</text>
+    <rect x="365" y="456" width="620" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
+    <text class="sans blocked-text" x="385" y="481" font-size="13" font-weight="600">NO CLOCK, GAP, INTERPOLATION, OR REPLAY POLICY</text>
+    <text class="sans status blocked-text" x="1018" y="481">BLOCKED</text>
+  </g>
+
+  <g aria-label="Model access blocked">
+    <text class="sans label" x="42" y="543">Model access</text>
+    <rect x="365" y="518" width="620" height="40" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
+    <text class="sans blocked-text" x="385" y="543" font-size="13" font-weight="600">NO LEARNING, CHECKPOINT, INFERENCE, OR EVALUATION</text>
+    <text class="sans status blocked-text" x="1018" y="543">BLOCKED</text>
+  </g>
+
+  <line x1="42" y1="586" x2="1158" y2="586" stroke="#dbe3ee"/>
+  <rect x="42" y="606" width="18" height="12" rx="2" fill="#2563eb"/>
+  <text class="sans note" x="70" y="617">Blue filled: verified in CI</text>
+  <rect x="278" y="606" width="18" height="12" rx="2" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text class="sans note" x="306" y="617">Open neutral: blocked and unverified</text>
+  <text class="sans note" x="1158" y="617" text-anchor="end">Engineering status only — not a scientific or dataset-quality score</text>
+  <text class="mono" x="42" y="642" fill="#7b879a" font-size="11">source: commit 3379060f83801230e5fe8c52e7bd0c3c288e5253 • actions run 33289072534</text>
+</svg>

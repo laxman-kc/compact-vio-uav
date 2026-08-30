@@ -204,10 +204,21 @@ integer-token interval policy that makes no clock-equivalence claim. The
 loader reads only the canonical contract and six exact tracked evidence files;
 it opens no real dataset payload, calibration, image, learning, or model path.
 It is not a payload parser or adapter. All operational readiness flags remain
-false and scientific authority remains `none`. The immediate next gate is a pure
-synthetic parser slice with positive and adversarial negative fixtures. Real
-payload access, calibration review, segment construction, dataset selection,
-membership, and model work remain separately blocked.
+false and scientific authority remains `none`. Gate 2 is now implemented at
+pushed commit `3379060f83801230e5fe8c52e7bd0c3c288e5253`; GitHub Actions
+[run 33289072534](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33289072534)
+passed on Python 3.10 and 3.12. Its bounded parsers accept exact in-memory
+synthetic camera, IMU, source-labelled pose, and stereo CSV fixtures under the
+Gate 1 contract. They opened no real data, deny the known inspected real CSV
+hashes before reading, and have no filesystem loader, CLI, package-level data
+export, calibration/image/EuRoC bridge, learning/model dependency, or segment
+constructor. The parser-assigned synthetic-only scope labels caller-supplied
+bytes but does not authenticate their origin, so successful parsing grants no
+real-source or scientific authority. Gate 3 remains a separate
+reviewed design decision between calibration-metadata evidence and a one-use
+real-payload adapter probe; neither alternative is selected or authorized.
+Segment construction, dataset selection/membership, and model work remain
+blocked.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is
@@ -337,6 +348,7 @@ and verified.
 - [Controlled v5 magnitude-loss experiment](reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md)
 - [TUM VI bounded format-inspection result](reports/tumvi-room4-512-16-format-inspection-2026-08-29.md)
 - [TUM VI adapter-contract Gate 1 report](reports/tumvi-room4-512-16-adapter-contract-v1-2026-08-29.md)
+- [TUM VI synthetic parser Gate 2 report](reports/tumvi-room4-512-16-synthetic-parser-gate2-2026-08-29.md)
 - [Dataset governance policy](governance/datasets/policy.md)
 - [Candidate dataset registry](governance/datasets/registry.yaml)
 - [Artifact policy](governance/artifacts/policy.md)

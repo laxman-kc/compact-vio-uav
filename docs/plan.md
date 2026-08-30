@@ -65,9 +65,14 @@ GitHub Actions
 passed its Python 3.10 and 3.12 jobs. The strict non-executable TUM-VI grammar,
 source-labelled output-policy contract, and sealed loader read only the
 contract plus six exact tracked evidence files and leave every readiness flag
-false. Gate 2 is restricted to pure synthetic parsers and positive/adversarial
-fixtures. Any separately authorized minimal calibration evidence, real-payload
-validation, independent unit selection, and protocol freeze remain required
+false. Gate 2 is implemented at pushed commit
+`3379060f83801230e5fe8c52e7bd0c3c288e5253`; GitHub Actions
+[run 33289072534](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33289072534)
+passed on Python 3.10 and 3.12. It adds bounded synthetic-only in-memory parsers,
+opened no real data, and leaves every operational readiness flag false. Gate 3
+is a separate reviewed design decision between calibration-metadata evidence and
+a one-use real-payload adapter probe; neither is selected or authorized by this
+plan update. Independent unit selection and protocol freeze remain required
 before any new model work.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
@@ -1099,30 +1104,46 @@ Execute these as separate small slices; do not combine them into one long phase:
    choices. They opened no real payload, calibration, image, learning, or model
    path. All readiness remains false and scientific authority is `none`.
    Immutable implementation and CI gates are therefore closed for Gate 1.
-8. Implement Gate 2 as pure synthetic parsers only. Positive fixtures must
-   prove exact accepted camera-index, IMU, and eight-column source-labelled pose
-   rows. Adversarial fixtures must fail closed on lexical, header, arity,
-   timestamp, filename, duplicate/order, resource, EuRoC-full-state
-   conflation, interval, and authority-forging cases. The slice must not open
-   the ignored TUM-VI tree, calibration, PNG payloads, learning code, or models;
-   it must not produce segments, pose associations, decoded images, calibrated
-   records, or readiness. Freeze a later real-payload authorization only after
-   this synthetic gate passes and its exact read dependency is reviewed.
-9. Only if a reviewed contract/parser dependency proves exact minimal
-   calibration metadata necessary may a separate one-use authorization inspect
-   it. Then complete the independent unit-selection gate only if sufficient
-   evidence exists, without inspecting any candidate prediction, and freeze the
-   source group, leakage review, and membership role. A different
-   rights-compatible full-pose unit may be chosen instead.
-10. Freeze one full-pose protocol before any new model work: candidates and
+8. Gate 2 is implemented at pushed commit
+   `3379060f83801230e5fe8c52e7bd0c3c288e5253`. GitHub Actions
+   [run 33289072534](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33289072534)
+   completed successfully; Python 3.10 job `99197374254` and Python 3.12 job
+   `99197374357` both passed. Parser SHA-256 is
+   `4d5186a9559a4c111edda6df3d49a1484952ab6028a9269904ce4577efdc99e1`;
+   focused-test SHA-256 is
+   `9ba2ca8157af4a9e83a44d4e57e6737d272de845b6932bf6e84db0d8371cb69c`.
+   Focused tests passed 20/20; the full suite reported `OK` across 537 tests
+   with 54 declared optional-capability skips. Ruff lint passed, and Ruff format
+   checked 131 supported source/document files; compilation, schema 10/7,
+   repository policy 186/0, and diff checks passed. Two independent reviews
+   reported no P0 or P1 finding. The parser
+   accepts exact synthetic `BytesIO` fixtures only, opened no real data, denies
+   known inspected real CSV hashes before reading, and adds no filesystem, CLI,
+   package-level data export, calibration/image/EuRoC/model/learning/segment
+   boundary. Its parser-assigned synthetic-only scope labels caller-supplied
+   bytes but does not authenticate their origin. No readiness or scientific
+   authority was gained.
+9. Make Gate 3 a separate reviewed design decision. Compare at least two
+   alternatives: (a) exact minimal calibration-metadata evidence under a later
+   one-use authorization, and (b) an exact one-use real-payload adapter probe
+   with frozen paths/hashes, parser revision, read/resource limits, receipt, and
+   prohibited downstream actions. Do not rank, combine, select, or authorize
+   either alternative until that review is complete; the valid decision may be
+   that neither is justified.
+10. Only if Gate 3 selects an alternative and its evidence exists and is
+   sufficient, complete the independent unit-selection gate without inspecting
+   any candidate prediction, and freeze source grouping, leakage review, and
+   membership role. A different rights-compatible full-pose unit may be chosen
+   instead.
+11. Freeze one full-pose protocol before any new model work: candidates and
    controls, native classical backend, association/alignment/scale semantics,
    ATE/RPE/rotation/drift measures, coverage and failure rules, latency/memory
    scope, primary metric, thresholds, tie handling, and stop rule.
-11. Only after that freeze, implement the minimum missing adapter/evaluator
+12. Only after that freeze, implement the minimum missing adapter/evaluator
    behavior and execute the protocol once. Publish complete coverage, failures,
    resource measurements, metrics, identities, and checksums without tuning
    from the outcome.
-12. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
+13. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
    flight work only after the frozen full-pose result and its separate
    deployment/safety decisions justify that step.
 

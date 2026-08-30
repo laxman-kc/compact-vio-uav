@@ -1857,3 +1857,56 @@ recommendation into a decision.
   adversarial negative fixtures. Real payloads, calibration, decoding,
   preprocessing, segment construction, dataset selection/membership, and all
   model work remain closed.
+
+## 2026-08-29 — M9 TUM-VI synthetic parser Gate 2 pushed and CI green
+
+- Gate 2 was implemented at commit
+  `3379060f83801230e5fe8c52e7bd0c3c288e5253` and pushed to `origin/main`.
+  Parser SHA-256 is
+  `4d5186a9559a4c111edda6df3d49a1484952ab6028a9269904ce4577efdc99e1`;
+  focused-test SHA-256 is
+  `9ba2ca8157af4a9e83a44d4e57e6737d272de845b6932bf6e84db0d8371cb69c`.
+- GitHub Actions
+  [run 33289072534](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33289072534)
+  was created and started at `2026-08-30T02:54:50Z` and reached terminal
+  `success` at `2026-08-30T02:55:20Z`. Python 3.10 job `99197374254` passed
+  from `02:54:54Z` through `02:55:14Z`; Python 3.12 job `99197374357` passed
+  from `02:54:54Z` through `02:55:19Z`.
+- Focused tests passed 20/20. The full suite reported `OK` across 537 tests with
+  54 declared optional-capability skips. Ruff lint passed, and Ruff format
+  checked 131 supported source/document files; compilation, the
+  10-schema/7-template harness, repository policy over 186 intended files with
+  zero violations, and `git diff --check` passed. Two
+  independent adversarial reviews reported no P0 or P1 finding.
+- The new parsers accept exact open `io.BytesIO` fixtures at byte zero for
+  camera indexes, IMU rows, eight-column source-labelled pose rows, and
+  byte-identical stereo indexes. They preserve numeric source lexemes, bind the
+  exact Gate 1 contract/accounting policy, enforce exact headers/order/identity
+  and resource limits, consume successful streams through EOF without closing
+  them, and seal immutable row/source/batch outputs.
+- Gate 2 opened no real data. The module has no filesystem loader or CLI, is not
+  exported from `compact_vio.data`, and imports no calibration, image, EuRoC,
+  learning/model, or segment module. The exact known inspected camera, IMU, and
+  mocap CSV SHA-256 identities are denied before any read.
+- The parser assigns the fixed
+  `synthetic-fixture-only-origin-not-authenticated/v1` source-scope label to
+  caller-supplied bytes; it is not authenticated provenance. Claimed
+  size/SHA-256 is recomputed over supplied bytes, but otherwise unknown bytes'
+  external origin cannot be proven. Successful parsing therefore grants no
+  real-source, adapter, dataset, or scientific authority.
+- The [Gate 2 technical report](../reports/tumvi-room4-512-16-synthetic-parser-gate2-2026-08-29.md)
+  and [status graph](../reports/assets/tumvi-gate2-parser-status.svg) record two
+  verified engineering gates—Gate 1 contract and Gate 2 synthetic parser—and
+  five blocked gates: real-payload parser, calibration metadata, image decode,
+  segment construction, and model access. Graph SHA-256 is
+  `7de56ac3e38ab9e70be85b4e746640bbafbcc75c77242f9d25c2ca6648568e48`.
+  The count is not a scientific score or dataset-quality claim.
+- Every operational readiness flag remains false and scientific authority
+  remains `none`. Gate 3 is a separate reviewed design decision between
+  calibration-metadata evidence and a one-use real-payload adapter probe. This
+  closeout does not rank, select, or authorize either alternative; the decision
+  may be that neither is justified.
+- Closeout documentation validation passed: `git diff --check`; all 15
+  foundation/link tests; repository policy over 188 intended files with zero
+  violations; the 10-schema/7-template harness; registry YAML parsing; SVG XML
+  parsing; and SVG raster rendering at 1200x660. Protocol deviation: none.
