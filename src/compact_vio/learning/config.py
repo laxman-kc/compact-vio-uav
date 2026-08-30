@@ -224,9 +224,11 @@ class TrainingConfig:
             "sampling",
             "selection",
         }
-        if set(value) != required:
+        optional = {"initialization"}
+        if not required <= set(value) or not set(value) <= required | optional:
             raise LearningError(
-                "V1 experiment configuration must contain the exact declared top-level fields"
+                "V1 experiment configuration must contain the exact declared top-level fields "
+                "and optional initialization policy"
             )
         for field in ("schema_version", "experiment_id", "split_manifest"):
             field_value = value[field]
@@ -234,6 +236,12 @@ class TrainingConfig:
                 raise LearningError(f"{field} must be a non-empty string")
         if value["schema_version"] != "1.0.0":
             raise LearningError("unsupported experiment schema_version")
+        if "initialization" in value:
+            initialization = _exact_mapping(
+                value["initialization"], {"mode"}, field="initialization"
+            )
+            if initialization["mode"] != "fine-tune-from-checkpoint/v1":
+                raise LearningError("initialization.mode must equal fine-tune-from-checkpoint/v1")
         image = _exact_mapping(
             value["image"], {"width_px", "height_px", "mean", "std"}, field="image"
         )

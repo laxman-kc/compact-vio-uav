@@ -11,7 +11,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -63,6 +63,7 @@ class RunSpec:
     training: TrainingConfig
     training_frame_strides: tuple[int, ...]
     training_unroll_pairs: int
+    initial_checkpoint_required: bool
     splits: SequenceSplits
     integration_only: tuple[str, ...]
     archives: tuple[ArchiveIdentity, ...]
@@ -77,6 +78,38 @@ class RunSpec:
                     )
                 result[sequence_id] = archive.sha256
         return result
+
+
+@dataclass(frozen=True, slots=True)
+class InitialCheckpointIdentity:
+    """Exact parent checkpoint used to initialize a fresh training run."""
+
+    path: Path
+    sha256: str
+    epoch: int
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "path": str(self.path),
+            "sha256": self.sha256,
+            "epoch": self.epoch,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class EpochCheckpointIdentity:
+    """Weights-only checkpoint retained for trajectory-based epoch selection."""
+
+    path: Path
+    sha256: str
+    epoch: int
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "path": str(self.path),
+            "sha256": self.sha256,
+            "epoch": self.epoch,
+        }
 
 
 def _utc_now() -> str:
@@ -275,6 +308,9 @@ def load_run_spec(config_path: os.PathLike[str] | str) -> RunSpec:
         training=training,
         training_frame_strides=training_frame_strides,  # type: ignore[arg-type]
         training_unroll_pairs=training_unroll_pairs,
+        initial_checkpoint_required=(
+            document.get("initialization") == {"mode": "fine-tune-from-checkpoint/v1"}
+        ),
         splits=splits,
         integration_only=integration_only,
         archives=archives,
@@ -417,11 +453,127 @@ def _runtime_training_config(config: TrainingConfig, *, smoke: bool) -> Training
     return replace(config, epochs=_SMOKE_EPOCHS) if smoke else config
 
 
+def _initial_checkpoint_request(
+    checkpoint: os.PathLike[str] | str | None,
+    expected_sha256: str | None,
+    *,
+    required: bool = False,
+) -> tuple[Path, str] | None:
+    """Require a path and exact digest together for an optional fine-tune parent."""
+
+    if type(required) is not bool:
+        raise LearningError("initial checkpoint required policy must be boolean")
+    if checkpoint is None and expected_sha256 is None:
+        if required:
+            raise LearningError(
+                "this experiment requires --initial-checkpoint and --initial-checkpoint-sha256"
+            )
+        return None
+    if checkpoint is None or expected_sha256 is None:
+        raise LearningError(
+            "--initial-checkpoint and --initial-checkpoint-sha256 must be supplied together"
+        )
+    return Path(checkpoint), _sha256(expected_sha256, field="initial checkpoint SHA-256")
+
+
+def _load_initial_checkpoint(
+    checkpoint: os.PathLike[str] | str,
+    *,
+    expected_sha256: str,
+    model: Any,
+    runtime_config: TrainingConfig,
+    dataset_id: str,
+    split_sha256: str,
+    train_sequence_ids: Sequence[str],
+    validation_sequence_ids: Sequence[str],
+    source_sha256: dict[str, str],
+    calibration_sha256: dict[str, str],
+) -> InitialCheckpointIdentity:
+    """Verify and restore only parent model weights for a fresh optimization run."""
+
+    from compact_vio.learning.checkpoint import load_checkpoint
+
+    requested = _initial_checkpoint_request(checkpoint, expected_sha256)
+    assert requested is not None
+    supplied_path, declared_sha256 = requested
+    if not supplied_path.is_file() or supplied_path.is_symlink():
+        raise LearningError(
+            f"initial checkpoint must be a regular non-symlink file: {supplied_path}"
+        )
+    resolved_path = supplied_path.resolve()
+    actual_sha256 = sha256_file(resolved_path)
+    if actual_sha256 != declared_sha256:
+        raise LearningError(
+            "initial checkpoint SHA-256 mismatch: "
+            f"expected {declared_sha256}, observed {actual_sha256}"
+        )
+
+    # Passing no optimizer is intentional: a fine-tune run consumes weights and
+    # metadata but never restores the parent's optimizer state or history.
+    metadata = load_checkpoint(resolved_path, model=model, map_location="cpu")
+    if metadata.config.model != runtime_config.model:
+        raise LearningError("initial checkpoint model architecture differs from this run")
+    if metadata.config.data != runtime_config.data:
+        raise LearningError("initial checkpoint data configuration differs from this run")
+
+    parent = metadata.provenance
+    expected_split_marker = f"split={split_sha256}:"
+    if expected_split_marker not in parent.split_id:
+        raise LearningError("initial checkpoint uses a different split manifest")
+    expected_identity = (
+        parent.dataset_id == dataset_id
+        and parent.train_sequence_ids == tuple(train_sequence_ids)
+        and parent.validation_sequence_ids == tuple(validation_sequence_ids)
+        and parent.source_sha256 == tuple(sorted(source_sha256.items()))
+        and parent.calibration_sha256 == tuple(sorted(calibration_sha256.items()))
+    )
+    if not expected_identity:
+        raise LearningError("initial checkpoint dataset or split identity differs from this run")
+    return InitialCheckpointIdentity(
+        path=resolved_path,
+        sha256=actual_sha256,
+        epoch=metadata.epoch,
+    )
+
+
+def _save_epoch_checkpoint(
+    output: Path,
+    *,
+    model: Any,
+    config: TrainingConfig,
+    epoch: int,
+    metrics: Mapping[str, int | float],
+    provenance: Any,
+) -> EpochCheckpointIdentity:
+    """Retain one model-only epoch checkpoint for later full-trajectory selection."""
+
+    from compact_vio.learning.checkpoint import save_checkpoint
+
+    if type(epoch) is not int or epoch <= 0:
+        raise LearningError("retained checkpoint epoch must be a positive integer")
+    destination = output / "epoch-checkpoints" / f"epoch-{epoch:04d}.pt"
+    saved = save_checkpoint(
+        destination,
+        model=model,
+        config=config,
+        epoch=epoch,
+        metrics=metrics,
+        provenance=provenance,
+        optimizer=None,
+    )
+    return EpochCheckpointIdentity(
+        path=saved,
+        sha256=sha256_file(saved),
+        epoch=epoch,
+    )
+
+
 def _checkpoint_split_id(
     spec: RunSpec,
     config: TrainingConfig,
     *,
     smoke: bool,
+    initial_checkpoint: InitialCheckpointIdentity | None = None,
 ) -> str:
     """Bind checkpoint provenance to sampling, state, and optional loss policies."""
 
@@ -442,6 +594,11 @@ def _checkpoint_split_id(
         identity += (
             "trajectory-loss=body-frame-se3-endpoint-smooth-l1-v1:"
             f"trajectory-weight={config.trajectory_loss_weight:.17g}:"
+        )
+    if initial_checkpoint is not None:
+        identity += (
+            f"initial-checkpoint-sha256={initial_checkpoint.sha256}:"
+            f"initial-checkpoint-epoch={initial_checkpoint.epoch}:"
         )
     return identity + f"mode={'smoke' if smoke else 'full'}"
 
@@ -871,6 +1028,11 @@ def _run(args: argparse.Namespace) -> int:
     started_monotonic = time.monotonic()
     spec = load_run_spec(args.config)
     runtime_config = _runtime_training_config(spec.training, smoke=args.smoke)
+    initial_request = _initial_checkpoint_request(
+        args.initial_checkpoint,
+        args.initial_checkpoint_sha256,
+        required=spec.initial_checkpoint_required,
+    )
     output = _prepare_output_directory(args.output_dir)
     data_root = Path(args.data_root).resolve()
     device = _select_device(torch, args.device)
@@ -975,19 +1137,54 @@ def _run(args: argparse.Namespace) -> int:
     source_hashes = {
         sequence.sequence_id: sequence_sources_sha256(sequence.root) for sequence in all_sequences
     }
+    dataset_id = f"EuRoC DOI {spec.dataset_doi}"
+    model = CompactVIO(runtime_config.model)
+    initial_checkpoint = None
+    if initial_request is not None:
+        initial_checkpoint = _load_initial_checkpoint(
+            initial_request[0],
+            expected_sha256=initial_request[1],
+            model=model,
+            runtime_config=runtime_config,
+            dataset_id=dataset_id,
+            split_sha256=spec.split_sha256,
+            train_sequence_ids=spec.splits.train,
+            validation_sequence_ids=spec.splits.validation,
+            source_sha256=source_hashes,
+            calibration_sha256=calibration_hashes,
+        )
     provenance = CheckpointProvenance.create(
-        dataset_id=f"EuRoC DOI {spec.dataset_doi}",
-        split_id=_checkpoint_split_id(spec, runtime_config, smoke=args.smoke),
+        dataset_id=dataset_id,
+        split_id=_checkpoint_split_id(
+            spec,
+            runtime_config,
+            smoke=args.smoke,
+            initial_checkpoint=initial_checkpoint,
+        ),
         train_sequence_ids=spec.splits.train,
         validation_sequence_ids=spec.splits.validation,
         source_sha256=source_hashes,
         calibration_sha256=calibration_hashes,
         code_revision=_git_revision(spec.config_path),
     )
-    model = CompactVIO(runtime_config.model)
     checkpoint_path = output / "checkpoint.pt"
+    retained_epoch_checkpoints: list[EpochCheckpointIdentity] = []
 
     def report_progress(epoch: int, train: Any, validation: Any) -> None:
+        if spec.initial_checkpoint_required:
+            retained_epoch_checkpoints.append(
+                _save_epoch_checkpoint(
+                    output,
+                    model=model,
+                    config=runtime_config,
+                    epoch=epoch,
+                    metrics={
+                        **train.to_dict(prefix="train/"),
+                        **validation.to_dict(prefix="validation/"),
+                    },
+                    provenance=provenance,
+                )
+            )
         print(
             json.dumps(
                 {
@@ -1014,6 +1211,11 @@ def _run(args: argparse.Namespace) -> int:
     )
     if _git_revision(spec.config_path) != provenance.code_revision:
         raise LearningError("Git revision changed during training")
+    if (
+        spec.initial_checkpoint_required
+        and len(retained_epoch_checkpoints) != runtime_config.epochs
+    ):
+        raise LearningError("fine-tune run did not retain exactly one checkpoint per epoch")
     best_metadata = load_checkpoint(
         checkpoint_path,
         model=model,
@@ -1078,6 +1280,15 @@ def _run(args: argparse.Namespace) -> int:
         raise LearningError("training configuration changed during execution")
     if sha256_file(spec.split_path) != spec.split_sha256:
         raise LearningError("split manifest changed during execution")
+    if (
+        initial_checkpoint is not None
+        and sha256_file(initial_checkpoint.path) != initial_checkpoint.sha256
+    ):
+        raise LearningError("initial checkpoint changed during execution")
+    if any(
+        sha256_file(identity.path) != identity.sha256 for identity in retained_epoch_checkpoints
+    ):
+        raise LearningError("retained epoch checkpoint changed during execution")
     if {
         sequence.sequence_id: sequence_sources_sha256(sequence.root) for sequence in all_sequences
     } != source_hashes:
@@ -1087,6 +1298,17 @@ def _run(args: argparse.Namespace) -> int:
         for sequence in all_sequences
     } != calibration_hashes:
         raise LearningError("EuRoC calibration source bytes changed during execution")
+    artifacts: dict[str, object] = {
+        "checkpoint": checkpoint_path.name,
+        "checkpoint_sha256": checkpoint_sha256,
+        "training_history": history_path.name,
+        "test_metrics": test_metrics_path.name,
+        "test_predictions": predictions_path.name,
+    }
+    if spec.initial_checkpoint_required:
+        artifacts["epoch_checkpoints"] = [
+            identity.to_dict() for identity in retained_epoch_checkpoints
+        ]
     summary = {
         "schema_version": "1.0.0",
         "status": "completed",
@@ -1099,6 +1321,9 @@ def _run(args: argparse.Namespace) -> int:
             "zero-per-independent-pair/v1"
             if spec.training_unroll_pairs == 1
             else "zero-per-training-chunk-carry-contiguous-evaluation-chain/v1"
+        ),
+        "initial_checkpoint": (
+            initial_checkpoint.to_dict() if initial_checkpoint is not None else None
         ),
         "runtime_config": runtime_config.to_dict(),
         "started_at": started_at,
@@ -1125,13 +1350,7 @@ def _run(args: argparse.Namespace) -> int:
         "git_revision": provenance.code_revision,
         "best_epoch": best_metadata.epoch,
         "best_validation_metrics": best_metadata.metrics,
-        "artifacts": {
-            "checkpoint": checkpoint_path.name,
-            "checkpoint_sha256": checkpoint_sha256,
-            "training_history": history_path.name,
-            "test_metrics": test_metrics_path.name,
-            "test_predictions": predictions_path.name,
-        },
+        "artifacts": artifacts,
         "test_metrics": test_metrics,
     }
     summary_path = output / "run-summary.json"
@@ -1178,6 +1397,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="run 2 epochs on at most 128 train and 64 validation/test pairs",
     )
+    parser.add_argument(
+        "--initial-checkpoint",
+        help="exact training checkpoint whose model weights initialize a fresh optimizer",
+    )
+    parser.add_argument(
+        "--initial-checkpoint-sha256",
+        help="required lowercase SHA-256 identity for --initial-checkpoint",
+    )
     return parser
 
 
@@ -1200,4 +1427,11 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 
-__all__ = ["RunSpec", "build_parser", "load_run_spec", "main"]
+__all__ = [
+    "EpochCheckpointIdentity",
+    "InitialCheckpointIdentity",
+    "RunSpec",
+    "build_parser",
+    "load_run_spec",
+    "main",
+]
