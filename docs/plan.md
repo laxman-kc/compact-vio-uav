@@ -81,7 +81,12 @@ superseding authorization executed once at revision
 `47daabc1891b71e53a6d3f4f5a070d69bbbe5c78`. Its checked receipt records
 `completed` / `rejects_frozen_gate1_grammar`: the two camera indexes and IMU
 accepted, while pose rejected at exact-header mismatch on physical line 1. The
-only immediate queue item is a separate reviewed contract-mismatch
+immutable result-evidence slice was committed and pushed as
+`ec7d1d8f1f77f1f9058b921f6971400111f3e58a`; GitHub Actions
+[run 33298358002](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33298358002)
+passed its Python 3.10 and 3.12 jobs. That closeout records the prior evidence
+commit; it does not identify this later docs-only follow-up as the evidence
+revision. The only immediate queue item is a separate reviewed contract-mismatch
 reconciliation decision. It may stop this candidate lane; it does not authorize
 a grammar amendment. Any source re-access requires a new exact one-use
 authorization. Calibration access, independent unit selection, and protocol
@@ -1171,7 +1176,13 @@ Execute these as separate small slices; do not combine them into one long phase:
    22,212/22,212, and pose rejected at `exact_header_mismatch` on physical line
    1 with 13,075 data lines and zero validated. No source row contents or
    lexemes were persisted or emitted. Every readiness field is false and
-   scientific authority is `none`.
+   scientific authority is `none`. The exact result-evidence slice was then
+   committed and pushed as
+   `ec7d1d8f1f77f1f9058b921f6971400111f3e58a`; GitHub Actions
+   [run 33298358002](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33298358002)
+   passed Python 3.10 job `99221801956` and Python 3.12 job `99221802057`.
+   This is the immutable prior evidence revision, not the revision of the
+   docs-only closeout that records it.
 12. The immediate next gate is a separate reviewed contract-mismatch
    reconciliation decision using the aggregate negative result. Do not infer or
    reconstruct the observed pose header, silently amend Gate 1, reuse Gate 2 on

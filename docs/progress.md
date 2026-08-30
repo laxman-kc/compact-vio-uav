@@ -2093,3 +2093,38 @@ recommendation into a decision.
   reviewed, committed, pushed, and CI-green. The result/evidence/documentation
   slice itself remains uncommitted; its immutable revision and CI closeout are
   pending.
+
+## 2026-08-30 — M9 TUM-VI Gate 3B result evidence pushed and CI green
+
+- The exact prior result/evidence/documentation slice was committed as
+  `ec7d1d8f1f77f1f9058b921f6971400111f3e58a` and pushed to `origin/main`.
+  This closes the immutable-revision field that remained pending in the prior
+  append-only result entry; that entry remains unchanged as the pre-commit
+  evidence state.
+- GitHub Actions
+  [run 33298358002](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33298358002)
+  was created at `2026-08-30T07:04:39Z` and reached terminal `success` at
+  `2026-08-30T07:05:21Z`. Python 3.10 job `99221801956` passed from
+  `07:04:42Z` through `07:05:18Z`; Python 3.12 job `99221802057` passed from
+  `07:04:43Z` through `07:05:20Z`.
+- The committed result identities remain claim SHA-256
+  `beba4617be76bf63870ff0957c0d4b187abe2caf7fcc6f0b336bf2b6fcc53403`,
+  receipt SHA-256
+  `7ea8720fc013504de8db22396a5eb4d8bf8f25f33cd00ab2e6798bd42d42c958`,
+  technical-report SHA-256
+  `c5976e29388088a92a660fa47b6d4ca5f1c14abcabf0ea1eecbc9939fcfc13de`,
+  and source-status SVG SHA-256
+  `2955c6e15a9745d3a06f1e4c2a2954474c17654734c3a9a09d5c4e86214e37a8`.
+  This closeout does not modify or supersede those records or hashes.
+- The successful CI run verifies the immutable result-evidence commit; it is not
+  a second grammar-probe execution and grants no new payload access, parser,
+  adapter, calibration, clock/pose, segment, dataset-membership, model,
+  readiness, or scientific authority. Every receipt readiness field remains
+  false and scientific authority remains `none`.
+- The immediate next scientific gate is unchanged: a separate reviewed
+  contract-mismatch reconciliation decision, which may keep Gate 1 frozen and
+  stop the candidate lane. Any source re-access still requires a new exact
+  one-use authorization that is independently reviewed, committed, pushed, and
+  CI-green. This append-only docs-only follow-up records the prior immutable
+  evidence revision; it does not recursively claim that its own future revision
+  is the result-evidence commit.

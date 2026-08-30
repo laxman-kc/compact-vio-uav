@@ -150,6 +150,11 @@ datasets:
     real_csv_grammar_probe_result_report_sha256: c5976e29388088a92a660fa47b6d4ca5f1c14abcabf0ea1eecbc9939fcfc13de
     real_csv_grammar_probe_result_graph: reports/assets/tumvi-gate3b-real-csv-grammar-probe-result.svg
     real_csv_grammar_probe_result_graph_sha256: 2955c6e15a9745d3a06f1e4c2a2954474c17654734c3a9a09d5c4e86214e37a8
+    real_csv_grammar_probe_result_evidence_revision: ec7d1d8f1f77f1f9058b921f6971400111f3e58a
+    real_csv_grammar_probe_result_evidence_github_actions_run: 33298358002
+    real_csv_grammar_probe_result_evidence_github_actions_url: https://github.com/laxman-kc/compact-vio-uav/actions/runs/33298358002
+    real_csv_grammar_probe_result_evidence_github_actions_jobs: [99221801956, 99221802057]
+    real_csv_grammar_probe_result_evidence_ci_state: success
     real_csv_grammar_probe_implementation_revision: d5bb14be25634f79ef9595cb04e629473338a2c2
     real_csv_grammar_probe_github_actions_run: 33294450083
     real_csv_grammar_probe_github_actions_url: https://github.com/laxman-kc/compact-vio-uav/actions/runs/33294450083
@@ -193,7 +198,7 @@ datasets:
     real_csv_grammar_probe_authorization_state: two_one_use_authorizations_consumed
     real_csv_grammar_probe_claim_state: two_claims_persisted
     real_csv_grammar_probe_receipt_state: superseding_completed_receipt_present_incident_receipt_absent
-    real_csv_grammar_probe_state: completed_rejects_frozen_gate1_grammar_no_adapter_or_dataset_readiness_no_scientific_authority
+    real_csv_grammar_probe_state: completed_rejects_frozen_gate1_grammar_result_evidence_committed_pushed_ci_green_no_adapter_or_dataset_readiness_no_scientific_authority
     real_payload_parser_ready: false
     adapter_ready: false
     calibration_ready: false
