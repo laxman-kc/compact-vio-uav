@@ -25,7 +25,7 @@ its presence is not evidence that a run happened or that a hypothesis passed.
 
 - [TUM VI room4 512x512 real-CSV grammar-probe Gate 3B implementation design](tumvi-room4-512-16-real-csv-grammar-probe-design-v1-2026-08-30.md)
   — inert spec and future-authorization controller frozen and independently
-  reviewed on synthetic fixtures; implementation commit/CI pending; no
+  reviewed on synthetic fixtures, pushed, and CI-green on Python 3.10/3.12; no
   authorization, claim, receipt, real-payload access, grammar result, readiness,
   or scientific authority.
 - [TUM VI room4 512x512 synthetic parser Gate 2](tumvi-room4-512-16-synthetic-parser-gate2-2026-08-29.md)

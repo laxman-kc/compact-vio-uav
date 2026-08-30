@@ -146,8 +146,10 @@ datasets:
     real_csv_grammar_probe_tests: tests/test_tumvi_real_csv_grammar_probe.py
     real_csv_grammar_probe_tests_sha256: 5fd1c544af84dcd90727a466e420d9aac104f9fafea73f93376f74b6b62e7281
     real_csv_grammar_probe_report: reports/tumvi-room4-512-16-real-csv-grammar-probe-design-v1-2026-08-30.md
-    real_csv_grammar_probe_implementation_revision: pending_commit
-    real_csv_grammar_probe_ci_state: pending_commit_push_and_ci
+    real_csv_grammar_probe_implementation_revision: d5bb14be25634f79ef9595cb04e629473338a2c2
+    real_csv_grammar_probe_github_actions_run: 33294450083
+    real_csv_grammar_probe_github_actions_url: https://github.com/laxman-kc/compact-vio-uav/actions/runs/33294450083
+    real_csv_grammar_probe_ci_state: passed_python_3_10_and_3_12
     real_csv_grammar_probe_focused_tests: 43
     real_csv_grammar_probe_full_suite_tests: 580
     real_csv_grammar_probe_full_suite_optional_skips: 54
@@ -155,7 +157,7 @@ datasets:
     real_csv_grammar_probe_authorization_state: absent_separate_future_record_required
     real_csv_grammar_probe_claim_state: absent
     real_csv_grammar_probe_receipt_state: absent
-    real_csv_grammar_probe_state: locally_frozen_independently_reviewed_implementation_only_uncommitted_no_real_payload_access_no_grammar_result_no_scientific_authority
+    real_csv_grammar_probe_state: implemented_pushed_ci_green_future_authorization_controller_no_authorization_no_real_payload_access_no_grammar_result_no_scientific_authority
     real_payload_parser_ready: false
     adapter_ready: false
     calibration_ready: false
@@ -186,7 +188,7 @@ datasets:
       - The pushed and CI-green adapter contract is a strict grammar and source-labelled output-policy record, not a payload parser or adapter. Its interval comparisons order integer timestamp tokens without asserting a common clock; segment, pose-association, decoding, preprocessing, and all readiness decisions remain blocked. It reads no real payload, calibration, image, learning, or model path and grants no scientific authority.
       - Gate 2 is implemented, pushed, and CI-green as an exact synthetic BytesIO parser boundary. It opened no real data, denies the known inspected real CSV hashes before reading, and adds no filesystem loader, CLI, package-level data export, calibration/image/EuRoC/learning/model dependency, or segment constructor.
       - Gate 2 assigns a fixed synthetic-only source_scope label to caller-supplied bytes; the label does not authenticate external origin. Size/SHA verification proves identity of supplied bytes but not where they came from; successful parsing grants no real-payload, adapter, dataset, or scientific authority.
-      - Gate 3B now has a locally frozen, independently reviewed inert specification and future-authorization controller for an exact four-file aggregate real-CSV grammar probe. The implementation is uncommitted and has no CI result. It opened, read, and hashed no real payload; no authorization, claim, receipt, or grammar result exists.
-      - Gate 3B execution remains prohibited until the exact implementation is committed, pushed, and CI-green and a later exact one-use authorization is separately reviewed, committed, pushed, and CI-green. That controller must publish a durable claim before its first payload descriptor open. It persists or emits no source row contents or lexemes; source-derived observations are aggregate counts, check states, and first-violation location, while a receipt also binds frozen source identity/path and execution/capacity metadata. Grammar acceptance or rejection would grant no readiness or scientific authority. Calibration-metadata access remains a separate unselected design question.
+      - Gate 3B is implemented, pushed, and CI-green as an independently reviewed inert specification plus future-authorization controller for an exact four-file aggregate real-CSV grammar probe. It opened, read, and hashed no real payload; no authorization, claim, receipt, or grammar result exists.
+      - The only immediate next gate is a separate decision whether to issue the exact one-use authorization. Any such record must be independently reviewed, committed, pushed, and CI-green before controller execution. The controller must publish a durable claim before its first payload descriptor open. It persists or emits no source row contents or lexemes; source-derived observations are aggregate counts, check states, and first-violation location, while a receipt also binds frozen source identity/path and execution/capacity metadata. Grammar acceptance or rejection would grant no readiness or scientific authority. Calibration access remains prohibited and is not part of this immediate gate.
       - The motion/domain is not a substitute for UAV-domain evidence.
       - Ground-truth availability varies and must be recorded per sequence.

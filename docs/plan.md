@@ -68,15 +68,17 @@ contract plus six exact tracked evidence files and leave every readiness flag
 false. Gate 2 is implemented at pushed commit
 `3379060f83801230e5fe8c52e7bd0c3c288e5253`; GitHub Actions
 [run 33289072534](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33289072534)
-  passed on Python 3.10 and 3.12. It adds bounded synthetic-only in-memory parsers,
-  opened no real data, and leaves every operational readiness flag false. Gate 3B
-  now has a locally frozen, independently reviewed inert specification and
-  future-authorization aggregate grammar-probe controller. The implementation is
-  uncommitted and has no CI result. No authorization, claim, receipt, real-payload
-  access, or grammar result exists. The immediate queue is immutable commit and
-  CI closeout, then a separate one-use authorization decision; calibration
-  metadata remains a distinct unselected alternative. Independent unit selection
-  and protocol freeze remain required before any new model work.
+passed on Python 3.10 and 3.12. It adds bounded synthetic-only in-memory parsers,
+opened no real data, and leaves every operational readiness flag false. Gate 3B
+is now implemented at pushed commit
+`d5bb14be25634f79ef9595cb04e629473338a2c2`; GitHub Actions
+[run 33294450083](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33294450083)
+passed on Python 3.10 and 3.12. No authorization, claim, receipt, real-payload
+access, or grammar result exists. The only immediate queue item is a separate
+decision whether to issue an exact one-use authorization; any such record must
+be independently reviewed, committed, pushed, and CI-green. Calibration access,
+independent unit selection, and protocol freeze remain blocked before any new
+model work.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -1126,8 +1128,10 @@ Execute these as separate small slices; do not combine them into one long phase:
    boundary. Its parser-assigned synthetic-only scope labels caller-supplied
    bytes but does not authenticate their origin. No readiness or scientific
    authority was gained.
-9. Gate 3B's implementation-only real-CSV grammar-probe design is locally frozen
-   and independently reviewed. Inert-spec SHA-256 is
+9. Gate 3B's implementation-only real-CSV grammar-probe design is implemented at
+   pushed commit `d5bb14be25634f79ef9595cb04e629473338a2c2`. GitHub Actions
+   [run 33294450083](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33294450083)
+   passed on Python 3.10 and 3.12. Inert-spec SHA-256 is
    `e65ecc449ca878f9294dcb11accd6eb555232af284ad38f608cfc35c4642f790`;
    controller SHA-256 is
    `677197c4d0bc6573a2102495fa0491289a356ae655b21da364e8f701d4603a93`;
@@ -1138,18 +1142,17 @@ Execute these as separate small slices; do not combine them into one long phase:
    cases matched the unchanged Gate 2 grammar. No real payload was opened,
    read, or hashed. No authorization, claim, receipt, or grammar result exists;
    every readiness flag is false and scientific authority is `none`.
-10. Commit the exact Gate 3B source/test/documentation slice, push it, and require
-   supported-version CI to pass without changing the three frozen hashes. Only
-   then may the project separately decide whether one real-payload grammar probe
-   is justified. A future authorization must be separately reviewed, committed,
-   pushed, and CI-green; this implementation and plan do not supply it.
+10. The only immediate next gate is a separate decision whether one real-payload
+   grammar probe is justified. This implementation and plan do not supply or
+   authorize it. If the decision is affirmative, the exact one-use authorization
+   must be independently reviewed, committed, pushed, and CI-green before any
+   controller execution.
 11. Only under that later exact one-use authorization may the controller execute
    once. It must durably publish its claim before the first payload descriptor
    open, read only the four receipt-bound CSV identities in one bounded pass,
    and emit only an aggregate receipt. Grammar acceptance or rejection would not
    grant adapter, calibration, segment, dataset, or scientific authority.
-   Calibration-metadata access remains a separate design and authorization
-   question and is not selected here.
+   Calibration access remains prohibited and is not part of this immediate gate.
 12. Only if later evidence exists and is sufficient, complete the independent
    unit-selection gate without inspecting any candidate prediction, and freeze
    source grouping, leakage review, and membership role. A different

@@ -2,22 +2,26 @@
 
 Review date: 2026-08-30
 
-Status: Inert specification and future-authorization controller frozen and
-locally verified on synthetic fixtures; implementation commit and CI pending;
-no authorization, claim, receipt, real-payload access, or grammar result;
-every readiness flag false; scientific authority none
+Status: Inert specification and future-authorization controller implemented,
+pushed, and CI-green on Python 3.10 and 3.12; no authorization, claim, receipt,
+real-payload access, or grammar result; every readiness flag false; scientific
+authority none
 
 ## Technical summary
 
-Gate 3B is complete only at the local implementation-and-review boundary. An
-inert specification freezes four prior receipt-bound CSV identities, the exact
-Gate 1 grammar, aggregate-only outputs, resource ceilings, and prohibited
-operations. A separate controller can execute that design only after a future
-exact one-use authorization exists. Its public execution path durably publishes
-a claim before opening the first payload descriptor, then performs one
-constant-memory pass that hashes and checks the four exact files. Its bounded
-scanner uses transient line, cell, and previous-timestamp state, but no source
-row contents or lexemes are persisted or emitted.
+Gate 3B is complete at the immutable implementation-and-CI boundary. Pushed
+commit `d5bb14be25634f79ef9595cb04e629473338a2c2` freezes an inert
+specification plus future-authorization controller, and GitHub Actions
+[run 33294450083](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33294450083)
+passed on Python 3.10 and 3.12. The specification binds four prior
+receipt-bound CSV identities, the exact Gate 1 grammar, aggregate-only outputs,
+resource ceilings, and prohibited operations. The controller can execute that
+design only after a future exact one-use authorization exists. Its public
+execution path durably publishes a claim before opening the first payload
+descriptor, then performs one constant-memory pass that hashes and checks the
+four exact files. Its bounded scanner uses transient line, cell, and
+previous-timestamp state, but no source row contents or lexemes are persisted or
+emitted.
 
 The frozen bytes passed focused tests 43/43, a full repository run reporting
 `OK` across 580 tests with 54 declared optional-capability skips, and a
@@ -29,18 +33,20 @@ no P0 or P1 finding.
 This is **not a real-data result**. No Gate 3B authorization exists. No claim or
 receipt exists, and no real payload path was opened, read, or hashed. Therefore
 there is no observed Gate 3B grammar acceptance or rejection, no adapter or
-calibration evidence, no readiness, and no scientific authority. The three
-implementation artifacts are not yet committed, and no CI run covers them.
+calibration evidence, no readiness, and no scientific authority. The immutable
+commit and CI result close only the controller implementation boundary.
 
-## Frozen implementation evidence is local, not yet immutable
+## Frozen implementation evidence is immutable and CI-green
 
-| Artifact or gate | Exact local result |
+| Artifact or gate | Exact result |
 |---|---|
 | [Inert probe specification](../configs/data/tumvi_room4_512_16_real_csv_grammar_probe_v1.json) | SHA-256 `e65ecc449ca878f9294dcb11accd6eb555232af284ad38f608cfc35c4642f790` |
 | [Future-authorization controller](../src/compact_vio/data/tumvi_real_csv_grammar_probe.py) | SHA-256 `677197c4d0bc6573a2102495fa0491289a356ae655b21da364e8f701d4603a93` |
 | [Synthetic/adversarial tests](../tests/test_tumvi_real_csv_grammar_probe.py) | SHA-256 `5fd1c544af84dcd90727a466e420d9aac104f9fafea73f93376f74b6b62e7281` |
-| Implementation revision | Pending: the three artifacts are untracked against tracked base `680ffa2b766a83b0fec93aea1590f9c71120d889` |
-| GitHub Actions | Pending until the exact frozen slice is committed and pushed |
+| Implementation revision | `d5bb14be25634f79ef9595cb04e629473338a2c2`, pushed to `origin/main` |
+| GitHub Actions | [run 33294450083](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33294450083), success |
+| Python 3.12 CI job | `99211605353`, success, `2026-08-30T05:19:55Z`–`05:20:30Z` |
+| Python 3.10 CI job | `99211605487`, success, `2026-08-30T05:19:55Z`–`05:20:38Z` |
 | Focused suite, implementation owner | 43/43 passed in 30.183 seconds |
 | Focused suite, independent reviewer | 43/43 passed in 29.411 seconds |
 | Full suite, implementation owner | `OK` across 580 tests with 54 declared optional-capability skips in 52.667 seconds |
@@ -53,9 +59,11 @@ implementation artifacts are not yet committed, and no CI run covers them.
 | Future output absence | exact authorization, claim, and receipt paths were absent |
 | Independent adversarial review | final hash-bound PASS; no P0 or P1 finding |
 
-Any byte change to the specification, controller, or tests revokes this review.
-Until a commit and remote CI bind the same hashes, this is local evidence rather
-than an immutable repository closeout.
+The workflow was created and started at `2026-08-30T05:19:51Z` and reached
+terminal `success` at `2026-08-30T05:20:39Z`. The committed specification,
+controller, and tests retain the exact independently reviewed hashes above. Any
+future byte change requires a new review; this run closes only the immutable
+implementation-and-CI boundary.
 
 ## The design freezes four prior identities without reading them
 
@@ -201,8 +209,8 @@ accepts or rejects the grammar.
 
 ## Limitations and authority remain unchanged
 
-No Gate 3B execution evidence exists. In particular, this implementation does
-not establish:
+No authorized Gate 3B real-payload probe execution evidence exists. In
+particular, this implementation does not establish:
 
 - a real-source grammar outcome, source completeness, or dataset quality;
 - independently authenticated origin for the prior receipt-bound identities;
@@ -222,30 +230,29 @@ Every readiness field remains false and scientific authority is `none`.
 Calibration, image, segment, dataset-membership, learning, and model paths stay
 closed.
 
-## The next gate is immutable source and CI, then a separate authorization decision
+## The next gate is only a separate one-use authorization decision
 
-1. Commit the exact frozen specification, controller, tests, and this
-   documentation together; record the immutable implementation revision.
-2. Push that revision and require supported-version CI to pass without changing
-   any of the three frozen artifact hashes.
-3. Only after that closeout, separately decide whether one execution is still
-   justified. If so, create and review the exact one-use authorization as a new
-   committed record. This report is not that authorization.
-4. Only after the authorization revision is itself committed, pushed, and
-   CI-green may the exact CLI be invoked once. The controller must publish the
-   durable claim before the first payload descriptor open.
+1. Separately decide whether one execution is still justified. This report and
+   the successful implementation CI run do not authorize it.
+2. If the decision is affirmative, create and independently review the exact
+   one-use authorization as a new committed record.
+3. Require that authorization revision itself to be pushed and CI-green without
+   changing the frozen implementation identities.
+4. Only after those authorization gates close may the exact CLI be invoked once.
+   The controller must publish the durable claim before the first payload
+   descriptor open.
 5. Record only the resulting claim and, on completed execution, aggregate
    receipt. Review the receipt before considering any later calibration,
    adapter, segment, dataset-membership, or model gate.
 
 No step here authorizes execution automatically. A future decision may decline
-the real-payload probe entirely. Calibration-metadata access remains a separate
-design and authorization question, not a side effect of Gate 3B.
+the real-payload probe entirely. Calibration access remains prohibited and is
+not part of this immediate authorization gate.
 
 ## Further questions
 
-- After immutable commit and CI closeout, is a one-use real-payload grammar
-  observation still decision-useful enough to justify a new authorization?
+- Is a one-use real-payload grammar observation decision-useful enough to
+  justify a new authorization now that the implementation/CI boundary is closed?
 - What exact reviewer and active-user evidence must the future authorization
   bind before the controller may publish its claim?
 - If a future aggregate receipt records grammar rejection, what independent

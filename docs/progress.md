@@ -1967,3 +1967,49 @@ recommendation into a decision.
   tests; repository policy over 192 intended files with zero violations; the
   10-schema/7-template harness; registry YAML parsing; and strict JSON parsing
   of the inert spec. Protocol deviation: none.
+
+## 2026-08-30 — M9 TUM-VI real-CSV grammar-probe Gate 3B pushed and CI green
+
+- The exact Gate 3B implementation/documentation slice was committed as
+  `d5bb14be25634f79ef9595cb04e629473338a2c2` and pushed to `origin/main`.
+  This closes the immutable-revision field that remained pending in the prior
+  append-only local-validation entry; that entry remains unchanged as the
+  pre-commit evidence state.
+- GitHub Actions
+  [run 33294450083](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33294450083)
+  was created and started at `2026-08-30T05:19:51Z` and reached terminal
+  `success` at `2026-08-30T05:20:39Z`. Python 3.12 job `99211605353` passed
+  from `05:19:55Z` through `05:20:30Z`; Python 3.10 job `99211605487` passed
+  from `05:19:55Z` through `05:20:38Z`.
+- The committed frozen identities remain inert-spec SHA-256
+  `e65ecc449ca878f9294dcb11accd6eb555232af284ad38f608cfc35c4642f790`,
+  future-authorization-controller SHA-256
+  `677197c4d0bc6573a2102495fa0491289a356ae655b21da364e8f701d4603a93`,
+  and focused synthetic/adversarial-test SHA-256
+  `5fd1c544af84dcd90727a466e420d9aac104f9fafea73f93376f74b6b62e7281`.
+  Focused tests passed 43/43; the full suite reported `OK` across 580 tests with
+  54 declared optional-capability skips; and all 240 deterministic synthetic
+  differential cases matched Gate 2's unchanged grammar before the push. The
+  successful two-version CI run closes only the remote implementation gate.
+- The updated [Gate 3B technical report](../reports/tumvi-room4-512-16-real-csv-grammar-probe-design-v1-2026-08-30.md)
+  has working-tree closeout SHA-256
+  `c703bfa0a522a466084ed8a0b0365d812f1dfefe4ce376dd7ad039566db469f2`.
+  The earlier append-only entry retains the report's pre-closeout hash as a
+  historical local-validation identity; it was not rewritten.
+- This closeout changes no payload or scientific boundary. No exact Gate 3B
+  authorization, claim, or receipt exists. No real payload path was opened,
+  read, or hashed, so no authorized real-payload probe execution or grammar
+  result exists. Gate 2 and its known-real-hash denial boundary remain
+  unchanged. Every readiness field is false and scientific authority is `none`.
+- The only immediate next gate is a separate decision whether to issue the exact
+  one-use authorization. This implementation, CI run, report, and closeout do
+  not authorize it. If justified, that authorization must be independently
+  reviewed, committed, pushed, and CI-green before the controller may execute
+  once. The durable claim must precede the first payload descriptor open.
+  Calibration, segment, dataset-membership, learning, and model access remain
+  prohibited and are not part of this immediate gate.
+- Closeout documentation validation passed: `git diff --check`; all 15
+  foundation/link tests; repository policy over 192 intended files with zero
+  violations; the 10-schema/7-template harness; registry YAML parsing; strict
+  JSON parsing of the inert spec; exact frozen-hash checks; and an independent
+  closeout truth audit with no P0, P1, or P2 finding. Protocol deviation: none.
