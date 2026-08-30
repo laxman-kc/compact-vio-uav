@@ -1774,3 +1774,55 @@ recommendation into a decision.
   templates; YAML parsing of the dataset registry; XML parsing and raster
   rendering of the SVG evidence graph; unchanged receipt SHA-256; and 74 local
   Markdown targets across the edited documents with zero broken links.
+
+## 2026-08-29 — M9 TUM-VI adapter-contract Gate 1 implemented and locally verified
+
+- A strict non-executable contract is now frozen at
+  `configs/data/tumvi_room4_512_16_adapter_contract_v1.json`, SHA-256
+  `4368580eb601958f1c402ee6f85d3207d9bb41282c51f4dee505482c1a6542d5`.
+  It binds the candidate, compatibility-slice receipt, format-inspection
+  specification/receipt/report, and rejected EuRoC adapter by exact tracked
+  path and SHA-256.
+- The strict loader at `src/compact_vio/data/tumvi_adapter_contract.py`,
+  SHA-256
+  `26a018504568c213dfa94dca9988544bd3bc7a5ce28770a30b932c9b0f25bf20`,
+  exposes only `TumviAdapterContract`, `TumviAdapterContractError`, and
+  `load_tumvi_adapter_contract`. It seals construction to the canonical
+  contract at exact tracked `HEAD`, rechecks worktree bytes and evidence
+  hashes, and rejects duplicate/missing/extra/wrong-type fields, noncanonical
+  evidence path values, alternate contract locations, links, changed evidence,
+  and `HEAD` movement.
+- The contract freezes exact LF-only, unquoted raw CSV grammars; per-column
+  lexeme-to-source-labelled-output mappings; minimum row counts; timestamp,
+  filename, stereo-index, and bounded-resource policies; and an eight-column
+  source-labelled pose-row shape distinct from EuRoC full state. Numeric values
+  remain original ASCII lexemes. Pose units, frames, transform direction, and
+  reference role remain unverified or unassigned.
+- The interval is only a prospective closed intersection of source-labelled
+  integer timestamp-token ranges. It makes no clock-equivalence claim. Clock
+  offset, gap limits, segment rule, pose association/interpolation, decoder,
+  dtype/range/channel mapping, normalization, and preprocessing remain null or
+  blocked. Timestamp shift, clock correction, extrapolation, resampling, and
+  monocular fallback are prohibited.
+- The loader reads only the contract and six exact tracked evidence files. It
+  opened no ignored dataset payload, calibration, PNG, learning, or model path.
+  No real-payload parser, adapter, segment, pose association, image decode,
+  preprocessing, selection, membership, model access, training, inference, or
+  evaluation was implemented or executed. Every readiness flag is false and
+  scientific authority is `none`.
+- The focused test file SHA-256 is
+  `612ed53ff3ed1dbe2d7a51e9c69d99b83a60ea19eeeb922ed2da2a1f813a7a3c`.
+  Focused tests passed 22/22 and the full repository suite passed 517/517.
+  Ruff lint/format, compilation, schema, repository-policy, JSON, and diff
+  checks passed. Independent adversarial review replayed the prior attack cases
+  and reported no P0 or P1 finding.
+- The [Gate 1 technical report](../reports/tumvi-room4-512-16-adapter-contract-v1-2026-08-29.md)
+  records the exact contract boundary, validation evidence, limitations, and
+  next gate. The immutable implementation revision and GitHub Actions result
+  are pending until this source/documentation slice is committed and pushed;
+  they must be recorded in a later append-only entry.
+- The immediate next gate is pure synthetic parsing with positive and
+  adversarial negative fixtures. It must preserve source lexemes and source
+  labels, fail closed at the frozen grammar/resource boundary, and keep real
+  payload, calibration, images, segment construction, dataset selection,
+  membership, and model work closed.

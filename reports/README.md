@@ -23,6 +23,10 @@ its presence is not evidence that a run happened or that a hypothesis passed.
 
 ## Reviewed reports
 
+- [TUM VI room4 512x512 adapter-contract Gate 1](tumvi-room4-512-16-adapter-contract-v1-2026-08-29.md)
+  — strict grammar/source-labelled-output policy and loader implemented and
+  locally verified; no payload parser or adapter, every readiness flag false,
+  scientific authority none, implementation revision and CI pending.
 - [TUM VI room4 512x512 bounded format inspection](tumvi-room4-512-16-format-inspection-2026-08-29.md)
   — completed `does_not_conform`: mocap-header and initial timestamp-range
   gates failed; adapter/calibration/ground-truth readiness false and scientific

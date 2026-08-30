@@ -193,10 +193,18 @@ and records `completed` / `does_not_conform`: seven of ten frozen operational
 gates passed, while the eight-column mocap header and two first-camera
 timestamp range checks failed. Adapter, calibration, and ground-truth readiness
 remain false; scientific authority is `none`. The current EuRoC adapter must
-not be reused and no model work follows. The next safe gate is a reviewed
-TUM-VI-specific adapter contract; minimal calibration metadata may be inspected
-only if that contract proves it necessary and a separate exact authorization
-permits it.
+not be reused and no model work follows. Gate 1 of the replacement path is now
+implemented and locally verified: a strict TUM-VI-specific adapter **contract**
+and loader freeze exact source-lexeme grammars, source-labelled output shapes,
+stereo-index identity requirements, resource ceilings, and an integer-token
+interval policy that makes no clock-equivalence claim. The loader reads only
+the canonical contract and six exact tracked evidence files; it opens no real
+dataset payload, calibration, image, learning, or model path. It is not a
+payload parser or adapter. All operational readiness flags remain false and
+scientific authority remains `none`. The immediate next gate is a pure
+synthetic parser slice with positive and adversarial negative fixtures. Real
+payload access, calibration review, segment construction, dataset selection,
+membership, and model work remain separately blocked.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is
@@ -325,6 +333,7 @@ and verified.
 - [Controlled v5 magnitude-loss result](reports/euroc-compact-vio-v5-magnitude-result-2026-08-28.md)
 - [Controlled v5 magnitude-loss experiment](reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md)
 - [TUM VI bounded format-inspection result](reports/tumvi-room4-512-16-format-inspection-2026-08-29.md)
+- [TUM VI adapter-contract Gate 1 report](reports/tumvi-room4-512-16-adapter-contract-v1-2026-08-29.md)
 - [Dataset governance policy](governance/datasets/policy.md)
 - [Candidate dataset registry](governance/datasets/registry.yaml)
 - [Artifact policy](governance/artifacts/policy.md)

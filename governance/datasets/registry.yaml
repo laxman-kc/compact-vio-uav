@@ -111,9 +111,26 @@ datasets:
     format_inspection_state: completed_does_not_conform_no_scientific_authority
     format_inspection_receipt_sha256: 30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846
     format_comparison_outcome: does_not_conform
+    adapter_contract: configs/data/tumvi_room4_512_16_adapter_contract_v1.json
+    adapter_contract_sha256: 4368580eb601958f1c402ee6f85d3207d9bb41282c51f4dee505482c1a6542d5
+    adapter_contract_loader: src/compact_vio/data/tumvi_adapter_contract.py
+    adapter_contract_loader_sha256: 26a018504568c213dfa94dca9988544bd3bc7a5ce28770a30b932c9b0f25bf20
+    adapter_contract_tests: tests/test_tumvi_adapter_contract.py
+    adapter_contract_tests_sha256: 612ed53ff3ed1dbe2d7a51e9c69d99b83a60ea19eeeb922ed2da2a1f813a7a3c
+    adapter_contract_report: reports/tumvi-room4-512-16-adapter-contract-v1-2026-08-29.md
+    adapter_contract_state: locally_verified_contract_only_revision_and_ci_pending_no_scientific_authority
     adapter_ready: false
     calibration_ready: false
+    clock_mapping_ready: false
+    pose_semantics_ready: false
     ground_truth_ready: false
+    png_decode_ready: false
+    preprocessing_ready: false
+    full_image_population_ready: false
+    segment_construction_ready: false
+    dataset_selected: false
+    membership_assigned: false
+    model_access_authorized: false
     received_archive_sha256: 2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68
     identity_state: published_identity_only
     proposed_lane: external_full_pose_generalization_candidate_only
@@ -127,6 +144,8 @@ datasets:
       - The completed header-only audit recorded 4,472 regular files, 11 directories, and two inert DSO-tree symlinks without following or extracting them; strict extraction compatibility is false and scientific authority is none.
       - The audit-bound one-use operation copied exactly the eight allowlisted regular mav0 files, totaling 5,043,300 bytes, after its authorization revision passed CI; it excluded dso, followed no link, and is consumed with a tracked receipt.
       - The compatibility-slice name denotes an operational input boundary, not a compatibility result. Its later bounded format inspection parsed only CSV structure and exactly four PNG signature/IHDR records; it completed with does_not_conform because the observed eight-column mocap header does not match either current 17-column EuRoC full-state target and the first selected camera timestamp falls before both observed IMU and mocap ranges.
-      - The format receipt does not establish units, frames, synchronization correction, calibration, ground-truth meaning, whole-file PNG validity/decodability, full image existence, scientific selection, or source membership. The EuRoC adapter must not be reused; a TUM-VI-specific adapter contract and, only if justified, separately authorized minimal calibration metadata are the next safe gates before any model work.
+      - The format receipt does not establish units, frames, synchronization correction, calibration, ground-truth meaning, whole-file PNG validity/decodability, full image existence, scientific selection, or source membership. The EuRoC adapter must not be reused. At that point, the receipt identified a TUM-VI-specific adapter contract and, only if justified, separately authorized minimal calibration metadata as future gates before any model work.
+      - The locally verified adapter contract is a strict grammar and source-labelled output-policy record, not a payload parser or adapter. Its interval comparisons order integer timestamp tokens without asserting a common clock; segment, pose-association, decoding, preprocessing, and all readiness decisions remain blocked. It reads no real payload, calibration, image, learning, or model path and grants no scientific authority.
+      - Gate 2 is restricted to pure synthetic parsers and adversarial fixtures. Any real-payload or calibration read requires a later exact authorization after the dependency is independently reviewed.
       - The motion/domain is not a substitute for UAV-domain evidence.
       - Ground-truth availability varies and must be recorded per sequence.

@@ -75,9 +75,28 @@ Current namespaces:
   17-column full-state target, and the first selected camera timestamp preceded
   both observed IMU and mocap ranges. Adapter, calibration, and ground-truth
   readiness remain false and scientific authority remains none. The next safe
-  configuration work is a TUM-VI-specific adapter contract; minimal calibration
-  metadata may be opened only under a later separate authorization if that
-  contract justifies it. The EuRoC adapter and all model work remain closed.
+  configuration gate is now implemented at
+  `data/tumvi_room4_512_16_adapter_contract_v1.json`. The strict loader at
+  `src/compact_vio/data/tumvi_adapter_contract.py` accepts only the canonical
+  tracked contract at exact `HEAD`, revalidates six exact tracked evidence
+  identities, and rejects duplicate, missing, extra, reordered list, wrong-type,
+  changed-worktree, untracked, hash-mismatched, linked, noncanonical evidence,
+  alternate-contract-location, or moving-`HEAD` inputs.
+  The contract freezes raw LF-only CSV grammars; exact per-column
+  lexeme-to-source-labelled-output mappings; minimum row, arity, timestamp,
+  filename, stereo-index, and resource rules; and prospective interval behavior
+  expressed only as integer-token ordering with no clock-equivalence claim.
+  Segment rules, clock/gap thresholds, pose interpolation, image decoding, and
+  preprocessing remain null or blocked. The public surface is only
+  `TumviAdapterContract`, `TumviAdapterContractError`, and
+  `load_tumvi_adapter_contract`; this is a policy loader, not a real-payload
+  parser or adapter. It reads no dataset payload, calibration, image, learning,
+  or model path. Every readiness flag remains false and scientific authority is
+  `none`. Gate 2 is a pure synthetic parser slice with positive and adversarial
+  negative fixtures. Minimal calibration metadata may be opened only under a
+  later separate authorization if a reviewed dependency proves it necessary.
+  The EuRoC adapter, real payloads, segment production, and all model work remain
+  closed.
 - `training/` contains the fully resolved v1-v5 experiment configurations.
   Each new candidate changes only the fields declared by its reviewed plan.
 - `evaluation/` contains frozen checkpoint-evaluation protocols after source,

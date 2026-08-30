@@ -58,10 +58,14 @@ completed from revision `7dfe85b8c7a3de04a1c789a79a139fa90ad5d5a4`
 and recorded `does_not_conform`: seven of ten frozen operational gates passed,
 but the eight-column mocap header and two first-camera timestamp range gates
 failed. Adapter, calibration, and ground-truth readiness remain false. The
-EuRoC adapter must not be reused. A TUM-VI-specific adapter contract, any
-separately authorized minimal calibration evidence it proves necessary,
-independent unit selection, and protocol freeze remain required before any new
-model work.
+EuRoC adapter must not be reused. Gate 1 of the replacement path is now
+implemented and locally verified: a strict non-executable TUM-VI grammar,
+source-labelled output-policy contract, and sealed loader. It reads only the
+contract plus six exact tracked evidence files and leaves every readiness flag
+false. Gate 2 is restricted to pure synthetic parsers and positive/adversarial
+fixtures. Any separately authorized minimal calibration evidence, real-payload
+validation, independent unit selection, and protocol freeze remain required
+before any new model work.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -1073,23 +1077,47 @@ Execute these as separate small slices; do not combine them into one long phase:
    `30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846`
    records `completed` / `does_not_conform`: the mocap header and both
    first-camera timestamp range predicates failed. Do not reuse the EuRoC
-   adapter and do not begin model/checkpoint work. Next, design and review a
-   TUM-VI-specific adapter contract with synthetic negative fixtures and an
-   explicit interval policy. Only if that contract demonstrates a necessary
-   dependency may a separate one-use authorization inspect exact minimal
-   calibration metadata. Then complete the independent unit-selection gate
-   only if sufficient evidence exists, without inspecting any candidate
-   prediction, and freeze the source group, leakage review, and membership
-   role. A different rights-compatible full-pose unit may be chosen instead.
-7. Freeze one full-pose protocol before any new model work: candidates and
+   adapter and do not begin model/checkpoint work.
+7. Gate 1 of the replacement path is implemented and locally verified. The
+   canonical contract SHA-256 is
+   `4368580eb601958f1c402ee6f85d3207d9bb41282c51f4dee505482c1a6542d5`;
+   strict-loader SHA-256 is
+   `26a018504568c213dfa94dca9988544bd3bc7a5ce28770a30b932c9b0f25bf20`;
+   focused-test SHA-256 is
+   `612ed53ff3ed1dbe2d7a51e9c69d99b83a60ea19eeeb922ed2da2a1f813a7a3c`.
+   Focused tests passed 22/22 and the full suite passed 517/517; lint, format,
+   compile, schema, policy, JSON, and diff gates also passed. The loader and
+   contract freeze exact raw grammars, per-column lexeme/output mappings,
+   minimum row counts, source-labelled records, stereo identity, resource
+   limits, and blocked/null interval, pose, image, preprocessing, and segment
+   choices. They opened no real payload, calibration, image, learning, or model
+   path. All readiness remains false and scientific authority is `none`.
+   Immutable implementation revision and GitHub Actions evidence are pending
+   until this slice is committed and pushed.
+8. Implement Gate 2 as pure synthetic parsers only. Positive fixtures must
+   prove exact accepted camera-index, IMU, and eight-column source-labelled pose
+   rows. Adversarial fixtures must fail closed on lexical, header, arity,
+   timestamp, filename, duplicate/order, resource, EuRoC-full-state
+   conflation, interval, and authority-forging cases. The slice must not open
+   the ignored TUM-VI tree, calibration, PNG payloads, learning code, or models;
+   it must not produce segments, pose associations, decoded images, calibrated
+   records, or readiness. Freeze a later real-payload authorization only after
+   this synthetic gate passes and its exact read dependency is reviewed.
+9. Only if a reviewed contract/parser dependency proves exact minimal
+   calibration metadata necessary may a separate one-use authorization inspect
+   it. Then complete the independent unit-selection gate only if sufficient
+   evidence exists, without inspecting any candidate prediction, and freeze the
+   source group, leakage review, and membership role. A different
+   rights-compatible full-pose unit may be chosen instead.
+10. Freeze one full-pose protocol before any new model work: candidates and
    controls, native classical backend, association/alignment/scale semantics,
    ATE/RPE/rotation/drift measures, coverage and failure rules, latency/memory
    scope, primary metric, thresholds, tie handling, and stop rule.
-8. Only after that freeze, implement the minimum missing adapter/evaluator
+11. Only after that freeze, implement the minimum missing adapter/evaluator
    behavior and execute the protocol once. Publish complete coverage, failures,
    resource measurements, metrics, identities, and checksums without tuning
    from the outcome.
-9. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
+12. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
    flight work only after the frozen full-pose result and its separate
    deployment/safety decisions justify that step.
 

@@ -1,0 +1,419 @@
+{
+  "record_type": "tumvi_adapter_contract",
+  "schema_version": "1.0.0",
+  "contract_id": "tumvi-room4-512-16-adapter-contract-v1",
+  "scope": "synthetic-grammar-record-and-coverage-policy-only-no-real-payload-access/v1",
+  "source_evidence": {
+    "candidate": {
+      "path": "configs/data/tumvi_room4_512_16_candidate_v1.json",
+      "sha256": "0de942674afcadd2f768385a82c52b8cb65eea14d5e8c4d17dc9e48262023740"
+    },
+    "compatibility_slice_receipt": {
+      "path": "governance/datasets/acquisitions/tumvi-room4-512-16-compatibility-slice-2026-08-29.receipt.json",
+      "sha256": "a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820"
+    },
+    "format_inspection_spec": {
+      "path": "configs/data/tumvi_room4_512_16_format_inspection_v1.json",
+      "sha256": "e8dd0bc98c7be85fed6d92d319bafec75c9f658584ea83d17ac93c6f47bdf1a7"
+    },
+    "format_inspection_receipt": {
+      "path": "governance/datasets/acquisitions/tumvi-room4-512-16-format-inspection-2026-08-29.receipt.json",
+      "sha256": "30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846"
+    },
+    "format_inspection_report": {
+      "path": "reports/tumvi-room4-512-16-format-inspection-2026-08-29.md",
+      "sha256": "8048a399d611051e807c9824cdb141a5e6db1bcf77f9bd197483223fe887ef30"
+    },
+    "rejected_euroc_adapter": {
+      "path": "src/compact_vio/data/euroc.py",
+      "sha256": "bfcddb06e7516d148253e8db38a7247ce51064ef13c28b934cdbb3980fc238fd"
+    }
+  },
+  "layout": {
+    "sequence_directory_name": "dataset-room4_512_16",
+    "camera_streams": [
+      {
+        "role": "cam0",
+        "index_path": "mav0/cam0/data.csv",
+        "image_directory": "mav0/cam0/data"
+      },
+      {
+        "role": "cam1",
+        "index_path": "mav0/cam1/data.csv",
+        "image_directory": "mav0/cam1/data"
+      }
+    ],
+    "imu_stream_path": "mav0/imu0/data.csv",
+    "pose_reference_stream_path": "mav0/mocap0/data.csv",
+    "excluded_prefixes": [
+      "dso"
+    ],
+    "calibration_access": "not_authorized",
+    "real_payload_access": "not_authorized_by_contract"
+  },
+  "csv_grammars": {
+    "common": {
+      "encoding": "utf-8",
+      "utf8_bom": "forbidden",
+      "nul_bytes": "forbidden",
+      "carriage_return_bytes": "forbidden",
+      "line_ending": "lf-only",
+      "final_line_ending": "required",
+      "delimiter": ",",
+      "quoting": "forbidden",
+      "quote_character": null,
+      "escape_character": null,
+      "doublequote_escaping": false,
+      "embedded_newlines": "forbidden",
+      "blank_rows": "forbidden",
+      "comment_data_rows": "forbidden",
+      "field_whitespace_normalization": "forbidden",
+      "header_comparison": "exact-raw-cell-no-whitespace-normalization/v1",
+      "timestamps_strictly_increasing": true
+    },
+    "timestamp_lexeme": {
+      "charset": "ascii",
+      "whitespace": "forbidden",
+      "fullmatch_regex": "(?:0|[1-9][0-9]*)",
+      "minimum_value": 0,
+      "maximum_value": 9223372036854775807,
+      "maximum_token_bytes": 19,
+      "output_representation": "unsigned-int64-exact/v1"
+    },
+    "numeric_lexeme": {
+      "charset": "ascii",
+      "whitespace": "forbidden",
+      "fullmatch_regex": "[+-]?(?:(?:[0-9]+(?:\\.[0-9]*)?)|(?:\\.[0-9]+))(?:[eE][+-]?[0-9]+)?",
+      "decimal_separator": ".",
+      "exponent_markers": [
+        "e",
+        "E"
+      ],
+      "nonfinite_literals": "forbidden",
+      "maximum_token_bytes": 128,
+      "output_representation": "original-ascii-lexeme",
+      "numeric_conversion": null
+    },
+    "camera_index": {
+      "roles": [
+        "cam0",
+        "cam1"
+      ],
+      "header": [
+        "#timestamp [ns]",
+        "filename"
+      ],
+      "row_arity": 2,
+      "minimum_data_rows": 1,
+      "stream_role_output_field": "stream_role",
+      "column_grammars": [
+        {
+          "source_header": "#timestamp [ns]",
+          "lexeme_grammar": "timestamp_lexeme",
+          "output_field": "timestamp_source_label_ns"
+        },
+        {
+          "source_header": "filename",
+          "lexeme_grammar": "filename_grammar",
+          "output_field": "filename_source_lexeme"
+        }
+      ],
+      "output_fields": [
+        "stream_role",
+        "timestamp_source_label_ns",
+        "filename_source_lexeme"
+      ],
+      "filename_grammar": {
+        "charset": "ascii",
+        "case_sensitive": true,
+        "whitespace": "forbidden",
+        "fullmatch_regex": "(?:0|[1-9][0-9]*)\\.png",
+        "stem_minimum_value": 0,
+        "stem_maximum_value": 9223372036854775807,
+        "maximum_token_bytes": 23,
+        "path_separators": "forbidden",
+        "output_representation": "safe-basename-original-ascii-lexeme"
+      },
+      "filename_stem_equals_timestamp": true,
+      "filenames_unique": true
+    },
+    "imu_stream": {
+      "header": [
+        "#timestamp [ns]",
+        "w_RS_S_x [rad s^-1]",
+        "w_RS_S_y [rad s^-1]",
+        "w_RS_S_z [rad s^-1]",
+        "a_RS_S_x [m s^-2]",
+        "a_RS_S_y [m s^-2]",
+        "a_RS_S_z [m s^-2]"
+      ],
+      "row_arity": 7,
+      "minimum_data_rows": 1,
+      "column_grammars": [
+        {
+          "source_header": "#timestamp [ns]",
+          "lexeme_grammar": "timestamp_lexeme",
+          "output_field": "timestamp_source_label_ns"
+        },
+        {
+          "source_header": "w_RS_S_x [rad s^-1]",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "w_rs_s_x_source_label_lexeme"
+        },
+        {
+          "source_header": "w_RS_S_y [rad s^-1]",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "w_rs_s_y_source_label_lexeme"
+        },
+        {
+          "source_header": "w_RS_S_z [rad s^-1]",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "w_rs_s_z_source_label_lexeme"
+        },
+        {
+          "source_header": "a_RS_S_x [m s^-2]",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "a_rs_s_x_source_label_lexeme"
+        },
+        {
+          "source_header": "a_RS_S_y [m s^-2]",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "a_rs_s_y_source_label_lexeme"
+        },
+        {
+          "source_header": "a_RS_S_z [m s^-2]",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "a_rs_s_z_source_label_lexeme"
+        }
+      ],
+      "output_fields": [
+        "timestamp_source_label_ns",
+        "w_rs_s_x_source_label_lexeme",
+        "w_rs_s_y_source_label_lexeme",
+        "w_rs_s_z_source_label_lexeme",
+        "a_rs_s_x_source_label_lexeme",
+        "a_rs_s_y_source_label_lexeme",
+        "a_rs_s_z_source_label_lexeme"
+      ]
+    },
+    "pose_reference_stream": {
+      "header": [
+        "#timestamp [ns]",
+        "p_RS_R_x [m]",
+        "p_RS_R_y [m]",
+        "p_RS_R_z [m]",
+        "q_RS_w []",
+        "q_RS_x []",
+        "q_RS_y []",
+        "q_RS_z []"
+      ],
+      "row_arity": 8,
+      "minimum_data_rows": 1,
+      "column_grammars": [
+        {
+          "source_header": "#timestamp [ns]",
+          "lexeme_grammar": "timestamp_lexeme",
+          "output_field": "timestamp_source_label_ns"
+        },
+        {
+          "source_header": "p_RS_R_x [m]",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "p_rs_r_x_source_label_lexeme"
+        },
+        {
+          "source_header": "p_RS_R_y [m]",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "p_rs_r_y_source_label_lexeme"
+        },
+        {
+          "source_header": "p_RS_R_z [m]",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "p_rs_r_z_source_label_lexeme"
+        },
+        {
+          "source_header": "q_RS_w []",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "q_rs_w_source_label_lexeme"
+        },
+        {
+          "source_header": "q_RS_x []",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "q_rs_x_source_label_lexeme"
+        },
+        {
+          "source_header": "q_RS_y []",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "q_rs_y_source_label_lexeme"
+        },
+        {
+          "source_header": "q_RS_z []",
+          "lexeme_grammar": "numeric_lexeme",
+          "output_field": "q_rs_z_source_label_lexeme"
+        }
+      ],
+      "output_fields": [
+        "timestamp_source_label_ns",
+        "p_rs_r_x_source_label_lexeme",
+        "p_rs_r_y_source_label_lexeme",
+        "p_rs_r_z_source_label_lexeme",
+        "q_rs_w_source_label_lexeme",
+        "q_rs_x_source_label_lexeme",
+        "q_rs_y_source_label_lexeme",
+        "q_rs_z_source_label_lexeme"
+      ]
+    }
+  },
+  "stereo_policy": {
+    "exact_index_bytes_required": true,
+    "exact_ordered_timestamp_filename_rows_required": true,
+    "require_each_filename_once_per_index": true,
+    "full_indexed_image_existence_required_before_real_execution": true,
+    "monocular_fallback": false
+  },
+  "interval_policy": {
+    "coverage_interval": "closed-intersection-of-source-labeled-timestamp-token-ranges-no-clock-equivalence-claim/v1",
+    "comparison_semantics": "integer-token-order-only-no-clock-equivalence-claim/v1",
+    "outside_camera_timestamp_action": "prospective-exclude-without-shift-clamp-extrapolation-or-resampling-not-executable/v1",
+    "segment_rule": null,
+    "minimum_frames_per_structural_segment": null,
+    "imu_window": "(previous_camera_timestamp,current_camera_timestamp]",
+    "require_nonempty_imu_window": true,
+    "clock_offset_ns": null,
+    "maximum_camera_gap_ns": null,
+    "maximum_imu_gap_ns": null,
+    "maximum_pose_gap_ns": null,
+    "operational_eligibility": "blocked-until-clock-mapping-and-full-image-existence-evidence-are-separately-frozen",
+    "segment_construction_ready": false,
+    "pose_at_camera_timestamp": "blocked-until-interpolation-policy-is-separately-frozen",
+    "allow_timestamp_shift": false,
+    "allow_clock_correction": false,
+    "allow_extrapolation": false,
+    "allow_resampling": false
+  },
+  "pose_reference_contract": {
+    "record_name": "TumviSourceLabeledPoseRow",
+    "fields": [
+      "timestamp_source_label_ns",
+      "p_rs_r_x_source_label_lexeme",
+      "p_rs_r_y_source_label_lexeme",
+      "p_rs_r_z_source_label_lexeme",
+      "q_rs_w_source_label_lexeme",
+      "q_rs_x_source_label_lexeme",
+      "q_rs_y_source_label_lexeme",
+      "q_rs_z_source_label_lexeme"
+    ],
+    "field_semantics": "source-header-labels-only-units-frames-and-transform-unverified/v1",
+    "reference_role": "unassigned",
+    "velocity_fields": "absent",
+    "gyroscope_bias_fields": "absent",
+    "accelerometer_bias_fields": "absent",
+    "quaternion_norm_policy": null,
+    "normalization_policy": null,
+    "interpolation_policy": null,
+    "maximum_interpolation_bracket_ns": null,
+    "extrapolation": "prohibited",
+    "ground_truth_ready": false
+  },
+  "image_preprocessing_boundary": {
+    "observed_selected_png_headers": {
+      "file_count": 4,
+      "interpreted_bytes_per_file": 33,
+      "width_px": 512,
+      "height_px": 512,
+      "bit_depth": 16,
+      "color_type": 0,
+      "standard_id": "W3C-PNG-Third-Edition-2025-06-24",
+      "standard_url": "https://www.w3.org/TR/2025/REC-png-3-20250624/"
+    },
+    "full_indexed_image_existence_verified": false,
+    "whole_file_png_validity_verified": false,
+    "decodability_verified": false,
+    "decoder": null,
+    "decoded_dtype": null,
+    "sample_range_mapping": null,
+    "channel_policy": null,
+    "normalization": null,
+    "preprocessing_ready": false,
+    "image_bytes_authorized": 0,
+    "permitted_output": "path-and-opaque-identity-only"
+  },
+  "resource_limits": {
+    "maximum_csv_rows_per_file": 1000000,
+    "maximum_csv_line_bytes": 1048576,
+    "maximum_csv_columns": 8,
+    "maximum_csv_bytes_by_role": {
+      "cam0": 98057,
+      "cam1": 98057,
+      "imu": 2232296,
+      "pose": 1481244
+    },
+    "maximum_image_bytes_read": 0,
+    "streaming_required": true,
+    "fail_on_limit": true
+  },
+  "result_contract": {
+    "contract_validation_outcomes": [
+      "valid",
+      "invalid"
+    ],
+    "record_outputs": {
+      "camera_index_row": [
+        "stream_role",
+        "timestamp_source_label_ns",
+        "filename_source_lexeme"
+      ],
+      "stereo_index_row": [
+        "timestamp_source_label_ns",
+        "cam0_filename_source_lexeme",
+        "cam1_filename_source_lexeme"
+      ],
+      "imu_row": [
+        "timestamp_source_label_ns",
+        "w_rs_s_x_source_label_lexeme",
+        "w_rs_s_y_source_label_lexeme",
+        "w_rs_s_z_source_label_lexeme",
+        "a_rs_s_x_source_label_lexeme",
+        "a_rs_s_y_source_label_lexeme",
+        "a_rs_s_z_source_label_lexeme"
+      ],
+      "source_labeled_pose_row": [
+        "timestamp_source_label_ns",
+        "p_rs_r_x_source_label_lexeme",
+        "p_rs_r_y_source_label_lexeme",
+        "p_rs_r_z_source_label_lexeme",
+        "q_rs_w_source_label_lexeme",
+        "q_rs_x_source_label_lexeme",
+        "q_rs_y_source_label_lexeme",
+        "q_rs_z_source_label_lexeme"
+      ]
+    },
+    "readiness": {
+      "real_payload_execution_authorized": false,
+      "adapter_implemented": false,
+      "adapter_ready": false,
+      "calibration_ready": false,
+      "clock_mapping_ready": false,
+      "pose_semantics_ready": false,
+      "ground_truth_ready": false,
+      "png_decode_ready": false,
+      "preprocessing_ready": false,
+      "full_image_population_ready": false,
+      "segment_construction_ready": false,
+      "dataset_selected": false,
+      "membership_assigned": false,
+      "model_access_authorized": false
+    },
+    "scientific_authority": "none",
+    "limitations": [
+      "contract_only_no_real_payload_access",
+      "source_header_labels_do_not_establish_units_frames_or_semantics",
+      "timestamp_token_comparison_does_not_establish_clock_equivalence",
+      "interval_policy_excludes_outside_rows_without_clock_correction",
+      "null_gap_and_interpolation_thresholds_block_pose_association",
+      "sparse_slice_does_not_establish_full_indexed_image_existence",
+      "four_png_headers_do_not_establish_decodability_or_preprocessing",
+      "does_not_select_dataset_or_assign_membership",
+      "does_not_authorize_model_access_training_inference_evaluation_or_publication"
+    ]
+  }
+}
