@@ -224,7 +224,7 @@ class TrainingConfig:
             "sampling",
             "selection",
         }
-        optional = {"initialization"}
+        optional = {"initialization", "training_sequence_state_policy"}
         if not required <= set(value) or not set(value) <= required | optional:
             raise LearningError(
                 "V1 experiment configuration must contain the exact declared top-level fields "
@@ -242,6 +242,15 @@ class TrainingConfig:
             )
             if initialization["mode"] != "fine-tune-from-checkpoint/v1":
                 raise LearningError("initialization.mode must equal fine-tune-from-checkpoint/v1")
+        if (
+            "training_sequence_state_policy" in value
+            and value["training_sequence_state_policy"]
+            != "carry-detached-fusion-and-pose-contiguous-chunks/v1"
+        ):
+            raise LearningError(
+                "training_sequence_state_policy must equal "
+                "carry-detached-fusion-and-pose-contiguous-chunks/v1 when declared"
+            )
         image = _exact_mapping(
             value["image"], {"width_px", "height_px", "mean", "std"}, field="image"
         )

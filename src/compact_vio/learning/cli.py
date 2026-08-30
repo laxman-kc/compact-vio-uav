@@ -39,6 +39,8 @@ from compact_vio.learning.errors import LearningDependencyError, LearningError
 _SMOKE_TRAIN_SAMPLES = 128
 _SMOKE_EVALUATION_SAMPLES = 64
 _SMOKE_EPOCHS = 2
+_RESET_TRAINING_SEQUENCE_STATE_POLICY = "reset-per-chunk/v1"
+_CARRY_TRAINING_SEQUENCE_STATE_POLICY = "carry-detached-fusion-and-pose-contiguous-chunks/v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +65,7 @@ class RunSpec:
     training: TrainingConfig
     training_frame_strides: tuple[int, ...]
     training_unroll_pairs: int
+    training_sequence_state_policy: str
     initial_checkpoint_required: bool
     splits: SequenceSplits
     integration_only: tuple[str, ...]
@@ -295,6 +298,24 @@ def load_run_spec(config_path: os.PathLike[str] | str) -> RunSpec:
     if training.batch_size % training_unroll_pairs:
         raise LearningError("optimization.batch_size must be divisible by sampling.unroll_pairs")
     experiment_id = _text(document.get("experiment_id"), field="experiment_id")
+    training_sequence_state_policy = document.get(
+        "training_sequence_state_policy", _RESET_TRAINING_SEQUENCE_STATE_POLICY
+    )
+    if training_sequence_state_policy not in {
+        _RESET_TRAINING_SEQUENCE_STATE_POLICY,
+        _CARRY_TRAINING_SEQUENCE_STATE_POLICY,
+    }:
+        raise LearningError("unsupported training_sequence_state_policy")
+    if (
+        training_sequence_state_policy == _CARRY_TRAINING_SEQUENCE_STATE_POLICY
+        and training_unroll_pairs == 1
+    ):
+        raise LearningError("carried training fusion state requires unroll_pairs greater than one")
+    if (
+        training_sequence_state_policy == _CARRY_TRAINING_SEQUENCE_STATE_POLICY
+        and training.trajectory_loss_weight <= 0.0
+    ):
+        raise LearningError("carried training fusion state requires trajectory_loss_weight")
     split_declared = _text(document.get("split_manifest"), field="split_manifest")
     split_path = _resolve_declared_path(config, split_declared)
     doi, splits, integration_only, archives = _parse_split_manifest(split_path)
@@ -308,6 +329,7 @@ def load_run_spec(config_path: os.PathLike[str] | str) -> RunSpec:
         training=training,
         training_frame_strides=training_frame_strides,  # type: ignore[arg-type]
         training_unroll_pairs=training_unroll_pairs,
+        training_sequence_state_policy=training_sequence_state_policy,
         initial_checkpoint_required=(
             document.get("initialization") == {"mode": "fine-tune-from-checkpoint/v1"}
         ),
@@ -595,6 +617,12 @@ def _checkpoint_split_id(
             "trajectory-loss=body-frame-se3-endpoint-smooth-l1-v1:"
             f"trajectory-weight={config.trajectory_loss_weight:.17g}:"
         )
+    if spec.training_sequence_state_policy == _CARRY_TRAINING_SEQUENCE_STATE_POLICY:
+        identity += (
+            "training-sequence-state-policy="
+            f"{_CARRY_TRAINING_SEQUENCE_STATE_POLICY}:"
+            "training-loader=ordered-single-chunk/v1:"
+        )
     if initial_checkpoint is not None:
         identity += (
             f"initial-checkpoint-sha256={initial_checkpoint.sha256}:"
@@ -617,6 +645,29 @@ def _bounded_subset_indices(sample_count: int, maximum_samples: int) -> tuple[in
     return tuple(
         index * (sample_count - 1) // (maximum_samples - 1) for index in range(maximum_samples)
     )
+
+
+def _training_loader_policy(
+    spec: RunSpec,
+    config: TrainingConfig,
+) -> tuple[int, bool, bool]:
+    """Return chunk batch size, shuffle flag, and detached-carry opt-in."""
+
+    stateful = spec.training_unroll_pairs > 1
+    chunk_batch_size = (
+        config.batch_size // spec.training_unroll_pairs if stateful else config.batch_size
+    )
+    carry_state = spec.training_sequence_state_policy == _CARRY_TRAINING_SEQUENCE_STATE_POLICY
+    if carry_state:
+        if not stateful:
+            raise LearningError("carried training fusion state requires sequence chunks")
+        if chunk_batch_size != 1:
+            raise LearningError(
+                "carried training fusion state requires optimization.batch_size to equal "
+                "sampling.unroll_pairs"
+            )
+        return 1, False, True
+    return chunk_batch_size, True, False
 
 
 def _empirical_percentile(values: Sequence[float], percentile: float) -> float:
@@ -1043,6 +1094,9 @@ def _run(args: argparse.Namespace) -> int:
     all_sequences = (*train_sequences, *validation_sequences, *test_sequences)
 
     stateful = spec.training_unroll_pairs > 1
+    training_batch_size, training_shuffle, carry_training_state = _training_loader_policy(
+        spec, runtime_config
+    )
     if stateful:
         validation_unroll_pairs = spec.training_unroll_pairs if args.smoke else 128
         train_dataset = EuRoCSequenceDataset(
@@ -1060,23 +1114,36 @@ def _run(args: argparse.Namespace) -> int:
             frame_strides=spec.training_frame_strides,
         )
         if args.smoke:
-            train_dataset = Subset(
-                train_dataset,
-                _bounded_subset_indices(
-                    len(train_dataset),
-                    max(1, _SMOKE_TRAIN_SAMPLES // spec.training_unroll_pairs),
-                ),
-            )
-            validation_dataset = Subset(
-                validation_dataset,
-                range(
-                    min(
-                        len(validation_dataset),
-                        max(1, _SMOKE_EVALUATION_SAMPLES // validation_unroll_pairs),
-                    )
-                ),
-            )
-        training_batch_size = runtime_config.batch_size // spec.training_unroll_pairs
+            if carry_training_state:
+                train_dataset = Subset(
+                    train_dataset,
+                    train_dataset.complete_chain_prefix_indices(
+                        max(1, _SMOKE_TRAIN_SAMPLES // spec.training_unroll_pairs)
+                    ),
+                )
+                validation_dataset = Subset(
+                    validation_dataset,
+                    validation_dataset.complete_chain_prefix_indices(
+                        max(1, _SMOKE_EVALUATION_SAMPLES // validation_unroll_pairs)
+                    ),
+                )
+            else:
+                train_dataset = Subset(
+                    train_dataset,
+                    _bounded_subset_indices(
+                        len(train_dataset),
+                        max(1, _SMOKE_TRAIN_SAMPLES // spec.training_unroll_pairs),
+                    ),
+                )
+                validation_dataset = Subset(
+                    validation_dataset,
+                    range(
+                        min(
+                            len(validation_dataset),
+                            max(1, _SMOKE_EVALUATION_SAMPLES // validation_unroll_pairs),
+                        )
+                    ),
+                )
         training_collate = collate_vio_sequence_batch
         validation_collate = collate_vio_sequence_batch
         fit_function = fit_sequence
@@ -1102,7 +1169,6 @@ def _run(args: argparse.Namespace) -> int:
                 validation_dataset,
                 _bounded_subset_indices(len(validation_dataset), _SMOKE_EVALUATION_SAMPLES),
             )
-        training_batch_size = runtime_config.batch_size
         training_collate = collate_vio_batch
         validation_collate = collate_vio_batch
         fit_function = fit
@@ -1118,7 +1184,7 @@ def _run(args: argparse.Namespace) -> int:
         train_dataset,
         batch_size=training_batch_size,
         collate_fn=training_collate,
-        shuffle=True,
+        shuffle=training_shuffle,
         generator=generator,
         **loader_options,
     )
@@ -1208,6 +1274,7 @@ def _run(args: argparse.Namespace) -> int:
         checkpoint_path=checkpoint_path,
         provenance=provenance,
         progress_callback=report_progress,
+        carry_training_sequence_state=carry_training_state,
     )
     if _git_revision(spec.config_path) != provenance.code_revision:
         raise LearningError("Git revision changed during training")
@@ -1320,7 +1387,11 @@ def _run(args: argparse.Namespace) -> int:
         "fusion_state_policy": (
             "zero-per-independent-pair/v1"
             if spec.training_unroll_pairs == 1
-            else "zero-per-training-chunk-carry-contiguous-evaluation-chain/v1"
+            else (
+                "carry-detached-contiguous-training-and-evaluation-chain/v1"
+                if carry_training_state
+                else "zero-per-training-chunk-carry-contiguous-evaluation-chain/v1"
+            )
         ),
         "initial_checkpoint": (
             initial_checkpoint.to_dict() if initial_checkpoint is not None else None
@@ -1353,6 +1424,12 @@ def _run(args: argparse.Namespace) -> int:
         "artifacts": artifacts,
         "test_metrics": test_metrics,
     }
+    if carry_training_state:
+        summary["training_sequence_state_policy"] = spec.training_sequence_state_policy
+        summary["training_loader_policy"] = {
+            "chunk_batch_size": training_batch_size,
+            "shuffle": training_shuffle,
+        }
     summary_path = output / "run-summary.json"
     _write_json(summary_path, summary)
     print(

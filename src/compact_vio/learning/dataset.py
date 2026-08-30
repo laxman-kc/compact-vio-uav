@@ -731,6 +731,31 @@ class EuRoCSequenceDataset(EuRoCPairDataset):
 
         return len(self._records)
 
+    def complete_chain_prefix_indices(self, maximum_chunks: int) -> tuple[int, ...]:
+        """Return an ordered smoke prefix ending at a real chain boundary.
+
+        At least the first complete chain is retained even when it exceeds the
+        requested bound; recurrent state must never be silently cut mid-chain.
+        """
+
+        if type(maximum_chunks) is not int or maximum_chunks <= 0:
+            raise LearningError("maximum_chunks must be a positive integer")
+        last_end_within_bound = 0
+        first_end = 0
+        for index, chunk in enumerate(self._chunks, start=1):
+            if not chunk.chain_end:
+                continue
+            if first_end == 0:
+                first_end = index
+            if index <= maximum_chunks:
+                last_end_within_bound = index
+            else:
+                break
+        selected = last_end_within_bound or first_end
+        if selected <= 0:
+            raise LearningError("sequence dataset has no complete recurrent chain")
+        return tuple(range(selected))
+
     def __getitem__(self, index: int) -> dict[str, Any]:
         if type(index) is not int:
             raise TypeError("dataset index must be an integer")
