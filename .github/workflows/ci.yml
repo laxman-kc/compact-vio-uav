@@ -44,6 +44,10 @@ jobs:
           compact-vio-extract-regular-slice --help
           compact-vio-inspect-tumvi-format --help
           compact-vio-copy-audit --help
+          compact-vio-evaluate-trajectory --help
+          compact-vio-export-onnx --help
+          compact-vio-run --help
+          compact-vio-demo --help
           set +e
           compact-vio-preflight > /tmp/compact-vio-preflight.json
           preflight_status=$?

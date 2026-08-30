@@ -401,11 +401,13 @@ def _history_json(result: Any) -> list[dict[str, object]]:
 
 
 def _epoch_metrics_json(metrics: Any) -> dict[str, object]:
-    """Serialize optional v5 loss evidence without changing legacy run records."""
+    """Serialize optional objective evidence without changing legacy run records."""
 
     document = asdict(metrics)
     if document.get("translation_magnitude_loss") is None:
         document.pop("translation_magnitude_loss", None)
+    if document.get("trajectory_consistency_loss") is None:
+        document.pop("trajectory_consistency_loss", None)
     return document
 
 
@@ -421,7 +423,7 @@ def _checkpoint_split_id(
     *,
     smoke: bool,
 ) -> str:
-    """Bind checkpoint provenance to sampling, state, and optional v5 loss policy."""
+    """Bind checkpoint provenance to sampling, state, and optional loss policies."""
 
     identity = (
         f"{spec.experiment_id}:config={spec.config_sha256}:"
@@ -435,6 +437,11 @@ def _checkpoint_split_id(
             "translation-magnitude-loss=smooth-l1-l2-norm-v1:"
             "translation-magnitude-weight="
             f"{config.translation_magnitude_loss_weight:.17g}:"
+        )
+    if config.trajectory_loss_weight > 0.0:
+        identity += (
+            "trajectory-loss=body-frame-se3-endpoint-smooth-l1-v1:"
+            f"trajectory-weight={config.trajectory_loss_weight:.17g}:"
         )
     return identity + f"mode={'smoke' if smoke else 'full'}"
 

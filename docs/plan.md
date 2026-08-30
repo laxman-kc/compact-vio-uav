@@ -1,5 +1,11 @@
 # Implementation plan
 
+> **Active model-completion sprint:** the current implementation priority is
+> [the concise offline model completion plan](model-completion-sprint.md).
+> It ends at a selected full-trajectory checkpoint, runnable recording
+> inference, checked ONNX export, and a local demo. TUM-VI expansion, ROS/PX4,
+> physical hardware, and other later milestones are outside this sprint.
+
 Status: Active training-first roadmap
 
 Last reviewed: 2026-08-29

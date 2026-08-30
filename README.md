@@ -1,5 +1,9 @@
 # compact-vio-uav
 
+> **Current focus:** finish the [offline model completion sprint](docs/model-completion-sprint.md):
+> full-trajectory evaluation, a selected checkpoint, recording inference,
+> ONNX parity, and a local demo. ROS/PX4 and physical hardware are later work.
+
 `compact-vio-uav` is a publicly readable, non-commercial research project for
 compact visual-inertial odometry (VIO) on UAVs. The primary scope is causal,
 metric-scale local odometry: mapping and loop closure are outside the main

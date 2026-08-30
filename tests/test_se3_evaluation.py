@@ -36,6 +36,11 @@ class Se3EvaluationTests(unittest.TestCase):
         self.assertEqual(baseline.predicted_path_length_m, 0.0)
         self.assertEqual(baseline.reference_path_length_m, 2.0)
         self.assertEqual(baseline.relative_translation_rmse_m, 1.0)
+        self.assertEqual(baseline.expected_pair_count, 2)
+        self.assertEqual(baseline.produced_pair_count, 2)
+        self.assertEqual(baseline.failed_pair_count, 0)
+        self.assertEqual(baseline.coverage_fraction, 1.0)
+        self.assertTrue(baseline.complete)
 
     def test_perfect_sequence_is_zero(self) -> None:
         reference = (
@@ -45,6 +50,7 @@ class Se3EvaluationTests(unittest.TestCase):
         result = evaluate_relative_pose_sequence(reference, reference)
         self.assertEqual(result.raw_translation_ate_rmse_m, 0.0)
         self.assertEqual(result.relative_rotation_rmse_rad, 0.0)
+        self.assertEqual(result.final_rotation_drift_rad, 0.0)
         self.assertEqual(result.reference_path_length_m, 2.0)
 
     def test_raw_metric_does_not_align_constant_error(self) -> None:
@@ -65,6 +71,24 @@ class Se3EvaluationTests(unittest.TestCase):
         predicted = (_increment("a", 0, 1, (0.0, 0.0, 0.0), (0.0, 0.0, math.pi / 2)),)
         result = evaluate_relative_pose_sequence(reference, predicted)
         self.assertAlmostEqual(result.relative_rotation_rmse_rad, math.pi / 2)
+        self.assertAlmostEqual(result.final_rotation_drift_rad, math.pi / 2)
+
+    def test_cumulative_pose_uses_previous_body_rotation_without_alignment(self) -> None:
+        reference = (
+            _increment("a", 0, 1, (1.0, 0.0, 0.0), (0.0, 0.0, math.pi / 2)),
+            _increment("b", 1, 2, (1.0, 0.0, 0.0)),
+        )
+        predicted = (
+            _increment("a", 0, 1, (1.0, 0.0, 0.0)),
+            _increment("b", 1, 2, (1.0, 0.0, 0.0)),
+        )
+
+        result = evaluate_relative_pose_sequence(reference, predicted)
+
+        self.assertEqual(result.relative_translation_rmse_m, 0.0)
+        self.assertGreater(result.raw_translation_ate_rmse_m, 0.0)
+        self.assertAlmostEqual(result.final_translation_drift_m, math.sqrt(2.0))
+        self.assertAlmostEqual(result.final_rotation_drift_rad, math.pi / 2)
 
     def test_rejects_implicit_pairing(self) -> None:
         reference = (_increment("a", 0, 1, (0.0, 0.0, 0.0)),)

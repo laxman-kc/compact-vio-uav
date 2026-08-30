@@ -67,8 +67,14 @@ class SequencePoseMetrics:
     relative_translation_rmse_m: float
     relative_rotation_rmse_rad: float
     final_translation_drift_m: float
+    final_rotation_drift_rad: float
     predicted_path_length_m: float
     reference_path_length_m: float
+    expected_pair_count: int
+    produced_pair_count: int
+    failed_pair_count: int
+    coverage_fraction: float
+    complete: bool
 
     def __post_init__(self) -> None:
         if self.metric_id != "se3/raw-no-alignment/exact-sequence-pairs/v1":
@@ -81,12 +87,36 @@ class SequencePoseMetrics:
             "relative_translation_rmse_m",
             "relative_rotation_rmse_rad",
             "final_translation_drift_m",
+            "final_rotation_drift_rad",
             "predicted_path_length_m",
             "reference_path_length_m",
         ):
             value = getattr(self, field)
             if type(value) is not float or not math.isfinite(value) or value < 0.0:
                 raise Se3EvaluationError(f"{field} must be a finite non-negative float")
+        for field in ("expected_pair_count", "produced_pair_count", "failed_pair_count"):
+            value = getattr(self, field)
+            if type(value) is not int or value < 0:
+                raise Se3EvaluationError(f"{field} must be a non-negative integer")
+        if self.expected_pair_count <= 0:
+            raise Se3EvaluationError("expected_pair_count must be positive")
+        if self.produced_pair_count != self.pair_count:
+            raise Se3EvaluationError("produced_pair_count must equal pair_count")
+        if self.produced_pair_count + self.failed_pair_count != self.expected_pair_count:
+            raise Se3EvaluationError(
+                "produced_pair_count plus failed_pair_count must equal expected_pair_count"
+            )
+        expected_fraction = self.produced_pair_count / self.expected_pair_count
+        if (
+            type(self.coverage_fraction) is not float
+            or not math.isfinite(self.coverage_fraction)
+            or not math.isclose(self.coverage_fraction, expected_fraction, abs_tol=1e-15)
+        ):
+            raise Se3EvaluationError("coverage_fraction must match produced/expected pairs")
+        if type(self.complete) is not bool:
+            raise Se3EvaluationError("complete must be boolean")
+        if self.complete != (self.failed_pair_count == 0 and self.coverage_fraction == 1.0):
+            raise Se3EvaluationError("complete must match exact output coverage")
 
 
 def _matmul(left: Matrix3, right: Matrix3) -> Matrix3:
@@ -246,8 +276,14 @@ def evaluate_relative_pose_sequence(
         relative_translation_rmse_m=_rmse(translation_errors),
         relative_rotation_rmse_rad=_rmse(rotation_errors),
         final_translation_drift_m=endpoint_errors[-1],
+        final_rotation_drift_rad=_rotation_error_rad(reference_rotation, predicted_rotation),
         predicted_path_length_m=float(predicted_length),
         reference_path_length_m=float(reference_length),
+        expected_pair_count=len(reference),
+        produced_pair_count=len(predicted),
+        failed_pair_count=0,
+        coverage_fraction=1.0,
+        complete=True,
     )
 
 

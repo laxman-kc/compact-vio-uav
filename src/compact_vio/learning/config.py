@@ -96,6 +96,7 @@ class TrainingConfig:
     weight_decay: float = 1e-4
     translation_loss_weight: float = 1.0
     translation_magnitude_loss_weight: float = 0.0
+    trajectory_loss_weight: float = 0.0
     rotation_loss_weight: float = 10.0
     gradient_clip_norm: float = 1.0
     num_workers: int = 4
@@ -121,6 +122,7 @@ class TrainingConfig:
             self.translation_magnitude_loss_weight,
             field="translation_magnitude_loss_weight",
         )
+        _non_negative_float(self.trajectory_loss_weight, field="trajectory_loss_weight")
         _non_negative_float(self.weight_decay, field="weight_decay")
         _non_negative_integer(self.num_workers, field="num_workers")
         _non_negative_integer(self.seed, field="seed")
@@ -133,6 +135,8 @@ class TrainingConfig:
         value = asdict(self)
         if self.translation_magnitude_loss_weight == 0.0:
             value.pop("translation_magnitude_loss_weight")
+        if self.trajectory_loss_weight == 0.0:
+            value.pop("trajectory_loss_weight")
         return value
 
     @classmethod
@@ -150,6 +154,7 @@ class TrainingConfig:
             "weight_decay",
             "translation_loss_weight",
             "translation_magnitude_loss_weight",
+            "trajectory_loss_weight",
             "rotation_loss_weight",
             "gradient_clip_norm",
             "num_workers",
@@ -260,14 +265,19 @@ class TrainingConfig:
             "num_workers",
             "amp",
         }
+        optional_optimization_fields = {
+            "translation_magnitude_loss_weight",
+            "trajectory_loss_weight",
+        }
         optimization_value = value["optimization"]
-        if not isinstance(optimization_value, Mapping) or set(optimization_value) not in (
-            optimization_fields,
-            optimization_fields | {"translation_magnitude_loss_weight"},
+        if (
+            not isinstance(optimization_value, Mapping)
+            or not optimization_fields <= set(optimization_value)
+            or not set(optimization_value) <= optimization_fields | optional_optimization_fields
         ):
             raise LearningError(
                 "optimization must contain the exact legacy fields and optional "
-                "translation_magnitude_loss_weight"
+                "translation_magnitude_loss_weight/trajectory_loss_weight"
             )
         optimization = optimization_value
         sampling_value = value["sampling"]
@@ -329,6 +339,7 @@ class TrainingConfig:
             translation_magnitude_loss_weight=optimization.get(
                 "translation_magnitude_loss_weight", 0.0
             ),  # type: ignore[arg-type]
+            trajectory_loss_weight=optimization.get("trajectory_loss_weight", 0.0),  # type: ignore[arg-type]
             rotation_loss_weight=optimization["rotation_loss_weight"],  # type: ignore[arg-type]
             gradient_clip_norm=optimization["gradient_clip_norm"],  # type: ignore[arg-type]
             num_workers=optimization["num_workers"],  # type: ignore[arg-type]

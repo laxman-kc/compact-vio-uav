@@ -10,6 +10,12 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _is_project_file(path: Path) -> bool:
+    """Exclude Git internals and the local dependency environment from repository scans."""
+
+    return ".git" not in path.parts and ".venv" not in path.parts
+
+
 def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     value: dict[str, Any] = {}
     for key, item in pairs:
@@ -24,7 +30,7 @@ class FoundationFileTests(unittest.TestCase):
         json_paths = sorted(ROOT.rglob("*.json"))
         self.assertTrue(json_paths)
         for path in json_paths:
-            if ".git" in path.parts:
+            if not _is_project_file(path):
                 continue
             with self.subTest(path=path.relative_to(ROOT)):
                 json.loads(
@@ -36,7 +42,7 @@ class FoundationFileTests(unittest.TestCase):
         link_pattern = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
         missing: list[tuple[str, str]] = []
         for document in sorted(ROOT.rglob("*.md")):
-            if ".git" in document.parts:
+            if not _is_project_file(document):
                 continue
             for target in link_pattern.findall(document.read_text(encoding="utf-8")):
                 if target.startswith(("http://", "https://", "#", "mailto:")):

@@ -36,6 +36,7 @@ class EpochMetrics:
     rotation_rmse_rad: float
     samples: int
     translation_magnitude_loss: float | None = None
+    trajectory_consistency_loss: float | None = None
 
     def to_dict(self, *, prefix: str = "") -> dict[str, float]:
         values = {
@@ -48,6 +49,8 @@ class EpochMetrics:
         }
         if self.translation_magnitude_loss is not None:
             values[f"{prefix}translation_magnitude_loss"] = self.translation_magnitude_loss
+        if self.trajectory_consistency_loss is not None:
+            values[f"{prefix}trajectory_consistency_loss"] = self.trajectory_consistency_loss
         return values
 
 
@@ -66,11 +69,13 @@ class _Accumulator:
     weighted_total: float = 0.0
     weighted_translation: float = 0.0
     weighted_translation_magnitude: float = 0.0
+    weighted_trajectory_consistency: float = 0.0
     weighted_rotation: float = 0.0
     translation_squared_error: float = 0.0
     rotation_squared_error: float = 0.0
     samples: int = 0
     has_translation_magnitude: bool = False
+    has_trajectory_consistency: bool = False
 
     def add(
         self,
@@ -78,6 +83,7 @@ class _Accumulator:
         total: Tensor,
         translation: Tensor,
         translation_magnitude: Tensor | None,
+        trajectory_consistency: Tensor | None,
         rotation: Tensor,
         prediction: Tensor,
         target: Tensor,
@@ -90,6 +96,11 @@ class _Accumulator:
                 float(translation_magnitude.detach()) * batch_size
             )
             self.has_translation_magnitude = True
+        if trajectory_consistency is not None:
+            self.weighted_trajectory_consistency += (
+                float(trajectory_consistency.detach()) * batch_size
+            )
+            self.has_trajectory_consistency = True
         self.weighted_rotation += float(rotation.detach()) * batch_size
         error = prediction.detach() - target
         self.translation_squared_error += float(error[:, :3].square().sum())
@@ -111,6 +122,11 @@ class _Accumulator:
                 if self.has_translation_magnitude
                 else None
             ),
+            trajectory_consistency_loss=(
+                self.weighted_trajectory_consistency / self.samples
+                if self.has_trajectory_consistency
+                else None
+            ),
         )
         if not all(
             math.isfinite(value)
@@ -123,6 +139,11 @@ class _Accumulator:
                 *(
                     (values.translation_magnitude_loss,)
                     if values.translation_magnitude_loss is not None
+                    else ()
+                ),
+                *(
+                    (values.trajectory_consistency_loss,)
+                    if values.trajectory_consistency_loss is not None
                     else ()
                 ),
             )
@@ -200,6 +221,104 @@ def motion_loss(
     )
 
 
+def _rotation_vector_matrices(rotation_vectors: Tensor) -> Tensor:
+    """Differentiably map batched axis-angle vectors to rotation matrices."""
+
+    x, y, z = rotation_vectors.unbind(dim=-1)
+    zeros = torch.zeros_like(x)
+    skew = torch.stack(
+        (
+            zeros,
+            -z,
+            y,
+            z,
+            zeros,
+            -x,
+            -y,
+            x,
+            zeros,
+        ),
+        dim=-1,
+    ).reshape(*rotation_vectors.shape[:-1], 3, 3)
+    angle = torch.linalg.vector_norm(rotation_vectors, dim=-1)
+    sine_coefficient = torch.sinc(angle / math.pi)
+    cosine_coefficient = 0.5 * torch.sinc(angle / (2.0 * math.pi)).square()
+    identity = torch.eye(
+        3,
+        dtype=rotation_vectors.dtype,
+        device=rotation_vectors.device,
+    ).expand(*rotation_vectors.shape[:-1], 3, 3)
+    return (
+        identity
+        + sine_coefficient[..., None, None] * skew
+        + cosine_coefficient[..., None, None] * torch.matmul(skew, skew)
+    )
+
+
+def _integrate_relative_motion(motion: Tensor, step_mask: Tensor) -> tuple[Tensor, Tensor]:
+    """Compose previous-body relative motion without alignment or scale fitting."""
+
+    batch_size, steps, _ = motion.shape
+    position = torch.zeros(batch_size, 3, dtype=motion.dtype, device=motion.device)
+    rotation = torch.eye(3, dtype=motion.dtype, device=motion.device).expand(batch_size, 3, 3)
+    positions: list[Tensor] = []
+    rotations: list[Tensor] = []
+    for step in range(steps):
+        active = step_mask[:, step]
+        translation = motion[:, step, :3]
+        delta_rotation = _rotation_vector_matrices(motion[:, step, 3:])
+        next_position = position + torch.matmul(rotation, translation.unsqueeze(-1)).squeeze(-1)
+        next_rotation = torch.matmul(rotation, delta_rotation)
+        position = torch.where(active[:, None], next_position, position)
+        rotation = torch.where(active[:, None, None], next_rotation, rotation)
+        positions.append(position)
+        rotations.append(rotation)
+    return torch.stack(positions, dim=1), torch.stack(rotations, dim=1)
+
+
+def trajectory_consistency_loss(
+    prediction: Tensor,
+    target: Tensor,
+    step_mask: Tensor,
+    *,
+    rotation_weight: float = 1.0,
+) -> tuple[Tensor, Tensor, Tensor]:
+    """Compare every composed pose endpoint across a causal sequence chunk.
+
+    Relative translations are rotated from the previous body frame before they
+    are accumulated. Relative rotations are composed on SO(3). Smooth-L1
+    position and rotation-matrix losses keep the objective differentiable at an
+    exact match, including zero rotation.
+    """
+
+    if prediction.shape != target.shape or prediction.ndim != 3 or prediction.shape[2] != 6:
+        raise LearningError("prediction and target must both have shape [batch, steps, 6]")
+    if step_mask.shape != prediction.shape[:2] or step_mask.dtype != torch.bool:
+        raise LearningError("step_mask must be boolean with shape [batch, steps]")
+    if not torch.isfinite(prediction).all() or not torch.isfinite(target).all():
+        raise LearningError("prediction and target must contain only finite values")
+    if torch.any(step_mask.sum(dim=1) == 0):
+        raise LearningError("every trajectory row must contain at least one valid step")
+    if prediction.shape[1] > 1 and torch.any(step_mask[:, 1:] & ~step_mask[:, :-1]):
+        raise LearningError("valid trajectory steps must form a contiguous prefix")
+    if (
+        type(rotation_weight) not in (int, float)
+        or not math.isfinite(rotation_weight)
+        or rotation_weight <= 0
+    ):
+        raise LearningError("rotation_weight must be a finite positive number")
+
+    predicted_position, predicted_rotation = _integrate_relative_motion(prediction, step_mask)
+    target_position, target_rotation = _integrate_relative_motion(target, step_mask)
+    translation = torch.nn.functional.smooth_l1_loss(
+        predicted_position[step_mask], target_position[step_mask]
+    )
+    rotation = torch.nn.functional.smooth_l1_loss(
+        predicted_rotation[step_mask], target_rotation[step_mask]
+    )
+    return translation + rotation_weight * rotation, translation, rotation
+
+
 def _configured_translation_magnitude_loss(
     prediction: Tensor,
     target: Tensor,
@@ -220,6 +339,10 @@ def _forward_loss(
     batch: VIOBatch,
     config: TrainingConfig,
 ) -> tuple[Tensor, Tensor, Tensor | None, Tensor, Tensor]:
+    if config.trajectory_loss_weight > 0.0:
+        raise LearningError(
+            "trajectory_loss_weight requires VIOSequenceBatch training with multiple steps"
+        )
     output = model(
         batch.frame_pairs,
         batch.imu,
@@ -248,7 +371,7 @@ def _forward_sequence_loss(
     config: TrainingConfig,
     *,
     fusion_state: Tensor | None = None,
-) -> tuple[Tensor, Tensor, Tensor | None, Tensor, Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor | None, Tensor | None, Tensor, Tensor, Tensor, Tensor]:
     """Return masked sequence losses, valid predictions/targets, and final state."""
 
     output = model.forward_sequence(
@@ -269,10 +392,20 @@ def _forward_sequence_loss(
         translation_magnitude_weight=config.translation_magnitude_loss_weight,
     )
     translation_magnitude = _configured_translation_magnitude_loss(prediction, target, config)
+    trajectory_consistency: Tensor | None = None
+    if config.trajectory_loss_weight > 0.0:
+        trajectory_consistency, _, _ = trajectory_consistency_loss(
+            output.motion_vector,
+            batch.target_motion,
+            batch.step_mask,
+            rotation_weight=config.rotation_loss_weight,
+        )
+        total = total + config.trajectory_loss_weight * trajectory_consistency
     return (
         total,
         translation,
         translation_magnitude,
+        trajectory_consistency,
         rotation,
         prediction,
         target,
@@ -311,6 +444,7 @@ def train_one_epoch(
                     total,
                     translation,
                     translation_magnitude,
+                    trajectory_consistency,
                     rotation,
                     prediction,
                     target,
@@ -325,6 +459,7 @@ def train_one_epoch(
                     prediction,
                 ) = _forward_loss(model, batch, config)
                 target = batch.target_motion
+                trajectory_consistency = None
         if scaler is not None and amp_enabled:
             scaler.scale(total).backward()
             scaler.unscale_(optimizer)
@@ -339,6 +474,7 @@ def train_one_epoch(
             total=total,
             translation=translation,
             translation_magnitude=translation_magnitude,
+            trajectory_consistency=trajectory_consistency,
             rotation=rotation,
             prediction=prediction,
             target=target,
@@ -402,6 +538,7 @@ def evaluate(
                     total,
                     translation,
                     translation_magnitude,
+                    trajectory_consistency,
                     rotation,
                     prediction,
                     target,
@@ -429,10 +566,12 @@ def evaluate(
                     prediction,
                 ) = _forward_loss(model, batch, config)
             target = batch.target_motion
+            trajectory_consistency = None
         accumulator.add(
             total=total,
             translation=translation,
             translation_magnitude=translation_magnitude,
+            trajectory_consistency=trajectory_consistency,
             rotation=rotation,
             prediction=prediction,
             target=target,
@@ -572,4 +711,5 @@ __all__ = [
     "motion_loss",
     "seed_everything",
     "train_one_epoch",
+    "trajectory_consistency_loss",
 ]

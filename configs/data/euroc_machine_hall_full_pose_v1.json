@@ -1,0 +1,37 @@
+{
+  "record_type": "euroc_acquisition_plan",
+  "schema_version": "1.0.0",
+  "dataset": {
+    "title": "The EuRoC micro aerial vehicle datasets",
+    "doi": "10.3929/ethz-b-000690084",
+    "landing_page": "https://www.research-collection.ethz.ch/entities/researchdata/bcaf173e-5dac-484b-bc37-faf97a594f1f",
+    "rights_statement": "In Copyright - Non-Commercial Use Permitted",
+    "publisher": "ETH Zurich"
+  },
+  "archives": [
+    {
+      "archive_id": "machine_hall",
+      "filename": "machine_hall.zip",
+      "url": "https://www.research-collection.ethz.ch/server/api/core/bitstreams/7b2419c1-62b5-4714-b7f8-485e5fe3e5fe/content",
+      "size_bytes": 12683729426,
+      "md5": "363f5c2502b469cdd97ef85997714806",
+      "sha256": "5ed7d07903f8d19b6c8808e2ae8a0872b281f6e34ef5497023b8ac58c3de0f6f",
+      "sequences": ["MH_03_medium"]
+    }
+  ],
+  "evaluation_role": {
+    "fresh_full_pose": ["MH_03_medium"]
+  },
+  "modalities": [
+    "cam0_grayscale",
+    "imu0_gyroscope",
+    "imu0_accelerometer"
+  ],
+  "reference_source": "state_groundtruth_estimate0_full_pose",
+  "notes": [
+    "MH_03_medium is frozen as the single fresh full-pose test for the model-completion sprint.",
+    "Model and checkpoint selection use only the existing Vicon Room development split; MH_03_medium is evaluated once after selection.",
+    "The official full state reference supports translation and rotation trajectory metrics.",
+    "The published byte size and MD5 matched the downloaded official archive; SHA-256 was computed from those matching bytes on 2026-08-28."
+  ]
+}
