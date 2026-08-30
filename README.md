@@ -214,11 +214,19 @@ hashes before reading, and have no filesystem loader, CLI, package-level data
 export, calibration/image/EuRoC bridge, learning/model dependency, or segment
 constructor. The parser-assigned synthetic-only scope labels caller-supplied
 bytes but does not authenticate their origin, so successful parsing grants no
-real-source or scientific authority. Gate 3 remains a separate
-reviewed design decision between calibration-metadata evidence and a one-use
-real-payload adapter probe; neither alternative is selected or authorized.
-Segment construction, dataset selection/membership, and model work remain
-blocked.
+real-source or scientific authority. Gate 3B now has a locally frozen,
+independently reviewed inert specification and future-authorization controller
+for an exact four-file aggregate real-CSV grammar probe. Its focused tests
+passed 43/43, the full suite reported `OK` across 580 tests with 54 declared
+optional-capability skips, and 240/240 synthetic differential cases matched the
+unchanged Gate 2 grammar. The implementation is uncommitted and has no CI
+result. No authorization, claim, or receipt exists, and Gate 3B opened, read,
+and hashed no real payload. After an immutable implementation commit and CI
+closeout, a separate reviewed one-use authorization would still be required
+before the controller could publish a durable claim and open its first payload
+descriptor. Calibration, segment construction, dataset selection/membership,
+and model work remain blocked; every readiness flag is false and scientific
+authority is `none`.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is
@@ -349,6 +357,7 @@ and verified.
 - [TUM VI bounded format-inspection result](reports/tumvi-room4-512-16-format-inspection-2026-08-29.md)
 - [TUM VI adapter-contract Gate 1 report](reports/tumvi-room4-512-16-adapter-contract-v1-2026-08-29.md)
 - [TUM VI synthetic parser Gate 2 report](reports/tumvi-room4-512-16-synthetic-parser-gate2-2026-08-29.md)
+- [TUM VI real-CSV grammar-probe Gate 3B implementation report](reports/tumvi-room4-512-16-real-csv-grammar-probe-design-v1-2026-08-30.md)
 - [Dataset governance policy](governance/datasets/policy.md)
 - [Candidate dataset registry](governance/datasets/registry.yaml)
 - [Artifact policy](governance/artifacts/policy.md)

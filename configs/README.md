@@ -107,11 +107,25 @@ Current namespaces:
   authenticated provenance. No filesystem/CLI/package-level data export,
   calibration, image, EuRoC, learning/model, or segment path was added, and no
   real data was opened by Gate 2. Every operational readiness flag remains
-  false and scientific authority remains `none`. Gate 3 must separately review
-  calibration-metadata evidence and a one-use real-payload adapter probe as
-  alternatives; this configuration documentation selects and authorizes neither.
-  Real payloads, segment production, dataset membership, and all model work
-  remain closed.
+  false and scientific authority remains `none`. Gate 3B's inert specification
+  is now locally frozen at
+  `data/tumvi_room4_512_16_real_csv_grammar_probe_v1.json`, SHA-256
+  `e65ecc449ca878f9294dcb11accd6eb555232af284ad38f608cfc35c4642f790`.
+  It binds the exact four prior receipt identities, Gate 1 grammar, nine tracked
+  evidence identities, aggregate-only output, and bounded resources without
+  opening a payload. The future-authorization controller at
+  `src/compact_vio/data/tumvi_real_csv_grammar_probe.py`, SHA-256
+  `677197c4d0bc6573a2102495fa0491289a356ae655b21da364e8f701d4603a93`,
+  and its synthetic/adversarial tests, SHA-256
+  `5fd1c544af84dcd90727a466e420d9aac104f9fafea73f93376f74b6b62e7281`,
+  are independently reviewed but not yet committed or covered by CI. No
+  authorization, claim, or receipt exists; no real payload was opened, read, or
+  hashed; and there is no grammar result. A later execution requires the exact
+  implementation commit and CI to close first, followed by a separately
+  committed, reviewed one-use authorization and durable claim before the first
+  payload descriptor open. Calibration, segment production, dataset membership,
+  and all model work remain closed. Every readiness flag is false and scientific
+  authority remains `none`.
 - `training/` contains the fully resolved v1-v5 experiment configurations.
   Each new candidate changes only the fields declared by its reviewed plan.
 - `evaluation/` contains frozen checkpoint-evaluation protocols after source,

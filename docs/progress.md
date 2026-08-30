@@ -1910,3 +1910,60 @@ recommendation into a decision.
   foundation/link tests; repository policy over 188 intended files with zero
   violations; the 10-schema/7-template harness; registry YAML parsing; SVG XML
   parsing; and SVG raster rendering at 1200x660. Protocol deviation: none.
+
+## 2026-08-30 — M9 TUM-VI real-CSV grammar-probe Gate 3B implementation frozen locally
+
+- Gate 3B is complete only at the local implementation-and-review boundary. Its
+  inert specification at
+  `configs/data/tumvi_room4_512_16_real_csv_grammar_probe_v1.json` has SHA-256
+  `e65ecc449ca878f9294dcb11accd6eb555232af284ad38f608cfc35c4642f790`.
+  The future-authorization controller at
+  `src/compact_vio/data/tumvi_real_csv_grammar_probe.py` has SHA-256
+  `677197c4d0bc6573a2102495fa0491289a356ae655b21da364e8f701d4603a93`;
+  focused synthetic/adversarial tests have SHA-256
+  `5fd1c544af84dcd90727a466e420d9aac104f9fafea73f93376f74b6b62e7281`.
+  Any change to those three frozen files revokes the independent review.
+- Focused tests passed 43/43 in both the implementation-owner and independent
+  runs. The full suite reported `OK` across 580 tests with 54 declared
+  optional-capability skips in both runs; the independent run bracketed the
+  suite with unchanged frozen hashes. All 240 deterministic synthetic mutation
+  cases matched Gate 2's unchanged grammar. Ruff 0.16.4 lint and two-file format
+  checks, Python compilation, strict JSON parsing, all nine tracked evidence
+  identity checks, and exact future-output absence checks passed. Independent
+  source review and final documentation truth review reported no P0, P1, or P2
+  finding.
+- The inert spec freezes the four prior receipt-bound CSV identities, exact
+  Gate 1 grammar, nine evidence identities, aggregate-only source-derived
+  observations, resource limits, and prohibited operations. The controller
+  requires a later separately committed one-use authorization and a durable
+  claim before the first payload descriptor open. It retains no-follow source
+  descriptors, performs a constant-memory single-pass hash/grammar scan, and
+  compares camera bytes in raw lockstep. Bounded transient parsing state is not
+  persisted; no source row contents or lexemes are emitted. A future aggregate
+  receipt would also bind frozen source identity/path and execution/capacity
+  metadata.
+- No Gate 3B authorization, claim, or receipt exists. No real payload path was
+  opened, read, or hashed, so no Gate 3B grammar observation or result exists.
+  No calibration, image, segment, dataset-membership, learning, or model path
+  was accessed. Gate 2 and its known-real-hash denial boundary are unchanged.
+  Every readiness field is false and scientific authority is `none`.
+- The [Gate 3B technical report](../reports/tumvi-room4-512-16-real-csv-grammar-probe-design-v1-2026-08-30.md),
+  SHA-256
+  `5c42c7acba9893bbfb8a0869ad4f75ff03c203521eb87c5df0d12e342a069fa6`,
+  records the exact design, implementation evidence, trust boundary,
+  limitations, and remaining gates. No new SVG was added because this gate has
+  no execution result; exact audit tables communicate the implementation
+  evidence without implying readiness.
+- The implementation artifacts remain untracked against base revision
+  `680ffa2b766a83b0fec93aea1590f9c71120d889`; no immutable implementation
+  revision or GitHub Actions result exists yet. The immediate gate is to commit
+  the exact frozen source/test/documentation slice, push it, and pass CI without
+  changing the three hashes. Only afterward may a separate reviewed one-use
+  authorization be considered, committed, pushed, and CI-verified. Even then,
+  execution is not automatic: the claim-before-open controller may run once
+  only under that exact live authorization. Calibration metadata remains a
+  separate unselected design and authorization question.
+- Documentation validation passed: `git diff --check`; all 15 foundation/link
+  tests; repository policy over 192 intended files with zero violations; the
+  10-schema/7-template harness; registry YAML parsing; and strict JSON parsing
+  of the inert spec. Protocol deviation: none.

@@ -1,0 +1,145 @@
+{
+  "record_type": "dataset_real_csv_grammar_probe_spec",
+  "schema_version": "1.0.0",
+  "probe_id": "tumvi-room4-512-16-real-csv-grammar-probe-v1",
+  "scope": "one-use-exact-four-receipt-bound-real-csv-grammar-probe-aggregate-only-no-readiness/v1",
+  "source_evidence": {
+    "compatibility_slice_receipt": {
+      "path": "governance/datasets/acquisitions/tumvi-room4-512-16-compatibility-slice-2026-08-29.receipt.json",
+      "sha256": "a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820"
+    },
+    "format_inspection_spec": {
+      "path": "configs/data/tumvi_room4_512_16_format_inspection_v1.json",
+      "sha256": "e8dd0bc98c7be85fed6d92d319bafec75c9f658584ea83d17ac93c6f47bdf1a7"
+    },
+    "format_inspection_receipt": {
+      "path": "governance/datasets/acquisitions/tumvi-room4-512-16-format-inspection-2026-08-29.receipt.json",
+      "sha256": "30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846"
+    },
+    "format_inspection_report": {
+      "path": "reports/tumvi-room4-512-16-format-inspection-2026-08-29.md",
+      "sha256": "8048a399d611051e807c9824cdb141a5e6db1bcf77f9bd197483223fe887ef30"
+    },
+    "adapter_contract": {
+      "path": "configs/data/tumvi_room4_512_16_adapter_contract_v1.json",
+      "sha256": "4368580eb601958f1c402ee6f85d3207d9bb41282c51f4dee505482c1a6542d5"
+    },
+    "adapter_contract_loader": {
+      "path": "src/compact_vio/data/tumvi_adapter_contract.py",
+      "sha256": "26a018504568c213dfa94dca9988544bd3bc7a5ce28770a30b932c9b0f25bf20"
+    },
+    "synthetic_parser": {
+      "path": "src/compact_vio/data/tumvi_adapter_parser.py",
+      "sha256": "4d5186a9559a4c111edda6df3d49a1484952ab6028a9269904ce4577efdc99e1"
+    },
+    "synthetic_parser_report": {
+      "path": "reports/tumvi-room4-512-16-synthetic-parser-gate2-2026-08-29.md",
+      "sha256": "04418a55c97d7ad71d7545129004f3760c62d818a81be3ffb97c0ee7b73ee6c8"
+    },
+    "data_package_boundary": {
+      "path": "src/compact_vio/data/__init__.py",
+      "sha256": "c3a6a55891323874481b1877fd703ec401cd601d0dd340b72c16d2a0463c8fa5"
+    }
+  },
+  "source": {
+    "root_path": "data/quarantine/tum-vi/room4-512-16/tumvi-room4-512-16-compatibility-slice-v1",
+    "source_scope": "compatibility-slice-receipt-bound-real-csv-bytes-not-independent-origin-authentication/v1",
+    "files": [
+      {
+        "role": "cam0",
+        "contract_source_path": "mav0/cam0/data.csv",
+        "slice_relative_path": "dataset-room4_512_16/mav0/cam0/data.csv",
+        "source_size_bytes": 98057,
+        "source_sha256": "feff54e5a721df968901ae0ec5af1d6ca45c12e758ef8e9e965b812ca87c8d67"
+      },
+      {
+        "role": "cam1",
+        "contract_source_path": "mav0/cam1/data.csv",
+        "slice_relative_path": "dataset-room4_512_16/mav0/cam1/data.csv",
+        "source_size_bytes": 98057,
+        "source_sha256": "feff54e5a721df968901ae0ec5af1d6ca45c12e758ef8e9e965b812ca87c8d67"
+      },
+      {
+        "role": "imu",
+        "contract_source_path": "mav0/imu0/data.csv",
+        "slice_relative_path": "dataset-room4_512_16/mav0/imu0/data.csv",
+        "source_size_bytes": 2232296,
+        "source_sha256": "4249d4036b3c03c55b709f6f634d975d024999fb017ab3539cfa71580793a3be"
+      },
+      {
+        "role": "pose",
+        "contract_source_path": "mav0/mocap0/data.csv",
+        "slice_relative_path": "dataset-room4_512_16/mav0/mocap0/data.csv",
+        "source_size_bytes": 1481244,
+        "source_sha256": "073a3e957efa8ff638ea41402cac9654b40897631d566a3ffee090208597db2a"
+      }
+    ]
+  },
+  "grammar_binding": {
+    "contract_id": "tumvi-room4-512-16-adapter-contract-v1",
+    "contract_path": "configs/data/tumvi_room4_512_16_adapter_contract_v1.json",
+    "contract_sha256": "4368580eb601958f1c402ee6f85d3207d9bb41282c51f4dee505482c1a6542d5",
+    "grammar_object": "csv_grammars",
+    "transport_and_token_policy": "exact-gate1-csv-grammar-no-normalization-or-numeric-conversion/v1",
+    "camera_comparison": "raw-byte-lockstep-through-simultaneous-eof/v1",
+    "gate2_relationship": "differential-oracle-only-never-real-payload-input/v1"
+  },
+  "capability_boundary": {
+    "first_payload_descriptor_open_requires_durable_claim": true,
+    "payload_access": "future-separate-one-use-authorization-only",
+    "source_access": "exact-four-receipt-bound-csv-files-only",
+    "input_processing": "single-pass-constant-memory-hash-and-grammar-scan/v1",
+    "output": "aggregate-counts-check-states-and-first-violation-location-only/v1",
+    "retain_rows_or_tokens": false,
+    "emit_rows_tokens_timestamps_filenames_headers_or_numeric_values": false,
+    "maximum_image_bytes_read": 0,
+    "calibration_access": "prohibited",
+    "model_access": "prohibited"
+  },
+  "resource_limits": {
+    "source_file_count": 4,
+    "source_size_bytes": 3909654,
+    "maximum_csv_rows_per_file": 1000000,
+    "maximum_csv_line_bytes": 1048576,
+    "maximum_csv_columns": 8,
+    "maximum_claim_bytes": 1048576,
+    "maximum_receipt_bytes": 1048576,
+    "post_probe_reserve_bytes": 2147483648,
+    "streaming_required": true,
+    "fail_on_operational_limit": true
+  },
+  "result_contract": {
+    "execution_outcomes": [
+      "completed",
+      "failed"
+    ],
+    "grammar_outcomes": [
+      "accepts_frozen_gate1_grammar",
+      "rejects_frozen_gate1_grammar"
+    ],
+    "readiness": {
+      "real_payload_execution_authorized": false,
+      "adapter_implemented": false,
+      "adapter_ready": false,
+      "calibration_ready": false,
+      "clock_mapping_ready": false,
+      "pose_semantics_ready": false,
+      "ground_truth_ready": false,
+      "png_decode_ready": false,
+      "preprocessing_ready": false,
+      "full_image_population_ready": false,
+      "segment_construction_ready": false,
+      "dataset_selected": false,
+      "membership_assigned": false,
+      "model_access_authorized": false
+    },
+    "scientific_authority": "none",
+    "limitations": [
+      "grammar_acceptance_does_not_authenticate_origin_or_scientific_semantics",
+      "source_header_labels_do_not_establish_units_frames_or_pose_meaning",
+      "timestamp_token_order_does_not_establish_clock_equivalence",
+      "no_image_calibration_model_segment_or_dataset_membership_access",
+      "does_not_approve_adapter_readiness_training_inference_evaluation_or_publication"
+    ]
+  }
+}

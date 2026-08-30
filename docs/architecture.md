@@ -51,11 +51,16 @@ sealed source-labelled outputs without opening real data or adding a filesystem
 loader, CLI, package-level data export, calibration/image/EuRoC/learning/model
 dependency, or segment constructor. The parser assigns a fixed synthetic-only
 scope label to caller-supplied bytes without authenticating their origin; known
-inspected real CSV hashes are denied before any read. Gate 3 remains a
-separate reviewed design decision between calibration-metadata evidence and a
-one-use real-payload adapter probe. Neither is selected or authorized.
-Independent unit selection and protocol freeze remain mandatory before any
-model work.
+inspected real CSV hashes are denied before any read. Gate 3B now has a locally
+frozen, independently reviewed inert specification and future-authorization
+controller for an exact four-file aggregate grammar probe. The implementation
+is uncommitted and CI is pending. No authorization, claim, receipt, or grammar
+result exists, and no real payload was opened, read, or hashed. Only after an
+immutable implementation revision and CI closeout may a separate one-use
+authorization be reviewed; even that record would have to precede a durable
+claim and the first payload descriptor open. Calibration-metadata access remains
+a separate unselected design question. Independent unit selection and protocol
+freeze remain mandatory before any model work.
 
 ## Planes
 
@@ -366,9 +371,27 @@ fixtures against the frozen contract. It verifies claimed size/SHA-256,
 preserves original numeric lexemes, enforces exact headers/order/resource
 bounds, and rejects the known inspected real CSV hashes before reading. It has
 no filesystem loader or downstream integration and its synthetic-origin label
-is not authenticated provenance. No real payload was opened by Gate 2. Gate 3
-must separately review calibration-metadata evidence and a one-use real-payload
-adapter probe as alternatives; neither is selected or authorized here. Also
+is not authenticated provenance. No real payload was opened by Gate 2. A
+separate Gate 3B module is now locally frozen and independently reviewed as an
+implementation-only future-authorization controller. Its inert specification
+binds the four prior receipt identities, Gate 1 grammar, exact tracked evidence,
+aggregate-only output, and resource limits. Spec, controller, and focused-test
+SHA-256 identities are respectively
+`e65ecc449ca878f9294dcb11accd6eb555232af284ad38f608cfc35c4642f790`,
+`677197c4d0bc6573a2102495fa0491289a356ae655b21da364e8f701d4603a93`,
+and `5fd1c544af84dcd90727a466e420d9aac104f9fafea73f93376f74b6b62e7281`.
+The public execution path cannot open a payload until it validates a later exact
+one-use authorization and durably publishes a claim. It then retains no-follow
+descriptors, hashes and scans each exact CSV once with constant memory, and
+compares the camera indexes in raw lockstep. No source row contents or lexemes
+are persisted or emitted; source-derived observations remain aggregate counts,
+check states, and a first-violation code/line. A receipt also binds frozen source
+identities/path metadata and execution/capacity metadata. Grammar rejection is a
+completed aggregate result; operational failure after claim preserves the
+consumed claim and produces no canonical receipt. The implementation is not
+committed and has no CI result; no authorization, claim, receipt, or real-payload
+access occurred. Every readiness flag is false and scientific authority is
+`none`. Also
 implemented are
 the generic causal event-release,
 estimator-envelope, execution-recorder, coverage, and payload-omitted trace
@@ -424,7 +447,7 @@ gate.
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
 | Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
-| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer, structural-audit, regular-slice, and bounded format-inspection controllers; retained TUM VI archive with verified size/MD5/SHA; completed receipt-backed 4,485-member header classification; completed eight-file `mav0` slice; completed negative format comparison; strict pushed/CI-green TUM-VI grammar contract loader; and pushed/CI-green synthetic-only in-memory CSV parsers | Gate 2 opened no real data and authenticates no source origin. Real-payload parsing, clock/calibration semantics, image decoding/preprocessing, segment construction, scientific selection/membership, protocol, and model access remain blocked. Gate 3 must review calibration-metadata evidence and a one-use real-payload adapter probe as alternatives without silently selecting either. |
+| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer, structural-audit, regular-slice, and bounded format-inspection controllers; retained TUM VI archive with verified size/MD5/SHA; completed receipt-backed 4,485-member header classification; completed eight-file `mav0` slice; completed negative format comparison; strict pushed/CI-green TUM-VI grammar contract loader; pushed/CI-green synthetic-only in-memory CSV parsers; and a locally frozen, reviewed Gate 3B future-authorization aggregate grammar-probe controller pending commit/CI | Gate 3B has no authorization, claim, receipt, execution, or grammar result and opened no real payload. A separate one-use authorization may be reviewed only after immutable implementation and CI closeout. Real-payload readiness, clock/calibration semantics, image decoding/preprocessing, segment construction, scientific selection/membership, protocol, and model access remain blocked. |
 | Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, five completed A10 runs, and a rejected controlled v5 loss ablation | No v5 retry or direct model work is authorized. A new full-pose unit/protocol must be selected and frozen independently before later model work. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
@@ -457,7 +480,7 @@ compact-vio-uav/
 │   ├── preflight.py                       [current]
 │   ├── repository_policy.py               [current]
 │   ├── contracts/                         [current: sensor payload/calibration-identity runtime records]
-│   ├── data/                              [current: verified acquisition/inventory, EuRoC adapters, TUM-VI contract and synthetic parsers]
+│   ├── data/                              [current: verified acquisition/inventory, EuRoC adapters, TUM-VI contract/synthetic parsers, locally reviewed future-auth grammar probe]
 │   ├── geometry/                          [current: translation trajectory records]
 │   ├── evaluation/                        [current: residual/RMSE, SE(3), position magnitude, coverage/binding]
 │   ├── learning/                          [current: config/data/model/train/checkpoint/inference/evaluation CLIs]

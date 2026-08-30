@@ -68,12 +68,15 @@ contract plus six exact tracked evidence files and leave every readiness flag
 false. Gate 2 is implemented at pushed commit
 `3379060f83801230e5fe8c52e7bd0c3c288e5253`; GitHub Actions
 [run 33289072534](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33289072534)
-passed on Python 3.10 and 3.12. It adds bounded synthetic-only in-memory parsers,
-opened no real data, and leaves every operational readiness flag false. Gate 3
-is a separate reviewed design decision between calibration-metadata evidence and
-a one-use real-payload adapter probe; neither is selected or authorized by this
-plan update. Independent unit selection and protocol freeze remain required
-before any new model work.
+  passed on Python 3.10 and 3.12. It adds bounded synthetic-only in-memory parsers,
+  opened no real data, and leaves every operational readiness flag false. Gate 3B
+  now has a locally frozen, independently reviewed inert specification and
+  future-authorization aggregate grammar-probe controller. The implementation is
+  uncommitted and has no CI result. No authorization, claim, receipt, real-payload
+  access, or grammar result exists. The immediate queue is immutable commit and
+  CI closeout, then a separate one-use authorization decision; calibration
+  metadata remains a distinct unselected alternative. Independent unit selection
+  and protocol freeze remain required before any new model work.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -1123,27 +1126,43 @@ Execute these as separate small slices; do not combine them into one long phase:
    boundary. Its parser-assigned synthetic-only scope labels caller-supplied
    bytes but does not authenticate their origin. No readiness or scientific
    authority was gained.
-9. Make Gate 3 a separate reviewed design decision. Compare at least two
-   alternatives: (a) exact minimal calibration-metadata evidence under a later
-   one-use authorization, and (b) an exact one-use real-payload adapter probe
-   with frozen paths/hashes, parser revision, read/resource limits, receipt, and
-   prohibited downstream actions. Do not rank, combine, select, or authorize
-   either alternative until that review is complete; the valid decision may be
-   that neither is justified.
-10. Only if Gate 3 selects an alternative and its evidence exists and is
-   sufficient, complete the independent unit-selection gate without inspecting
-   any candidate prediction, and freeze source grouping, leakage review, and
-   membership role. A different rights-compatible full-pose unit may be chosen
-   instead.
-11. Freeze one full-pose protocol before any new model work: candidates and
+9. Gate 3B's implementation-only real-CSV grammar-probe design is locally frozen
+   and independently reviewed. Inert-spec SHA-256 is
+   `e65ecc449ca878f9294dcb11accd6eb555232af284ad38f608cfc35c4642f790`;
+   controller SHA-256 is
+   `677197c4d0bc6573a2102495fa0491289a356ae655b21da364e8f701d4603a93`;
+   focused-test SHA-256 is
+   `5fd1c544af84dcd90727a466e420d9aac104f9fafea73f93376f74b6b62e7281`.
+   Focused tests passed 43/43; the full suite reported `OK` across 580 tests
+   with 54 declared optional-capability skips; 240/240 synthetic differential
+   cases matched the unchanged Gate 2 grammar. No real payload was opened,
+   read, or hashed. No authorization, claim, receipt, or grammar result exists;
+   every readiness flag is false and scientific authority is `none`.
+10. Commit the exact Gate 3B source/test/documentation slice, push it, and require
+   supported-version CI to pass without changing the three frozen hashes. Only
+   then may the project separately decide whether one real-payload grammar probe
+   is justified. A future authorization must be separately reviewed, committed,
+   pushed, and CI-green; this implementation and plan do not supply it.
+11. Only under that later exact one-use authorization may the controller execute
+   once. It must durably publish its claim before the first payload descriptor
+   open, read only the four receipt-bound CSV identities in one bounded pass,
+   and emit only an aggregate receipt. Grammar acceptance or rejection would not
+   grant adapter, calibration, segment, dataset, or scientific authority.
+   Calibration-metadata access remains a separate design and authorization
+   question and is not selected here.
+12. Only if later evidence exists and is sufficient, complete the independent
+   unit-selection gate without inspecting any candidate prediction, and freeze
+   source grouping, leakage review, and membership role. A different
+   rights-compatible full-pose unit may be chosen instead.
+13. Freeze one full-pose protocol before any new model work: candidates and
    controls, native classical backend, association/alignment/scale semantics,
    ATE/RPE/rotation/drift measures, coverage and failure rules, latency/memory
    scope, primary metric, thresholds, tie handling, and stop rule.
-12. Only after that freeze, implement the minimum missing adapter/evaluator
+14. Only after that freeze, implement the minimum missing adapter/evaluator
    behavior and execute the protocol once. Publish complete coverage, failures,
    resource measurements, metrics, identities, and checksums without tuning
    from the outcome.
-13. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
+15. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
    flight work only after the frozen full-pose result and its separate
    deployment/safety decisions justify that step.
 
