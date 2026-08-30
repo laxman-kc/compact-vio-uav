@@ -8,7 +8,7 @@ import math
 import tempfile
 import unittest
 import zipfile
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 try:
@@ -20,6 +20,7 @@ except ImportError:
     INFERENCE_STACK_AVAILABLE = False
 
 from compact_vio.learning.config import DataConfig, ModelConfig
+from compact_vio.learning.local_demo import _completion_status
 from compact_vio.learning.local_demo import build_parser as build_demo_parser
 from compact_vio.learning.recording_inference import (
     MotionEstimate,
@@ -29,6 +30,9 @@ from compact_vio.learning.recording_inference import (
     load_camera_timestamps,
     load_imu_csv,
     run_recording,
+)
+from compact_vio.learning.recording_inference import (
+    main as recording_main,
 )
 
 
@@ -65,6 +69,28 @@ class _FakeBackend:
         return self.motions[len(self.calls) - 1], f"state-{len(self.calls)}"
 
 
+class _FakeRecordingBackend:
+    backend_id = "fake-raw-recording/v1"
+    calibration_usage = "used-by-fake-raw-backend"
+    quality_status = "experimental_rejected"
+    quality_warning = "EXPERIMENTAL MODEL: frozen quality gates failed."
+
+    def __init__(self) -> None:
+        self.call: tuple[object, object, object] | None = None
+
+    def predict_recording(
+        self,
+        frames: object,
+        imu_samples: object,
+        calibration: object,
+    ) -> tuple[MotionEstimate, ...]:
+        self.call = (frames, imu_samples, calibration)
+        return (
+            MotionEstimate((0.25, 0.0, 0.0), (0.0, 0.0, 0.0)),
+            MotionEstimate((0.25, 0.0, 0.0), (0.0, 0.0, 0.0)),
+        )
+
+
 class DependencyLightEntrypointTests(unittest.TestCase):
     def test_demo_help_does_not_import_gradio_torch_or_opencv(self) -> None:
         original_import = builtins.__import__
@@ -89,6 +115,36 @@ class DependencyLightEntrypointTests(unittest.TestCase):
             builtins.__import__ = original_import
         self.assertEqual(raised.exception.code, 0)
         self.assertIn("--checkpoint", output.getvalue())
+        self.assertIn("--model-package", output.getvalue())
+        self.assertIn("imu.T_BS must be identity", output.getvalue())
+
+    def test_package_cli_requires_calibration_before_loading_package(self) -> None:
+        error = io.StringIO()
+        with redirect_stderr(error):
+            status = recording_main(
+                [
+                    "--recording",
+                    "missing-recording",
+                    "--imu",
+                    "missing-imu.csv",
+                    "--model-package",
+                    "missing-package/manifest.json",
+                    "--output",
+                    "missing-output",
+                ]
+            )
+        self.assertEqual(status, 2)
+        self.assertIn("--calibration is required with --model-package", error.getvalue())
+
+    def test_demo_status_prominently_surfaces_rejected_quality(self) -> None:
+        status = _completion_status(
+            pair_count=2,
+            frame_count=3,
+            path_length_m=1.25,
+            quality_warning="EXPERIMENTAL MODEL: frozen gates failed.",
+        )
+        self.assertTrue(status.startswith("⚠️ **MODEL QUALITY WARNING:**"))
+        self.assertIn("EXPERIMENTAL MODEL", status)
 
 
 @unittest.skipUnless(
@@ -217,6 +273,34 @@ class RecordingInferenceTests(unittest.TestCase):
 
         self.assertEqual(result.frame_count, 3)
         self.assertAlmostEqual(result.final_displacement_m, 0.2)
+
+    def test_raw_recording_backend_receives_paths_timestamps_imu_and_calibration(self) -> None:
+        backend = _FakeRecordingBackend()
+        result = run_recording(
+            recording_path=self.images,
+            imu_csv_path=self.imu_csv,
+            calibration_path=self.calibration,
+            output_directory=self.root / "raw-result",
+            backend=backend,  # type: ignore[arg-type]
+        )
+
+        self.assertAlmostEqual(result.final_displacement_m, 0.5)
+        assert backend.call is not None
+        frames, imu_samples, calibration = backend.call
+        self.assertEqual(tuple(frame.timestamp_ns for frame in frames), (100, 200, 300))
+        self.assertEqual(tuple(sample.timestamp_ns for sample in imu_samples), (150, 200, 250, 300))
+        self.assertEqual(calibration["camera_model"], "pinhole")
+        summary = json.loads(result.summary_json.read_text(encoding="utf-8"))
+        self.assertEqual(summary["backend_id"], backend.backend_id)
+        self.assertEqual(summary["calibration_usage"], backend.calibration_usage)
+        self.assertEqual(summary["model_identity"], "not-declared")
+        self.assertEqual(summary["motion_frame"], "previous camera/body frame")
+        self.assertEqual(summary["quality_status"], "experimental_rejected")
+        self.assertIn("EXPERIMENTAL MODEL", summary["quality_warning"])
+        self.assertIn(
+            "MODEL QUALITY WARNING",
+            result.summary_html.read_text(encoding="utf-8"),
+        )
 
     def test_missing_causal_imu_interval_is_rejected(self) -> None:
         sparse = self.root / "sparse.csv"

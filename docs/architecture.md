@@ -1,7 +1,7 @@
 # System architecture
 
-Status: Training-first EuRoC development slice accepted; implementation in progress
-Last reviewed: 2026-08-29
+Status: Offline recording runtime implemented; current model quality rejected
+Last reviewed: 2026-08-30
 
 ## Purpose
 
@@ -15,6 +15,20 @@ evaluated the retained v2, v3, and v4 checkpoints without retraining and selecte
 v2 only for that narrow endpoint. A/B/C/D reliability experiments are later
 research ablations, not the implementation critical path. Mapping, loop
 closure, flight control, and target deployment are outside the current core.
+
+The latest offline vertical slice is now runnable. A raw recording enters as
+MP4, an image ZIP, or timestamped images plus synchronized IMU and calibration.
+The experimental backend rectifies each camera pair, extracts frozen
+TorchVision RAFT-small flow, removes gyro-predicted image rotation, summarizes
+the remaining flow and IMU window into 831 features, applies a train-only range
+clamp and stateless MLP translation head, and integrates translation plus gyro
+rotation into a local trajectory. The runner writes CSV/SVG/HTML/JSON; a local
+Gradio page exposes the same path through a **Run VIO** button. A strict local
+package binds the weights, clamp, checked translation-head ONNX, preprocessing,
+and evaluation summary. The package is labeled `experimental_rejected` because
+fresh MH03 failed path-length and endpoint-drift gates; it is executable
+software, not the accepted end model.
+
 The single controlled v5 loss ablation against the retained v2 checkpoint has
 completed and failed both frozen validation guardrails. It was rejected before
 fresh position evaluation. The retained TUM VI `room4` archive now has a
@@ -65,8 +79,8 @@ separate superseding authorization passed CI, execution revision
 records `rejects_frozen_gate1_grammar`: both camera indexes and IMU accepted,
 while pose failed the exact-header gate on physical line 1. This opens no
 adapter, calibration, segment, dataset-membership, protocol, or model gate. The
-immediate next gate is a separate reviewed contract-mismatch reconciliation
-decision; any payload re-access requires new exact one-use authority.
+TUM-VI lane is paused and is not the current implementation queue; any future
+payload re-access would require a separate bounded decision.
 
 ## Planes
 
@@ -473,13 +487,13 @@ gate.
 | Layer | Current implementation | Planned or conditional boundary |
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
-| Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
+| Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, typed camera/IMU records, raw full-trajectory SE(3) metrics, output coverage, strict calibration contracts, recording ingestion, trajectory integration, and CSV/SVG/HTML/JSON output | Hardware/live-stream interfaces and target-specific latency behavior remain later work. |
 | Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer, structural-audit, regular-slice, bounded format-inspection, and aggregate real-CSV grammar-probe controllers; retained TUM VI archive with verified size/MD5/SHA; completed receipt-backed 4,485-member header classification; completed eight-file `mav0` slice; completed negative format comparison; strict pushed/CI-green TUM-VI grammar contract loader; pushed/CI-green synthetic-only in-memory CSV parsers; one zero-payload consumed grammar-probe claim; and one checked completed grammar-rejection receipt | Gate 3B completed with `rejects_frozen_gate1_grammar`: camera indexes and IMU accepted, pose rejected at the exact-header gate. This is not real-payload parser or adapter readiness. The only immediate gate is a separate reviewed contract-mismatch reconciliation decision; any source re-access needs new exact one-use authority. Clock/calibration semantics, image decoding/preprocessing, segment construction, scientific selection/membership, protocol, and model access remain blocked. |
-| Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, five completed A10 runs, and a rejected controlled v5 loss ablation | No v5 retry or direct model work is authorized. A new full-pose unit/protocol must be selected and frozen independently before later model work. |
+| Learned estimator | Earlier compact CNN/GRU checkpoints plus the runnable experimental RAFT-small/causal-gyro/stateless-MLP hybrid; the local package scores complete trajectories and explicitly carries its rejected evaluation outcome | The accepted end model is still missing: the current hybrid fails fresh-sequence path magnitude and long-horizon drift. Further tuning was stopped after the bounded sprint. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
-| GPU execution | Dated A10 smoke, five bounded training runs, and one frozen checkpoint evaluation are recorded; worker lifecycle state is not inferred from past evidence | Present state and every later task require fresh inventory and owner confirmation. |
-| Export/deployment | Optimizer-free PyTorch inference-checkpoint export/load is implemented; the immutable A10 v2 file, canonical identity, prediction parity, local copy, and artifact manifest are verified | V5 failed its prerequisite and is rejected from inference export or deployment. ONNX is conditional; TensorRT, Jetson/other edge hardware, ROS 2, and PX4 scope are unresolved. |
+| GPU execution | Dated A10 compact-model runs plus the bounded RAFT/gyro/head development and fresh MH03 evaluation are recorded; MH04/MH05 stayed unopened | Any new training cycle requires a new explicit model hypothesis; the failed bounded sweep is not an open tuning loop. |
+| Export/deployment | `compact-vio-run`, `compact-vio-demo`, a strict local RAFT-hybrid package, and a checked stateless translation-head ONNX are implemented. PyTorch/ONNX Runtime head parity passes within `1e-5` | RAFT and gyro preprocessing are not a single ONNX graph. TensorRT, Jetson benchmarking, ROS 2, and PX4 remain later work. |
 
 ## Repository structure: current and planned
 

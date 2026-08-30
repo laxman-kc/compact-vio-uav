@@ -17,6 +17,10 @@ Current calibration files:
   fixture is rejected and `approved_for_replay` is false. Neither template is a
   sensor choice, numerical recommendation, physical calibration, or dataset-use
   approval.
+- `raft-hybrid-calibration.example.json` shows the exact combined
+  camera/IMU shape accepted by `compact-vio-run --model-package`. Its numerical
+  values are placeholders and must be replaced with the recording sensor's real
+  resolution, intrinsics, distortion, and camera-to-IMU transform.
 
 Schema validity proves structure only. Replay approval requires a matching
 assessment whose raw profile hash, identity, revision, validity fingerprint,

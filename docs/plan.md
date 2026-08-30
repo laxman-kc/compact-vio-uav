@@ -1,14 +1,16 @@
 # Implementation plan
 
-> **Active model-completion sprint:** the current implementation priority is
-> [the concise offline model completion plan](model-completion-sprint.md).
-> It ends at a selected full-trajectory checkpoint, runnable recording
-> inference, checked ONNX export, and a local demo. TUM-VI expansion, ROS/PX4,
-> physical hardware, and other later milestones are outside this sprint.
+> **Offline sprint closed:** recording inference, trajectory files, the local
+> upload demo, a self-contained local model package, and checked
+> translation-head ONNX export are implemented. The packaged model failed the
+> final fresh-sequence path/drift gates and is labeled `experimental_rejected`.
+> See the [concise sprint record](model-completion-sprint.md) and
+> [result report](../reports/offline-model-completion-sprint-2026-08-30.md).
+> TUM-VI expansion, ROS/PX4, and physical hardware are not current work.
 
-Status: Active training-first roadmap
+Status: Offline software complete; model quality target not met
 
-Last reviewed: 2026-08-29
+Last reviewed: 2026-08-30
 
 Requirements authority: [Project requirements](requirements/project-requirements.md)
 
@@ -92,11 +94,11 @@ immutable result-evidence slice was committed and pushed as
 [run 33298358002](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33298358002)
 passed its Python 3.10 and 3.12 jobs. That closeout records the prior evidence
 commit; it does not identify this later docs-only follow-up as the evidence
-revision. The only immediate queue item is a separate reviewed contract-mismatch
-reconciliation decision. It may stop this candidate lane; it does not authorize
-a grammar amendment. Any source re-access requires a new exact one-use
-authorization. Calibration access, independent unit selection, and protocol
-freeze remain blocked before any new model work.
+revision. The historical TUM-VI contract-mismatch reconciliation item is paused
+and is not the current implementation queue. Any future TUM-VI source re-access
+would require a separate bounded decision. The offline model sprint instead
+closed with a runnable rejected package; its remaining technical gap is
+cross-sequence translation/path and long-horizon drift.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or

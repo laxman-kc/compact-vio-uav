@@ -1,8 +1,10 @@
 # compact-vio-uav
 
-> **Current focus:** finish the [offline model completion sprint](docs/model-completion-sprint.md):
-> full-trajectory evaluation, a selected checkpoint, recording inference,
-> ONNX parity, and a local demo. ROS/PX4 and physical hardware are later work.
+> **Current result:** the offline runner, upload demo, trajectory outputs, model
+> package, and translation-head ONNX export are implemented. The packaged model
+> is runnable but experimental: it failed the final fresh-sequence path/drift
+> gates, so it is not presented as a quality-accepted model. ROS/PX4 and physical
+> hardware remain later work.
 
 `compact-vio-uav` is a publicly readable, non-commercial research project for
 compact visual-inertial odometry (VIO) on UAVs. The primary scope is causal,
@@ -11,6 +13,64 @@ comparison, and PX4 retains stabilization, failsafe, and motor control. Exact
 physical sensor hardware, confirmatory-test membership and thresholds,
 deployment target, and source licence remain decisions for the milestones that
 need them.
+
+## Run the offline model
+
+The local package accepts an MP4, image ZIP, or timestamped image directory plus
+a synchronized six-axis IMU CSV and camera/IMU calibration. It produces
+`trajectory.csv`, `trajectory.svg`, `summary.html`, and `summary.json`.
+
+Install the runtime and demo dependencies:
+
+```bash
+python -m pip install -e '.[demo,onnx]'
+```
+
+Run from the command line:
+
+```bash
+compact-vio-run \
+  --recording /path/to/recording.mp4 \
+  --camera-timestamps /path/to/camera.csv \
+  --imu /path/to/imu.csv \
+  --calibration /path/to/calibration.json \
+  --model-package outputs/raft-hybrid-experimental-20260830/model-package/manifest.json \
+  --model-package-sha256 4125e0d0fd265869d6306c151d00a4cb7f1ba4381db0b2fbdacc3705d3f9247f \
+  --output outputs/my-recording \
+  --device cpu
+```
+
+Open the local upload interface—the **Run VIO** button is in this page:
+
+```bash
+compact-vio-demo \
+  --model-package outputs/raft-hybrid-experimental-20260830/model-package/manifest.json
+```
+
+Then open `http://127.0.0.1:7860`. CUDA can be selected with `--device cuda`;
+the demo automatically uses CUDA when available. CPU inference works but RAFT
+is substantially slower.
+
+Input formats:
+
+- `camera.csv`: `timestamp_ns` and optionally `filename`. MP4 input requires
+  this file. Images may instead be named with their nanosecond timestamps.
+- `imu.csv`: `timestamp_ns,gyro_x_rad_s,gyro_y_rad_s,gyro_z_rad_s,accel_x_m_s2,accel_y_m_s2,accel_z_m_s2`.
+  Supply at least two IMU samples before the first camera frame; roughly 1–2
+  seconds of pre-roll matches the model's bias-initialization design.
+- Calibration: copy
+  [`configs/raft-hybrid-calibration.example.json`](configs/raft-hybrid-calibration.example.json)
+  and replace every placeholder with the real sensor resolution, intrinsics,
+  distortion, and camera-to-IMU transform. Source images must match the declared
+  resolution. The current package requires identity `imu.T_BS` and reports
+  motion in the previous IMU sensor frame.
+
+The package is deliberately labeled `experimental_rejected`. On fresh MH03 it
+scored all 2,630 pairs and beat zero motion on pair error and raw ATE, but its
+path ratio was `0.5316` (required `0.8–1.2`) and normalized final drift was
+`3.28%` (required at most `2%`). The runner and demo display this warning. The
+binary package is local and Git-ignored, so a fresh clone contains the code but
+not these model weights.
 
 ## Current status
 
@@ -364,6 +424,8 @@ and verified.
 
 ## Documentation map
 
+- [Offline model-completion sprint](docs/model-completion-sprint.md)
+- [Offline model-completion result](reports/offline-model-completion-sprint-2026-08-30.md)
 - [Implementation plan](docs/plan.md)
 - [Progress evidence](docs/progress.md)
 - [Requirements index and official-source traceability](docs/requirements.md)

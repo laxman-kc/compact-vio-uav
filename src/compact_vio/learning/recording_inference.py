@@ -100,7 +100,7 @@ class ImuSample:
 
 @dataclass(frozen=True, slots=True)
 class MotionEstimate:
-    """One model prediction expressed in the previous camera/body frame."""
+    """One model prediction in the backend-declared previous sensor/body frame."""
 
     translation_previous_m: Vector3
     rotation_vector_rad: Vector3
@@ -154,6 +154,27 @@ class MotionBackend(Protocol):
         state: object | None,
     ) -> tuple[MotionEstimate, object | None]:
         """Return one relative motion and the state for the next causal pair."""
+
+
+class RecordingBackend(Protocol):
+    """Whole-recording backend contract for calibration-aware VIO frontends.
+
+    Unlike :class:`MotionBackend`, this contract preserves source image paths,
+    camera timestamps, native IMU timestamps, and the parsed calibration.  It
+    is used by the RAFT/gyro hybrid, whose exact preprocessing cannot be
+    reconstructed from the legacy resized tensors.
+    """
+
+    backend_id: str
+    calibration_usage: str
+
+    def predict_recording(
+        self,
+        frames: Sequence[CameraSample],
+        imu_samples: Sequence[ImuSample],
+        calibration: dict[str, object] | None,
+    ) -> Sequence[MotionEstimate]:
+        """Return one motion for every consecutive source-frame pair."""
 
 
 class TorchCheckpointBackend:
@@ -792,6 +813,13 @@ def _summary_html(summary: dict[str, object], svg: str) -> str:
         f"<tr><th>{html.escape(str(key))}</th><td>{html.escape(str(value))}</td></tr>"
         for key, value in summary.items()
     )
+    warning = summary.get("quality_warning")
+    warning_html = (
+        '<div class="warning"><strong>MODEL QUALITY WARNING</strong><br>'
+        f"{html.escape(str(warning))}</div>"
+        if warning
+        else ""
+    )
     return "\n".join(
         (
             "<!doctype html>",
@@ -804,10 +832,12 @@ def _summary_html(summary: dict[str, object], svg: str) -> str:
             "margin:20px 0;background:#0f172a}",
             "th,td{padding:10px 14px;border:1px solid #334155;text-align:left}"
             "th{width:45%;color:#7dd3fc}",
+            ".warning{margin:18px 0;padding:16px;border:2px solid #f59e0b;"
+            "background:#451a03;color:#fef3c7;border-radius:8px}",
             "svg{max-width:100%;height:auto;border-radius:12px}</style></head>",
             "<body><main><h1>CompactVIO recording result</h1>",
             "<p>Raw causal model inference and integrated local trajectory.</p>",
-            f"<table>{rows}</table>{svg}</main></body></html>",
+            f"{warning_html}<table>{rows}</table>{svg}</main></body></html>",
         )
     )
 
@@ -826,10 +856,13 @@ def run_recording(
 
     if type(sequence_id) is not str or not sequence_id.strip():
         raise RecordingInferenceError("sequence_id must be a non-empty string")
-    if not isinstance(getattr(backend, "model_config", None), ModelConfig) or not isinstance(
-        getattr(backend, "data_config", None), DataConfig
+    if not callable(getattr(backend, "predict_recording", None)) and not (
+        isinstance(getattr(backend, "model_config", None), ModelConfig)
+        and isinstance(getattr(backend, "data_config", None), DataConfig)
     ):
-        raise RecordingInferenceError("backend must declare valid model_config and data_config")
+        raise RecordingInferenceError(
+            "backend must implement predict_recording or declare model_config and data_config"
+        )
     output = Path(output_directory)
     if output.is_symlink() or (output.exists() and not output.is_dir()):
         raise RecordingInferenceError(f"output must be a regular directory: {output}")
@@ -840,47 +873,65 @@ def run_recording(
 
     started = time.perf_counter()
     calibration_sha256: str | None = None
+    calibration: dict[str, object] | None = None
     if calibration_path is not None:
-        _, calibration_sha256 = load_calibration(calibration_path)
+        calibration, calibration_sha256 = load_calibration(calibration_path)
     imu = load_imu_csv(imu_csv_path)
     imu_timestamps = tuple(sample.timestamp_ns for sample in imu)
     motions: list[MotionEstimate] = []
     state: object | None = None
     with camera_samples(recording_path, camera_timestamps_path) as frames:
-        from compact_vio.learning.dataset import _normalized_image_tensor
+        recording_predictor = getattr(backend, "predict_recording", None)
+        if callable(recording_predictor):
+            predicted = tuple(recording_predictor(frames, imu, calibration))
+            if len(predicted) != len(frames) - 1:
+                raise RecordingInferenceError(
+                    "recording backend must return exactly one motion per frame pair"
+                )
+            if not all(isinstance(estimate, MotionEstimate) for estimate in predicted):
+                raise RecordingInferenceError("recording backend returned an invalid motion")
+            motions.extend(predicted)
+        else:
+            if not isinstance(
+                getattr(backend, "model_config", None), ModelConfig
+            ) or not isinstance(getattr(backend, "data_config", None), DataConfig):
+                raise RecordingInferenceError(
+                    "step backend must declare valid model_config and data_config"
+                )
+            from compact_vio.learning.dataset import _normalized_image_tensor
 
-        previous_tensor = _normalized_image_tensor(
-            frames[0].image_path,
-            model_config=backend.model_config,
-            data_config=backend.data_config,
-        )
-        for previous, current in zip(frames, frames[1:], strict=False):
-            current_tensor = _normalized_image_tensor(
-                current.image_path,
+            previous_tensor = _normalized_image_tensor(
+                frames[0].image_path,
                 model_config=backend.model_config,
                 data_config=backend.data_config,
             )
-            start = bisect.bisect_right(imu_timestamps, previous.timestamp_ns)
-            end = bisect.bisect_right(imu_timestamps, current.timestamp_ns)
-            window = imu[start:end]
-            if not window:
-                raise RecordingInferenceError(
-                    "no causal IMU sample in camera interval "
-                    f"({previous.timestamp_ns}, {current.timestamp_ns}]"
+            for previous, current in zip(frames, frames[1:], strict=False):
+                current_tensor = _normalized_image_tensor(
+                    current.image_path,
+                    model_config=backend.model_config,
+                    data_config=backend.data_config,
                 )
-            import torch
+                start = bisect.bisect_right(imu_timestamps, previous.timestamp_ns)
+                end = bisect.bisect_right(imu_timestamps, current.timestamp_ns)
+                window = imu[start:end]
+                if not window:
+                    raise RecordingInferenceError(
+                        "no causal IMU sample in camera interval "
+                        f"({previous.timestamp_ns}, {current.timestamp_ns}]"
+                    )
+                import torch
 
-            frame_pair = torch.stack((previous_tensor, current_tensor))
-            estimate, state = backend.predict_step(
-                frame_pair,
-                _normalized_imu(window, backend.data_config),
-                (current.timestamp_ns - previous.timestamp_ns) * 1e-9,
-                state,
-            )
-            if not isinstance(estimate, MotionEstimate):
-                raise RecordingInferenceError("backend must return a MotionEstimate")
-            motions.append(estimate)
-            previous_tensor = current_tensor
+                frame_pair = torch.stack((previous_tensor, current_tensor))
+                estimate, state = backend.predict_step(
+                    frame_pair,
+                    _normalized_imu(window, backend.data_config),
+                    (current.timestamp_ns - previous.timestamp_ns) * 1e-9,
+                    state,
+                )
+                if not isinstance(estimate, MotionEstimate):
+                    raise RecordingInferenceError("backend must return a MotionEstimate")
+                motions.append(estimate)
+                previous_tensor = current_tensor
         poses = _integrate(frames, motions)
 
     elapsed_s = time.perf_counter() - started
@@ -899,8 +950,17 @@ def run_recording(
         "runtime_s": round(elapsed_s, 6),
         "mean_runtime_ms_per_pair": round(elapsed_s * 1000.0 / len(motions), 3),
         "trajectory_convention": "local-frame/raw-no-alignment/v1",
+        "backend_id": getattr(backend, "backend_id", type(backend).__name__),
+        "model_identity": getattr(backend, "model_identity", "not-declared"),
+        "motion_frame": getattr(backend, "motion_frame", "previous camera/body frame"),
+        "quality_status": getattr(backend, "quality_status", "not_declared"),
+        "quality_warning": getattr(backend, "quality_warning", None),
         "calibration_sha256": calibration_sha256 or "not-supplied",
-        "calibration_usage": "recorded-only; current model uses grayscale-resize-normalize",
+        "calibration_usage": getattr(
+            backend,
+            "calibration_usage",
+            "recorded-only; current model uses grayscale-resize-normalize",
+        ),
     }
     csv_path = output / "trajectory.csv"
     svg_path = output / "trajectory.svg"
@@ -924,21 +984,66 @@ def run_recording(
     )
 
 
+_RAFT_CALIBRATION_EXAMPLE = """RAFT hybrid calibration JSON/YAML shape (T_BS maps each sensor into
+the IMU sensor frame; imu.T_BS must be identity):
+{
+  "camera": {
+    "T_BS": [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],
+    "camera_model": "pinhole",
+    "distortion_coefficients": [0.0,0.0,0.0,0.0],
+    "distortion_model": "radtan",
+    "intrinsics": [200.0,200.0,188.0,120.0],
+    "resolution": [376,240]
+  },
+  "imu": {"T_BS": [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]}
+}
+Every source frame must exactly match resolution. The IMU CSV must include at least two
+samples strictly before the first camera timestamp; 1.0-1.84 s of pre-roll matches training.
+"""
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="compact-vio-run",
         description="Run a CompactVIO checkpoint on MP4, image ZIP, or timestamped images.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=_RAFT_CALIBRATION_EXAMPLE,
     )
     parser.add_argument(
         "--recording", required=True, help="MP4, image ZIP, or timestamped image directory"
     )
     parser.add_argument("--camera-timestamps", help="camera timestamp CSV; required for MP4")
-    parser.add_argument("--imu", required=True, help="timestamped six-axis IMU CSV")
-    parser.add_argument("--calibration", help="JSON/YAML camera-IMU calibration to fingerprint")
-    parser.add_argument("--checkpoint", required=True, help="training or inference checkpoint")
+    parser.add_argument(
+        "--imu",
+        required=True,
+        help=(
+            "timestamped six-axis IMU CSV; hybrid requires >=2 samples strictly before the "
+            "first camera frame (1.0-1.84 s pre-roll matches training)"
+        ),
+    )
+    parser.add_argument(
+        "--calibration",
+        help="combined camera/IMU JSON/YAML; required with --model-package (shape below)",
+    )
+    model = parser.add_mutually_exclusive_group(required=True)
+    model.add_argument("--checkpoint", help="legacy training or inference checkpoint")
+    model.add_argument(
+        "--model-package",
+        help="RAFT-small hybrid package manifest.json",
+    )
     parser.add_argument(
         "--checkpoint-sha256",
         help="required external SHA-256 when --checkpoint is an inference-only artifact",
+    )
+    parser.add_argument(
+        "--model-package-sha256",
+        help="optional expected SHA-256 of the hybrid package manifest",
+    )
+    parser.add_argument(
+        "--raft-batch-size",
+        type=int,
+        default=8,
+        help="frame pairs per RAFT batch for --model-package (default: 8)",
     )
     parser.add_argument("--output", required=True, help="directory for trajectory artifacts")
     parser.add_argument("--sequence-id", default="recording")
@@ -947,7 +1052,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--state-policy",
         choices=("stateful", "independent"),
         default="stateful",
-        help="carry fusion state across contiguous pairs (default: stateful)",
+        help="legacy checkpoint only; ignored by stateless RAFT packages",
     )
     return parser
 
@@ -955,19 +1060,50 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        backend = TorchCheckpointBackend(
-            args.checkpoint,
-            device=args.device,
-            expected_checkpoint_sha256=args.checkpoint_sha256,
-            state_policy=args.state_policy,
-        )
+        if args.model_package is not None:
+            if args.calibration is None:
+                raise RecordingInferenceError("--calibration is required with --model-package")
+            if args.checkpoint_sha256 is not None:
+                raise RecordingInferenceError(
+                    "--checkpoint-sha256 cannot be used with --model-package"
+                )
+            from compact_vio.learning.raft_hybrid import RaftHybridBackend
+
+            backend: object = RaftHybridBackend(
+                args.model_package,
+                device=args.device,
+                batch_size=args.raft_batch_size,
+                expected_manifest_sha256=args.model_package_sha256,
+            )
+            if getattr(backend, "quality_status", None) == "experimental_rejected":
+                print(
+                    json.dumps(
+                        {
+                            "event": "model_quality_warning",
+                            "quality_status": backend.quality_status,
+                            "warning": backend.quality_warning,
+                        },
+                        sort_keys=True,
+                    ),
+                    file=sys.stderr,
+                    flush=True,
+                )
+        else:
+            if args.model_package_sha256 is not None:
+                raise RecordingInferenceError("--model-package-sha256 requires --model-package")
+            backend = TorchCheckpointBackend(
+                args.checkpoint,
+                device=args.device,
+                expected_checkpoint_sha256=args.checkpoint_sha256,
+                state_policy=args.state_policy,
+            )
         result = run_recording(
             recording_path=args.recording,
             camera_timestamps_path=args.camera_timestamps,
             calibration_path=args.calibration,
             imu_csv_path=args.imu,
             output_directory=args.output,
-            backend=backend,
+            backend=backend,  # type: ignore[arg-type]
             sequence_id=args.sequence_id,
         )
     except (LearningError, OSError, RuntimeError, ValueError) as exc:
@@ -1010,6 +1146,7 @@ __all__ = [
     "ImuSample",
     "InferenceArtifacts",
     "MotionBackend",
+    "RecordingBackend",
     "MotionEstimate",
     "PoseSample",
     "RecordingInferenceError",

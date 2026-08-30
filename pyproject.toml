@@ -23,12 +23,15 @@ train = [
   "Pillow>=10.4,<13",
   "PyYAML>=6.0.2,<7",
   "torch>=2.7,<3",
+  "torchvision>=0.22,<0.23",
 ]
 runtime = [
+  "onnx>=1.16,<2",
   "Pillow>=10.4,<13",
   "PyYAML>=6.0.2,<7",
   "opencv-python-headless>=4.10,<5",
   "torch>=2.7,<3",
+  "torchvision>=0.22,<0.23",
 ]
 onnx = [
   "Pillow>=10.4,<13",
@@ -36,13 +39,16 @@ onnx = [
   "onnx>=1.16,<2",
   "onnxruntime>=1.18,<2",
   "torch>=2.7,<3",
+  "torchvision>=0.22,<0.23",
 ]
 demo = [
+  "onnx>=1.16,<2",
   "Pillow>=10.4,<13",
   "PyYAML>=6.0.2,<7",
   "gradio>=5,<7",
   "opencv-python-headless>=4.10,<5",
   "torch>=2.7,<3",
+  "torchvision>=0.22,<0.23",
 ]
 
 [project.scripts]
@@ -61,6 +67,8 @@ compact-vio-evaluate-position = "compact_vio.learning.position_evaluate_cli:main
 compact-vio-evaluate-trajectory = "compact_vio.learning.full_pose_evaluate_cli:main"
 compact-vio-export-inference = "compact_vio.learning.inference_export_cli:main"
 compact-vio-export-onnx = "compact_vio.learning.onnx_export:main"
+compact-vio-export-raft-head-onnx = "compact_vio.learning.raft_head_onnx:main"
+compact-vio-package-raft-hybrid = "compact_vio.learning.raft_hybrid:main"
 compact-vio-run = "compact_vio.learning.recording_inference:main"
 compact-vio-demo = "compact_vio.learning.local_demo:main"
 

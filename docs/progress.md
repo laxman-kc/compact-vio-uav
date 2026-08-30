@@ -2128,3 +2128,34 @@ recommendation into a decision.
   CI-green. This append-only docs-only follow-up records the prior immutable
   evidence revision; it does not recursively claim that its own future revision
   is the result-evidence commit.
+
+## 2026-08-30 — Offline model-completion sprint closed with runnable rejected package
+
+- The recording path is implemented: `compact-vio-run` accepts MP4, image ZIP,
+  or timestamped images with synchronized IMU and calibration, integrates the
+  model's six-degree-of-freedom increments, and writes trajectory CSV, SVG,
+  HTML, and JSON. `compact-vio-demo` exposes the same path through a local
+  upload page and **Run VIO** button.
+- The completed local package combines frozen TorchVision RAFT-small `C_T_V2`,
+  causal gyro rotation, a train-only feature clamp, and the stateless
+  123,395-parameter translation head. Its manifest SHA-256 is
+  `4125e0d0fd265869d6306c151d00a4cb7f1ba4381db0b2fbdacc3705d3f9247f`.
+  The checked translation-head ONNX SHA-256 is
+  `d2f5facbc547182e45a3459ea30123ad3ee8da4ca1a451ee6503c823c40b30ec`;
+  fresh ONNX Runtime parity observed maximum absolute error `8.20e-8` under
+  `1e-5` relative/absolute tolerances.
+- The train-only range clamp candidate passed every frozen gate on V1_03 and
+  V2_03. The one-shot fresh MH03 evaluation scored all 2,630 pairs and beat
+  zero motion on pair translation, pair rotation, and raw ATE, but failed path
+  ratio (`0.531632`, required `0.8–1.2`) and normalized final translation drift
+  (`3.281%`, required at most `2%`). The package is therefore labeled
+  `experimental_rejected`; the CLI and demo surface that warning.
+- Bounded follow-ups—Machine Hall head adaptation, closed-form calibration,
+  causal velocity GRU, one scalar correction, and exact scalar feasibility—did
+  not yield an all-gate candidate. Tuning stopped; MH04 and MH05 stayed
+  unopened. The remaining model gap is cross-sequence translation/path and
+  long-horizon drift, not missing inference or visualization plumbing.
+- Model binaries remain under ignored `outputs/`; a fresh clone contains the
+  open-source code and commands but not the local experimental weights. The
+  translation head is portable ONNX; the RAFT/gyro front end still uses
+  PyTorch/Python. ROS/PX4 and physical hardware remain later work.

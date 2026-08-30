@@ -23,6 +23,11 @@ its presence is not evidence that a run happened or that a hypothesis passed.
 
 ## Reviewed reports
 
+- [Offline model-completion sprint result](offline-model-completion-sprint-2026-08-30.md)
+  — the recording runner, local upload demo, trajectory outputs, packaged
+  RAFT/gyro/MLP runtime, and checked translation-head ONNX are implemented; the
+  model passes both development sequences but is explicitly rejected after
+  failing path-length and endpoint-drift gates on fresh MH03.
 - [TUM VI room4 512x512 real-CSV grammar-probe Gate 3B result](tumvi-room4-512-16-real-csv-grammar-probe-result-2026-08-30.md)
   ([aggregate source-status visual](assets/tumvi-gate3b-real-csv-grammar-probe-result.svg))
   — superseding one-use execution completed with
