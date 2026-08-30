@@ -14,7 +14,6 @@ from compact_vio.learning.cli import (
     load_run_spec,
 )
 from compact_vio.learning.config import DataConfig, ModelConfig, TrainingConfig
-from compact_vio.learning.dataset import EuRoCSequenceDataset, SampleIdentity, VIOSequenceBatch
 from compact_vio.learning.errors import LearningError
 
 try:
@@ -26,6 +25,11 @@ except ImportError:
 
 if TORCH_AVAILABLE:
     import compact_vio.learning.training as training_module
+    from compact_vio.learning.dataset import (
+        EuRoCSequenceDataset,
+        SampleIdentity,
+        VIOSequenceBatch,
+    )
     from compact_vio.learning.model import CompactVIO
     from compact_vio.learning.training import (
         _trajectory_consistency_loss_with_state,
@@ -90,6 +94,7 @@ class V9PolicyConfigTests(unittest.TestCase):
         self.assertIn("training-loader=ordered-single-chunk/v1", identity)
         self.assertIn(f"initial-checkpoint-sha256={'a' * 64}", identity)
 
+    @unittest.skipUnless(TORCH_AVAILABLE, "PyTorch training extra is not installed")
     def test_smoke_prefix_ends_at_a_real_complete_chain(self) -> None:
         dataset = object.__new__(EuRoCSequenceDataset)
         dataset._chunks = (
