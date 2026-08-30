@@ -73,12 +73,19 @@ opened no real data, and leaves every operational readiness flag false. Gate 3B
 is now implemented at pushed commit
 `d5bb14be25634f79ef9595cb04e629473338a2c2`; GitHub Actions
 [run 33294450083](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33294450083)
-passed on Python 3.10 and 3.12. No authorization, claim, receipt, real-payload
-access, or grammar result exists. The only immediate queue item is a separate
-decision whether to issue an exact one-use authorization; any such record must
-be independently reviewed, committed, pushed, and CI-green. Calibration access,
-independent unit selection, and protocol freeze remain blocked before any new
-model work.
+passed on Python 3.10 and 3.12. Its first one-use authorization was consumed by
+an auditor-preflight claim, but a wholly mocked source binder stopped the
+attempt before any payload descriptor open; no receipt or grammar result
+exists for that attempt. After recovery CI, a separately reviewed and CI-green
+superseding authorization executed once at revision
+`47daabc1891b71e53a6d3f4f5a070d69bbbe5c78`. Its checked receipt records
+`completed` / `rejects_frozen_gate1_grammar`: the two camera indexes and IMU
+accepted, while pose rejected at exact-header mismatch on physical line 1. The
+only immediate queue item is a separate reviewed contract-mismatch
+reconciliation decision. It may stop this candidate lane; it does not authorize
+a grammar amendment. Any source re-access requires a new exact one-use
+authorization. Calibration access, independent unit selection, and protocol
+freeze remain blocked before any new model work.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -1128,7 +1135,7 @@ Execute these as separate small slices; do not combine them into one long phase:
    boundary. Its parser-assigned synthetic-only scope labels caller-supplied
    bytes but does not authenticate their origin. No readiness or scientific
    authority was gained.
-9. Gate 3B's implementation-only real-CSV grammar-probe design is implemented at
+9. Gate 3B's real-CSV grammar-probe design was implemented at
    pushed commit `d5bb14be25634f79ef9595cb04e629473338a2c2`. GitHub Actions
    [run 33294450083](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33294450083)
    passed on Python 3.10 and 3.12. Inert-spec SHA-256 is
@@ -1139,33 +1146,54 @@ Execute these as separate small slices; do not combine them into one long phase:
    `5fd1c544af84dcd90727a466e420d9aac104f9fafea73f93376f74b6b62e7281`.
    Focused tests passed 43/43; the full suite reported `OK` across 580 tests
    with 54 declared optional-capability skips; 240/240 synthetic differential
-   cases matched the unchanged Gate 2 grammar. No real payload was opened,
-   read, or hashed. No authorization, claim, receipt, or grammar result exists;
-   every readiness flag is false and scientific authority is `none`.
-10. The only immediate next gate is a separate decision whether one real-payload
-   grammar probe is justified. This implementation and plan do not supply or
-   authorize it. If the decision is affirmative, the exact one-use authorization
+   cases matched the unchanged Gate 2 grammar. This closed the design boundary,
+   not payload or scientific readiness.
+10. Preserve the first consumed operational attempt as zero-payload incident
+   evidence. Authorization SHA-256
+   `9893cc16ce13db037d3179487c9bb37d93ffb0dc068d7b86bdd1480a36b84ef0`
+   produced claim SHA-256
+   `f63263fd0b9f086075b7002c4b4e5dd2ca30112587a7c1b31966e9557afae490`
+   before its wholly mocked binder raised at entry. No payload descriptor
+   opened, no receipt exists, and no retry is permitted. The zero-descriptor
+   statement is auditor-observed runtime evidence, not a receipt-backed source
+   observation.
+11. Record the superseding completed execution without broadening it. Recovery
+   revision `abd7af3d77c12637144b324465ab462752629872` passed CI; separate
+   authorization-only revision
+   `47daabc1891b71e53a6d3f4f5a070d69bbbe5c78` passed
+   [run 33297367015](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33297367015)
+   and executed once. Claim SHA-256 is
+   `beba4617be76bf63870ff0957c0d4b187abe2caf7fcc6f0b336bf2b6fcc53403`;
+   receipt SHA-256 is
+   `7ea8720fc013504de8db22396a5eb4d8bf8f25f33cd00ab2e6798bd42d42c958`.
+   The receipt records `completed` / `rejects_frozen_gate1_grammar`: cameras
+   each accepted 2,228/2,228 rows with raw lockstep, IMU accepted
+   22,212/22,212, and pose rejected at `exact_header_mismatch` on physical line
+   1 with 13,075 data lines and zero validated. No source row contents or
+   lexemes were persisted or emitted. Every readiness field is false and
+   scientific authority is `none`.
+12. The immediate next gate is a separate reviewed contract-mismatch
+   reconciliation decision using the aggregate negative result. Do not infer or
+   reconstruct the observed pose header, silently amend Gate 1, reuse Gate 2 on
+   real bytes, or implement an adapter. The decision may keep the frozen
+   contract and stop this candidate lane.
+13. If reconciliation requires any source re-access, first define the minimum
+   observation and a new exact one-use controller/authorization boundary. It
    must be independently reviewed, committed, pushed, and CI-green before any
-   controller execution.
-11. Only under that later exact one-use authorization may the controller execute
-   once. It must durably publish its claim before the first payload descriptor
-   open, read only the four receipt-bound CSV identities in one bounded pass,
-   and emit only an aggregate receipt. Grammar acceptance or rejection would not
-   grant adapter, calibration, segment, dataset, or scientific authority.
-   Calibration access remains prohibited and is not part of this immediate gate.
-12. Only if later evidence exists and is sufficient, complete the independent
+   execution; neither consumed authorization may be retried.
+14. Only if later evidence exists and is sufficient, complete the independent
    unit-selection gate without inspecting any candidate prediction, and freeze
    source grouping, leakage review, and membership role. A different
    rights-compatible full-pose unit may be chosen instead.
-13. Freeze one full-pose protocol before any new model work: candidates and
+15. Freeze one full-pose protocol before any new model work: candidates and
    controls, native classical backend, association/alignment/scale semantics,
    ATE/RPE/rotation/drift measures, coverage and failure rules, latency/memory
    scope, primary metric, thresholds, tie handling, and stop rule.
-14. Only after that freeze, implement the minimum missing adapter/evaluator
+16. Only after that freeze, implement the minimum missing adapter/evaluator
    behavior and execute the protocol once. Publish complete coverage, failures,
    resource measurements, metrics, identities, and checksums without tuning
    from the outcome.
-15. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
+17. Consider a later model hypothesis, export, target benchmark, ROS 2, PX4, or
    flight work only after the frozen full-pose result and its separate
    deployment/safety decisions justify that step.
 

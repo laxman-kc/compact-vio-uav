@@ -23,11 +23,18 @@ its presence is not evidence that a run happened or that a hypothesis passed.
 
 ## Reviewed reports
 
+- [TUM VI room4 512x512 real-CSV grammar-probe Gate 3B result](tumvi-room4-512-16-real-csv-grammar-probe-result-2026-08-30.md)
+  ([aggregate source-status visual](assets/tumvi-gate3b-real-csv-grammar-probe-result.svg))
+  — superseding one-use execution completed with
+  `rejects_frozen_gate1_grammar`: camera indexes and IMU accepted, pose rejected
+  at exact-header mismatch on physical line 1; an earlier claim was consumed
+  with zero payload descriptors opened and no receipt; 14/14 readiness fields
+  false and scientific authority none.
 - [TUM VI room4 512x512 real-CSV grammar-probe Gate 3B implementation design](tumvi-room4-512-16-real-csv-grammar-probe-design-v1-2026-08-30.md)
-  — inert spec and future-authorization controller frozen and independently
-  reviewed on synthetic fixtures, pushed, and CI-green on Python 3.10/3.12; no
-  authorization, claim, receipt, real-payload access, grammar result, readiness,
-  or scientific authority.
+  — historical pre-execution implementation boundary: inert spec and
+  future-authorization controller frozen and independently reviewed on
+  synthetic fixtures, pushed, and CI-green on Python 3.10/3.12; the later
+  execution evidence is recorded in the result report above.
 - [TUM VI room4 512x512 synthetic parser Gate 2](tumvi-room4-512-16-synthetic-parser-gate2-2026-08-29.md)
   ([gate-status visual](assets/tumvi-gate2-parser-status.svg)) — bounded
   synthetic `BytesIO` parsers pushed and CI-green; no real data opened, the

@@ -1,0 +1,16 @@
+{
+  "adapter_contract_sha256": "4368580eb601958f1c402ee6f85d3207d9bb41282c51f4dee505482c1a6542d5",
+  "authorization_id": "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30",
+  "authorization_sha256": "5f566515e723a0e51abd09b75cd43b68d6aa61807749d5069a49427aa218126f",
+  "claim_prepared_at": "2026-08-30T06:39:58Z",
+  "compatibility_slice_receipt_sha256": "a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820",
+  "controller_started_at": "2026-08-30T06:39:58Z",
+  "execution_ordinal": 1,
+  "format_inspection_receipt_sha256": "30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846",
+  "git_revision": "47daabc1891b71e53a6d3f4f5a070d69bbbe5c78",
+  "one_use_policy": "claim-before-first-payload-descriptor-open-consumes-authorization-no-retry/v1",
+  "payload_access_state": "not_started_at_claim_publication",
+  "probe_spec_sha256": "e65ecc449ca878f9294dcb11accd6eb555232af284ad38f608cfc35c4642f790",
+  "record_type": "dataset_real_csv_grammar_probe_claim",
+  "schema_version": "1.0.0"
+}

@@ -2,11 +2,11 @@
 
 Status: Operational dataset-evidence control
 
-This directory holds immutable, machine-readable authorizations and receipts
-for bounded dataset archive transfers and later local evidence inspections.
-These records are separate from dataset candidate records so that authorizing
-network I/O or bounded payload observation cannot silently select a dataset or
-revise historical source evidence.
+This directory holds immutable, machine-readable authorizations, retained
+claims, and receipts for bounded dataset archive transfers and later local
+evidence inspections. These records are separate from dataset candidate records
+so that authorizing network I/O or bounded payload observation cannot silently
+select a dataset or revise historical source evidence.
 
 An authorization is executable only when the controller validates all of its
 closed fields and runtime gates. The current contract requires one execution,
@@ -40,6 +40,14 @@ rechecks evidence before its receipt, but path-based operations are not a
 defense against a hostile same-user process racing directory entries. Failed
 claims and inventories are ignored local evidence; they are not remotely
 durable until separately reviewed and retained.
+
+The Gate 3B real-CSV grammar-probe controller uses a narrower tracked-output
+contract: its exact claim path is trackable and retained whether the operation
+completes or fails after claim publication. It publishes that claim before the
+first payload descriptor open. A post-claim operational failure produces no
+canonical receipt and permits no retry. A completed grammar acceptance or
+rejection produces only an aggregate tracked receipt and grants no scientific
+or readiness authority.
 
 The `room4` transfer, structural-audit, compatibility-slice, and
 format-inspection authorizations are based on the active workspace user's
@@ -92,6 +100,41 @@ Current records:
   eight-column mocap header, and the first selected camera timestamp is outside
   the observed IMU and mocap intervals. Adapter, calibration, and ground-truth
   readiness are false; scientific authority is none.
+- `tumvi-room4-512-16-real-csv-grammar-probe-2026-08-29.authorization.json` —
+  first reviewed one-use aggregate grammar-probe authorization, SHA-256
+  `9893cc16ce13db037d3179487c9bb37d93ffb0dc068d7b86bdd1480a36b84ef0`.
+  Its revision `4390ada9d9f138220fb528162b1a1ecf6e37fb6f` passed GitHub
+  Actions run `33296869742`. It is consumed and cannot be retried.
+- `tumvi-room4-512-16-real-csv-grammar-probe-2026-08-29.claim.json` —
+  retained 1,012-byte incident claim, SHA-256
+  `f63263fd0b9f086075b7002c4b4e5dd2ca30112587a7c1b31966e9557afae490`,
+  published at `2026-08-30T06:26:18Z`. An auditor preflight had replaced the
+  complete source binder with a mock that raised at entry, so the binder body
+  and all four payload descriptor opens were never reached. This
+  zero-descriptor fact is auditor-observed runtime evidence; the durable record
+  itself states payload access had not started at claim publication.
+- `tumvi-room4-512-16-real-csv-grammar-probe-2026-08-29.receipt.json` —
+  reserved incident receipt path. It does not exist. The claim remains, the
+  authorization is consumed, no grammar result was produced, and no retry is
+  permitted.
+- `tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30.authorization.json` —
+  separate superseding one-use authorization, SHA-256
+  `5f566515e723a0e51abd09b75cd43b68d6aa61807749d5069a49427aa218126f`.
+  Recovery revision `abd7af3d77c12637144b324465ab462752629872` passed run
+  `33297224165`; authorization-only execution revision
+  `47daabc1891b71e53a6d3f4f5a070d69bbbe5c78` passed run `33297367015`
+  before executing once.
+- `tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30.claim.json` —
+  1,012-byte canonical durable claim, SHA-256
+  `beba4617be76bf63870ff0957c0d4b187abe2caf7fcc6f0b336bf2b6fcc53403`,
+  prepared at `2026-08-30T06:39:58Z` before the first payload descriptor open.
+- `tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30.receipt.json` —
+  8,259-byte canonical aggregate receipt, SHA-256
+  `7ea8720fc013504de8db22396a5eb4d8bf8f25f33cd00ab2e6798bd42d42c958`.
+  Its checked outcome is `completed` / `rejects_frozen_gate1_grammar`: both
+  camera indexes and IMU accepted; pose rejected at exact-header mismatch on
+  physical line 1. All readiness fields are false and scientific authority is
+  none.
 - `tumvi-room4-512-16-transfer-2026-08-29.receipt.json` — reserved success
   receipt path. It does not exist because every success gate did not pass.
 
@@ -109,10 +152,19 @@ selection, membership, model/checkpoint access, training, inference,
 evaluation, publication, and source deletion stay outside its authority.
 
 The format inspection is consumed and completed, not failed. Its negative
-comparison forbids reuse of the EuRoC adapter and does not authorize a repair,
-broader payload access, or model work. The next safe boundary is a reviewed
-TUM-VI-specific adapter contract with synthetic negative tests. Only if that
-contract identifies a necessary minimal dependency may a later, separate
-one-use authorization inspect exact calibration metadata. Dataset selection,
-membership, leakage review, protocol freeze, checkpoint access, training,
-inference, and evaluation remain separate gates.
+comparison forbids reuse of the EuRoC adapter and did not authorize a repair,
+broader payload access, or model work. Subsequent Gate 1 and Gate 2 work froze a
+TUM-VI-specific grammar/output contract and synthetic-only parsers. Gate 3B then
+completed one separately authorized aggregate real-CSV grammar observation
+after retaining the earlier zero-payload consumed attempt. The checked receipt
+rejects the frozen Gate 1 grammar solely at the pose exact-header gate; it does
+not persist or emit the observed header or any source row contents or lexemes.
+
+The next safe boundary is a separate reviewed contract-mismatch reconciliation
+decision. It may leave the grammar unchanged and stop the TUM-VI candidate
+lane. Any additional source observation requires a new one-use authorization
+that is independently reviewed, committed, pushed, and CI-green; neither
+consumed authorization may be retried. Adapter implementation/readiness,
+calibration, clock/pose semantics, image decoding, segment construction,
+dataset selection, membership, leakage review, protocol freeze, checkpoint
+access, training, inference, and evaluation remain separate closed gates.

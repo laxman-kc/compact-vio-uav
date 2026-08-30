@@ -2013,3 +2013,83 @@ recommendation into a decision.
   violations; the 10-schema/7-template harness; registry YAML parsing; strict
   JSON parsing of the inert spec; exact frozen-hash checks; and an independent
   closeout truth audit with no P0, P1, or P2 finding. Protocol deviation: none.
+
+## 2026-08-30 — M9 TUM-VI Gate 3B first authorization consumed with zero payload descriptors opened
+
+- The first reviewed one-use real-CSV grammar-probe authorization is
+  `governance/datasets/acquisitions/tumvi-room4-512-16-real-csv-grammar-probe-2026-08-29.authorization.json`,
+  SHA-256
+  `9893cc16ce13db037d3179487c9bb37d93ffb0dc068d7b86bdd1480a36b84ef0`.
+  Its execution revision
+  `4390ada9d9f138220fb528162b1a1ecf6e37fb6f` passed GitHub Actions
+  [run 33296869742](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33296869742).
+- An auditor-observed preflight published the required durable claim at
+  `2026-08-30T06:26:18Z`. The 1,012-byte claim SHA-256 is
+  `f63263fd0b9f086075b7002c4b4e5dd2ca30112587a7c1b31966e9557afae490`.
+  The complete source binder had been replaced with a mock that raised at entry,
+  so its body and all four payload descriptor opens were never reached.
+- The claim and absent receipt are durable evidence. The zero-descriptor fact is
+  an auditor-observed runtime fact, not an independent receipt-backed source
+  observation. No grammar acceptance or rejection exists for this attempt. The
+  claim is retained, the authorization is consumed, no retry is permitted, and
+  the exact incident receipt path remains absent.
+- Recovery commit `abd7af3d77c12637144b324465ab462752629872` preserved the
+  consumed claim and superseding-run identity boundary; GitHub Actions
+  [run 33297224165](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33297224165)
+  passed. This incident and recovery grant no payload, parser, adapter,
+  calibration, dataset, model, readiness, or scientific authority.
+
+## 2026-08-30 — M9 TUM-VI Gate 3B superseding aggregate probe completed with grammar rejection
+
+- A separate one-use authorization with SHA-256
+  `5f566515e723a0e51abd09b75cd43b68d6aa61807749d5069a49427aa218126f`
+  was committed at authorization-only execution revision
+  `47daabc1891b71e53a6d3f4f5a070d69bbbe5c78`. GitHub Actions
+  [run 33297367015](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33297367015)
+  passed, including Python jobs `99219236016` and `99219236078`, before the
+  controller executed once.
+- The controller published a 1,012-byte claim at `2026-08-30T06:39:58Z`,
+  SHA-256
+  `beba4617be76bf63870ff0957c0d4b187abe2caf7fcc6f0b336bf2b6fcc53403`,
+  before the first payload descriptor open. It then published an 8,259-byte
+  checked aggregate receipt with SHA-256
+  `7ea8720fc013504de8db22396a5eb4d8bf8f25f33cd00ab2e6798bd42d42c958`.
+  Claim and receipt are canonical JSON regular files with link count 1.
+- The receipt records `completed` / `rejects_frozen_gate1_grammar`. `cam0` and
+  `cam1` each accepted 2,228/2,228 data rows and passed raw stereo lockstep; IMU
+  accepted 22,212/22,212; pose identity passed but its exact-header check failed
+  on physical line 1, so 13,075 data lines were counted, zero rows were
+  validated, and later pose checks were not reached. Totals are 3,909,654 bytes,
+  39,747 physical lines, 39,743 data lines, and 26,668 validated rows, with 27
+  `pass`, 1 `fail`, and 6 `not_reached` check states.
+- Receipt preparation elapsed time was 0.9046070000040345 seconds within the
+  600-second authorization bound; controller-initiated paid-service cost was
+  USD 0. The receipt records seven operations performed and 26 prohibited
+  operations not performed. No source row contents, row tokens, sensor
+  timestamps, observed header text, filenames from row values, or numeric
+  sensor values were persisted or emitted.
+- The reviewed [Gate 3B result report](../reports/tumvi-room4-512-16-real-csv-grammar-probe-result-2026-08-30.md)
+  has SHA-256
+  `c5976e29388088a92a660fa47b6d4ca5f1c14abcabf0ea1eecbc9939fcfc13de`.
+  Its [aggregate source-status visual](../reports/assets/tumvi-gate3b-real-csv-grammar-probe-result.svg)
+  has SHA-256
+  `2955c6e15a9745d3a06f1e4c2a2954474c17654734c3a9a09d5c4e86214e37a8`.
+  The equal-width bands encode categorical grammar state, not row volume,
+  readiness, dataset quality, or a scientific score.
+- Independent post-run and documentation review reported no P0, P1, or P2
+  finding. Validation passed: `git diff --check`; all 15 foundation/link tests;
+  repository policy over 199 intended files with zero violations; the
+  10-schema/7-template harness; registry YAML parsing; strict JSON parsing of
+  both authorizations, both claims, and the completed receipt; SVG XML parsing
+  and 1200x640 raster inspection; exact record/report/graph hash checks; and
+  local-link existence checks. Protocol deviation: the first authorization was
+  consumed by the zero-payload auditor preflight described above; it was not
+  retried.
+- Every receipt readiness field is false and scientific authority is `none`.
+  The immediate next gate is a separate reviewed contract-mismatch
+  reconciliation decision, which may keep Gate 1 frozen and stop this candidate
+  lane. It must not infer or reconstruct the observed pose header. Any source
+  re-access requires a new exact one-use authorization that is independently
+  reviewed, committed, pushed, and CI-green. The result/evidence/documentation
+  slice itself remains uncommitted; its immutable revision and CI closeout are
+  pending.

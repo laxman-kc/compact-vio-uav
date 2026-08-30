@@ -55,14 +55,18 @@ inspected real CSV hashes are denied before any read. Gate 3B is now implemented
 at pushed commit `d5bb14be25634f79ef9595cb04e629473338a2c2` with Python 3.10
 and 3.12 green in GitHub Actions
 [run 33294450083](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33294450083).
-Its independently reviewed inert specification and future-authorization
-controller freeze an exact four-file aggregate grammar probe. No authorization,
-claim, receipt, or grammar result exists, and no real payload was opened, read,
-or hashed. The only immediate next gate is a separate decision whether to issue
-an exact one-use authorization. Any such record must itself be reviewed,
-committed, pushed, and CI-green before a durable claim and the first payload
-descriptor open. Calibration access, independent unit selection, and protocol
-freeze remain blocked before any model work.
+Its independently reviewed inert specification and one-use controller freeze an
+exact four-file aggregate grammar probe. One initial authorization was consumed
+by a durable claim during an auditor preflight, but the wholly mocked binder
+raised before any payload descriptor open; no receipt or grammar result exists
+for that attempt and it cannot be retried. After a recovery revision and a
+separate superseding authorization passed CI, execution revision
+`47daabc1891b71e53a6d3f4f5a070d69bbbe5c78` completed once. The checked receipt
+records `rejects_frozen_gate1_grammar`: both camera indexes and IMU accepted,
+while pose failed the exact-header gate on physical line 1. This opens no
+adapter, calibration, segment, dataset-membership, protocol, or model gate. The
+immediate next gate is a separate reviewed contract-mismatch reconciliation
+decision; any payload re-access requires new exact one-use authority.
 
 ## Planes
 
@@ -374,27 +378,47 @@ preserves original numeric lexemes, enforces exact headers/order/resource
 bounds, and rejects the known inspected real CSV hashes before reading. It has
 no filesystem loader or downstream integration and its synthetic-origin label
 is not authenticated provenance. No real payload was opened by Gate 2. A
-separate Gate 3B module is now independently reviewed, pushed, and CI-green at
-commit `d5bb14be25634f79ef9595cb04e629473338a2c2` as an
-implementation-only future-authorization controller. Its inert specification
+separate Gate 3B module was independently reviewed, pushed, and CI-green at
+commit `d5bb14be25634f79ef9595cb04e629473338a2c2` as an implementation-only
+future-authorization controller. Its inert specification
 binds the four prior receipt identities, Gate 1 grammar, exact tracked evidence,
 aggregate-only output, and resource limits. Spec, controller, and focused-test
 SHA-256 identities are respectively
 `e65ecc449ca878f9294dcb11accd6eb555232af284ad38f608cfc35c4642f790`,
 `677197c4d0bc6573a2102495fa0491289a356ae655b21da364e8f701d4603a93`,
 and `5fd1c544af84dcd90727a466e420d9aac104f9fafea73f93376f74b6b62e7281`.
-The public execution path cannot open a payload until it validates a later exact
-one-use authorization and durably publishes a claim. It then retains no-follow
-descriptors, hashes and scans each exact CSV once with constant memory, and
-compares the camera indexes in raw lockstep. No source row contents or lexemes
-are persisted or emitted; source-derived observations remain aggregate counts,
-check states, and a first-violation code/line. A receipt also binds frozen source
-identities/path metadata and execution/capacity metadata. Grammar rejection is a
-completed aggregate result; operational failure after claim preserves the
-consumed claim and produces no canonical receipt. No authorization, claim,
-receipt, or real-payload access occurred; the implementation and CI close only
-the controller boundary. Every readiness flag is false and scientific authority
-is `none`. Also
+The public execution path cannot open a payload until it validates an exact
+one-use authorization and durably publishes a claim. The first such
+authorization, SHA-256
+`9893cc16ce13db037d3179487c9bb37d93ffb0dc068d7b86bdd1480a36b84ef0`,
+was consumed at claim publication during an auditor preflight. Its wholly
+mocked binder raised at entry, before any of the four payload descriptors could
+open; claim SHA-256
+`f63263fd0b9f086075b7002c4b4e5dd2ca30112587a7c1b31966e9557afae490`
+persists, no receipt exists, and no retry is allowed. Recovery commit
+`abd7af3d77c12637144b324465ab462752629872` passed GitHub Actions run
+`33297224165`. A separate superseding authorization with SHA-256
+`5f566515e723a0e51abd09b75cd43b68d6aa61807749d5069a49427aa218126f`
+then passed authorization-revision run `33297367015` at execution revision
+`47daabc1891b71e53a6d3f4f5a070d69bbbe5c78` and executed once.
+
+That execution retained no-follow descriptors, hashed and scanned each exact
+CSV once with constant memory, and compared the camera indexes in raw lockstep.
+The durable claim SHA-256 is
+`beba4617be76bf63870ff0957c0d4b187abe2caf7fcc6f0b336bf2b6fcc53403`;
+the checked aggregate receipt SHA-256 is
+`7ea8720fc013504de8db22396a5eb4d8bf8f25f33cd00ab2e6798bd42d42c958`.
+The receipt records `completed` / `rejects_frozen_gate1_grammar`: `cam0` and
+`cam1` each accepted 2,228/2,228 data rows with raw stereo lockstep, IMU
+accepted 22,212/22,212, and pose rejected at `exact_header_mismatch` on physical
+line 1 with 13,075 data lines and zero validated. No source row contents or
+lexemes were persisted or emitted; source-derived observations are aggregate
+counts, check states, and the first-violation code/line. The receipt also binds
+frozen source identities/path metadata and execution/capacity metadata. The
+post-run auditor used the checked receipt loader without reopening a source and
+reported no P0, P1, or P2 finding. Grammar rejection is a completed aggregate
+result, not adapter or dataset readiness. Every readiness flag is false and
+scientific authority is `none`. Also
 implemented are
 the generic causal event-release,
 estimator-envelope, execution-recorder, coverage, and payload-omitted trace
@@ -450,7 +474,7 @@ gate.
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
 | Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
-| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer, structural-audit, regular-slice, and bounded format-inspection controllers; retained TUM VI archive with verified size/MD5/SHA; completed receipt-backed 4,485-member header classification; completed eight-file `mav0` slice; completed negative format comparison; strict pushed/CI-green TUM-VI grammar contract loader; pushed/CI-green synthetic-only in-memory CSV parsers; and a pushed/CI-green Gate 3B future-authorization aggregate grammar-probe controller | Gate 3B has no authorization, claim, receipt, execution, or grammar result and opened no real payload. The only immediate gate is a separate reviewed/committed/pushed/CI-green one-use authorization decision. Real-payload readiness, clock/calibration semantics, image decoding/preprocessing, segment construction, scientific selection/membership, protocol, and model access remain blocked. |
+| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer, structural-audit, regular-slice, bounded format-inspection, and aggregate real-CSV grammar-probe controllers; retained TUM VI archive with verified size/MD5/SHA; completed receipt-backed 4,485-member header classification; completed eight-file `mav0` slice; completed negative format comparison; strict pushed/CI-green TUM-VI grammar contract loader; pushed/CI-green synthetic-only in-memory CSV parsers; one zero-payload consumed grammar-probe claim; and one checked completed grammar-rejection receipt | Gate 3B completed with `rejects_frozen_gate1_grammar`: camera indexes and IMU accepted, pose rejected at the exact-header gate. This is not real-payload parser or adapter readiness. The only immediate gate is a separate reviewed contract-mismatch reconciliation decision; any source re-access needs new exact one-use authority. Clock/calibration semantics, image decoding/preprocessing, segment construction, scientific selection/membership, protocol, and model access remain blocked. |
 | Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, five completed A10 runs, and a rejected controlled v5 loss ablation | No v5 retry or direct model work is authorized. A new full-pose unit/protocol must be selected and frozen independently before later model work. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |
@@ -483,7 +507,7 @@ compact-vio-uav/
 │   ├── preflight.py                       [current]
 │   ├── repository_policy.py               [current]
 │   ├── contracts/                         [current: sensor payload/calibration-identity runtime records]
-│   ├── data/                              [current: verified acquisition/inventory, EuRoC adapters, TUM-VI contract/synthetic parsers, locally reviewed future-auth grammar probe]
+│   ├── data/                              [current: verified acquisition/inventory, EuRoC adapters, TUM-VI contract/synthetic parsers, completed aggregate grammar probe]
 │   ├── geometry/                          [current: translation trajectory records]
 │   ├── evaluation/                        [current: residual/RMSE, SE(3), position magnitude, coverage/binding]
 │   ├── learning/                          [current: config/data/model/train/checkpoint/inference/evaluation CLIs]

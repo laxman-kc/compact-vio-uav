@@ -1,0 +1,220 @@
+{
+  "authorization": {
+    "id": "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30",
+    "path": "governance/datasets/acquisitions/tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30.authorization.json",
+    "sha256": "5f566515e723a0e51abd09b75cd43b68d6aa61807749d5069a49427aa218126f"
+  },
+  "capacity": {
+    "authorized_minimum_free_bytes": 2149580800,
+    "free_bytes_before_receipt": 95471792128,
+    "initial_free_bytes": 95471804416,
+    "maximum_claim_bytes": 1048576,
+    "maximum_receipt_bytes": 1048576,
+    "post_probe_reserve_bytes": 2147483648
+  },
+  "claim": {
+    "path": "governance/datasets/acquisitions/tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30.claim.json",
+    "sha256": "beba4617be76bf63870ff0957c0d4b187abe2caf7fcc6f0b336bf2b6fcc53403"
+  },
+  "controller_started_at": "2026-08-30T06:39:58Z",
+  "execution": {
+    "controller_initiated_paid_service_cost_usd": 0,
+    "elapsed_seconds_at_receipt_preparation": 0.9046070000040345,
+    "git_revision": "47daabc1891b71e53a6d3f4f5a070d69bbbe5c78",
+    "maximum_elapsed_seconds": 600,
+    "tool_files": [
+      {
+        "path": "src/compact_vio/data/tumvi_real_csv_grammar_probe.py",
+        "sha256": "89f1871d935382e9010b879b4f36caae5107257776ece449da12f70347eacad3"
+      },
+      {
+        "path": "src/compact_vio/data/acquisition.py",
+        "sha256": "6896f0fdd130e78ada923b2df48d16c8ee84f84f6429090759678c16b02734e7"
+      }
+    ]
+  },
+  "execution_outcome": "completed",
+  "grammar": {
+    "contract_id": "tumvi-room4-512-16-adapter-contract-v1",
+    "contract_path": "configs/data/tumvi_room4_512_16_adapter_contract_v1.json",
+    "contract_sha256": "4368580eb601958f1c402ee6f85d3207d9bb41282c51f4dee505482c1a6542d5",
+    "grammar_outcome": "rejects_frozen_gate1_grammar",
+    "observation_policy": "aggregate-only-no-source-row-token-timestamp-filename-header-or-numeric-values/v1",
+    "streams": [
+      {
+        "bytes_read": 98057,
+        "check_states": {
+          "exact_header": "pass",
+          "line_transport": "pass",
+          "minimum_data_rows": "pass",
+          "role_lexemes": "pass",
+          "row_arity": "pass",
+          "source_identity": "pass",
+          "stereo_raw_lockstep": "pass",
+          "timestamp_lexeme": "pass",
+          "timestamps_strictly_increasing": "pass"
+        },
+        "contract_source_path": "mav0/cam0/data.csv",
+        "first_violation": null,
+        "grammar_state": "accepted",
+        "physical_line_count": 2229,
+        "role": "cam0",
+        "slice_relative_path": "dataset-room4_512_16/mav0/cam0/data.csv",
+        "source_sha256": "feff54e5a721df968901ae0ec5af1d6ca45c12e758ef8e9e965b812ca87c8d67",
+        "source_size_bytes": 98057,
+        "total_data_line_count": 2228,
+        "validated_data_row_count": 2228
+      },
+      {
+        "bytes_read": 98057,
+        "check_states": {
+          "exact_header": "pass",
+          "line_transport": "pass",
+          "minimum_data_rows": "pass",
+          "role_lexemes": "pass",
+          "row_arity": "pass",
+          "source_identity": "pass",
+          "stereo_raw_lockstep": "pass",
+          "timestamp_lexeme": "pass",
+          "timestamps_strictly_increasing": "pass"
+        },
+        "contract_source_path": "mav0/cam1/data.csv",
+        "first_violation": null,
+        "grammar_state": "accepted",
+        "physical_line_count": 2229,
+        "role": "cam1",
+        "slice_relative_path": "dataset-room4_512_16/mav0/cam1/data.csv",
+        "source_sha256": "feff54e5a721df968901ae0ec5af1d6ca45c12e758ef8e9e965b812ca87c8d67",
+        "source_size_bytes": 98057,
+        "total_data_line_count": 2228,
+        "validated_data_row_count": 2228
+      },
+      {
+        "bytes_read": 2232296,
+        "check_states": {
+          "exact_header": "pass",
+          "line_transport": "pass",
+          "minimum_data_rows": "pass",
+          "role_lexemes": "pass",
+          "row_arity": "pass",
+          "source_identity": "pass",
+          "timestamp_lexeme": "pass",
+          "timestamps_strictly_increasing": "pass"
+        },
+        "contract_source_path": "mav0/imu0/data.csv",
+        "first_violation": null,
+        "grammar_state": "accepted",
+        "physical_line_count": 22213,
+        "role": "imu",
+        "slice_relative_path": "dataset-room4_512_16/mav0/imu0/data.csv",
+        "source_sha256": "4249d4036b3c03c55b709f6f634d975d024999fb017ab3539cfa71580793a3be",
+        "source_size_bytes": 2232296,
+        "total_data_line_count": 22212,
+        "validated_data_row_count": 22212
+      },
+      {
+        "bytes_read": 1481244,
+        "check_states": {
+          "exact_header": "fail",
+          "line_transport": "not_reached",
+          "minimum_data_rows": "not_reached",
+          "role_lexemes": "not_reached",
+          "row_arity": "not_reached",
+          "source_identity": "pass",
+          "timestamp_lexeme": "not_reached",
+          "timestamps_strictly_increasing": "not_reached"
+        },
+        "contract_source_path": "mav0/mocap0/data.csv",
+        "first_violation": {
+          "code": "exact_header_mismatch",
+          "physical_line_number": 1
+        },
+        "grammar_state": "rejected",
+        "physical_line_count": 13076,
+        "role": "pose",
+        "slice_relative_path": "dataset-room4_512_16/mav0/mocap0/data.csv",
+        "source_sha256": "073a3e957efa8ff638ea41402cac9654b40897631d566a3ffee090208597db2a",
+        "source_size_bytes": 1481244,
+        "total_data_line_count": 13075,
+        "validated_data_row_count": 0
+      }
+    ]
+  },
+  "limitations": [
+    "grammar_acceptance_does_not_authenticate_origin_or_scientific_semantics",
+    "source_header_labels_do_not_establish_units_frames_or_pose_meaning",
+    "timestamp_token_order_does_not_establish_clock_equivalence",
+    "no_image_calibration_model_segment_or_dataset_membership_access",
+    "does_not_approve_adapter_readiness_training_inference_evaluation_or_publication"
+  ],
+  "operations_not_performed": [
+    "download",
+    "network_access",
+    "access_archive",
+    "access_png",
+    "access_dso",
+    "access_calibration",
+    "open_unlisted_file",
+    "follow_links",
+    "mutate_source",
+    "delete_source_or_evidence",
+    "persist_source_rows_or_tokens",
+    "log_source_rows_or_tokens",
+    "convert_numeric_sensor_lexemes",
+    "interpret_clock_units_frames_pose_or_ground_truth",
+    "reuse_gate2_synthetic_api_for_real_payload",
+    "modify_gate2_parser_or_denylist",
+    "decode_images",
+    "construct_segments",
+    "select_dataset",
+    "assign_dataset_membership",
+    "load_checkpoint",
+    "train",
+    "infer",
+    "evaluate",
+    "publish_scientific_result",
+    "deploy"
+  ],
+  "operations_performed": [
+    "write_claim",
+    "open_exact_four_bound_csv_descriptors_after_claim",
+    "verify_exact_four_source_identities_single_pass",
+    "scan_strict_gate1_grammar_single_pass",
+    "compare_camera_indexes_raw_lockstep",
+    "revalidate_claim_source_git_runtime_truth",
+    "write_aggregate_receipt"
+  ],
+  "readiness": {
+    "adapter_implemented": false,
+    "adapter_ready": false,
+    "calibration_ready": false,
+    "clock_mapping_ready": false,
+    "dataset_selected": false,
+    "full_image_population_ready": false,
+    "ground_truth_ready": false,
+    "membership_assigned": false,
+    "model_access_authorized": false,
+    "png_decode_ready": false,
+    "pose_semantics_ready": false,
+    "preprocessing_ready": false,
+    "real_payload_execution_authorized": false,
+    "segment_construction_ready": false
+  },
+  "receipt_prepared_at": "2026-08-30T06:39:58Z",
+  "record_type": "dataset_real_csv_grammar_probe_receipt",
+  "retention": {
+    "deletion_authorized": false,
+    "policy": "retain_real_csv_grammar_probe_evidence_until_review",
+    "review_at": "2026-09-07T06:36:02Z"
+  },
+  "schema_version": "1.0.0",
+  "scientific_authority": "none",
+  "source": {
+    "probe_spec": {
+      "path": "configs/data/tumvi_room4_512_16_real_csv_grammar_probe_v1.json",
+      "sha256": "e65ecc449ca878f9294dcb11accd6eb555232af284ad38f608cfc35c4642f790"
+    },
+    "root_path": "data/quarantine/tum-vi/room4-512-16/tumvi-room4-512-16-compatibility-slice-v1",
+    "source_scope": "compatibility-slice-receipt-bound-real-csv-bytes-not-independent-origin-authentication/v1"
+  }
+}

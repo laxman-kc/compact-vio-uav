@@ -218,17 +218,31 @@ real-source or scientific authority. Gate 3B is now implemented at pushed commit
 `d5bb14be25634f79ef9595cb04e629473338a2c2`; GitHub Actions
 [run 33294450083](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33294450083)
 passed on Python 3.10 and 3.12. Its independently reviewed inert specification
-and future-authorization controller bind an exact four-file aggregate real-CSV
-grammar probe. Focused tests passed 43/43, the full suite reported `OK` across
-580 tests with 54 declared optional-capability skips, and 240/240 synthetic
-differential cases matched the unchanged Gate 2 grammar. No authorization,
-claim, or receipt exists, and Gate 3B opened, read, and hashed no real payload.
-The only immediate next gate is a separate decision whether to issue an exact
-one-use authorization; any such record must be independently reviewed,
-committed, pushed, and CI-green before the controller can publish a durable
-claim or open its first payload descriptor. Calibration, segment construction,
-dataset selection/membership, and model work remain blocked; every readiness
-flag is false and scientific authority is `none`.
+and one-use controller bind an exact four-file aggregate real-CSV grammar probe.
+Focused tests passed 43/43, the full suite reported `OK` across 580 tests with 54
+declared optional-capability skips, and 240/240 synthetic differential cases
+matched the unchanged Gate 2 grammar. The first reviewed authorization was
+consumed when an auditor preflight published claim SHA-256
+`f63263fd0b9f086075b7002c4b4e5dd2ca30112587a7c1b31966e9557afae490`;
+a wholly mocked binder then stopped execution before any payload descriptor
+open. No receipt exists and no retry is permitted for that authorization. After
+recovery commit `abd7af3d77c12637144b324465ab462752629872` passed CI, a
+separate authorization-only revision
+`47daabc1891b71e53a6d3f4f5a070d69bbbe5c78` passed GitHub Actions
+[run 33297367015](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33297367015)
+and executed once. Its 1,012-byte claim has SHA-256
+`beba4617be76bf63870ff0957c0d4b187abe2caf7fcc6f0b336bf2b6fcc53403`;
+its 8,259-byte checked receipt has SHA-256
+`7ea8720fc013504de8db22396a5eb4d8bf8f25f33cd00ab2e6798bd42d42c958`
+and records `completed` / `rejects_frozen_gate1_grammar`. Both camera indexes
+accepted 2,228/2,228 rows and passed raw lockstep; IMU accepted 22,212/22,212;
+pose rejected at `exact_header_mismatch` on physical line 1 with 13,075 data
+lines and zero validated. No source row contents or lexemes were persisted or
+emitted. The negative aggregate result does not authorize a grammar change,
+payload parser, adapter, calibration, segment, dataset selection/membership, or
+model work. The immediate next gate is a separate reviewed contract-mismatch
+reconciliation decision; any source re-access requires new exact one-use
+authority. Every readiness flag is false and scientific authority is `none`.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is
@@ -359,6 +373,7 @@ and verified.
 - [TUM VI bounded format-inspection result](reports/tumvi-room4-512-16-format-inspection-2026-08-29.md)
 - [TUM VI adapter-contract Gate 1 report](reports/tumvi-room4-512-16-adapter-contract-v1-2026-08-29.md)
 - [TUM VI synthetic parser Gate 2 report](reports/tumvi-room4-512-16-synthetic-parser-gate2-2026-08-29.md)
+- [TUM VI real-CSV grammar-probe Gate 3B result](reports/tumvi-room4-512-16-real-csv-grammar-probe-result-2026-08-30.md)
 - [TUM VI real-CSV grammar-probe Gate 3B implementation report](reports/tumvi-room4-512-16-real-csv-grammar-probe-design-v1-2026-08-30.md)
 - [Dataset governance policy](governance/datasets/policy.md)
 - [Candidate dataset registry](governance/datasets/registry.yaml)
