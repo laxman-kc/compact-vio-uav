@@ -1,0 +1,124 @@
+{
+  "authority_basis": {
+    "kind": "active_workspace_user_instruction",
+    "instruction_summary": "Authorize one execution of the bounded TUM VI room4 512x512 16-bit format inspection at implementation revision b83eebf3cc24cfada57d2d76da4a19672ef8267a after CI run 33282946955 passed; grants no scientific authority.",
+    "captured_at": "2026-08-30T00:18:53Z",
+    "identity_authentication": "not_independently_authenticated"
+  },
+  "authorization_id": "tumvi-room4-512-16-format-inspection-2026-08-29",
+  "authorized_at": "2026-08-30T00:18:53Z",
+  "execution": {
+    "requires_clean_worktree": true,
+    "maximum_elapsed_seconds": 600,
+    "maximum_paid_compute_cost_usd": 0,
+    "minimum_free_bytes": 2149580800,
+    "tool_files": [
+      {
+        "path": "src/compact_vio/data/tumvi_format_inspection.py",
+        "sha256": "a1cb881bfeed74b22f601157515fe69866f3b133e4bedb74496fcfa30e99d748"
+      },
+      {
+        "path": "src/compact_vio/data/tumvi_format.py",
+        "sha256": "c69bbe867c6a01e44f2203f6356d0381ce3afa2d139af83a8f4cfc10ac3c1a96"
+      },
+      {
+        "path": "src/compact_vio/data/acquisition.py",
+        "sha256": "6896f0fdd130e78ada923b2df48d16c8ee84f84f6429090759678c16b02734e7"
+      }
+    ]
+  },
+  "expires_at": "2026-08-31T00:18:53Z",
+  "max_executions": 1,
+  "outputs": {
+    "claim_path": "data/quarantine/tum-vi/room4-512-16/format-inspection.claim.json",
+    "receipt_path": "governance/datasets/acquisitions/tumvi-room4-512-16-format-inspection-2026-08-29.receipt.json"
+  },
+  "permitted_operations": [
+    "write_claim",
+    "verify_bound_spec_and_source_receipt",
+    "verify_exact_slice_tree_as_opaque_bytes",
+    "inspect_four_csv_structures",
+    "inspect_four_png_signature_ihdr_records",
+    "compare_frozen_format_predicates",
+    "write_receipt",
+    "retract_exact_new_receipt_on_truth_gate_failure"
+  ],
+  "prohibited_operations": [
+    "network_access",
+    "archive_access",
+    "reextract_or_copy_files",
+    "access_unlisted_files",
+    "read_dso",
+    "follow_links",
+    "interpret_png_bytes_after_33",
+    "decode_images",
+    "decompress_images",
+    "retain_sensor_row_values",
+    "infer_units_frames_calibration_or_ground_truth",
+    "resample_interpolate_or_correct_synchronization",
+    "load_dataset_samples",
+    "assign_protocol_membership",
+    "select_dataset",
+    "load_checkpoint",
+    "train",
+    "infer",
+    "evaluate",
+    "publish_scientific_result",
+    "modify_or_delete_source_evidence"
+  ],
+  "record_status": "approved",
+  "record_type": "dataset_format_inspection_authorization",
+  "retention": {
+    "policy": "retain_format_inspection_evidence_until_review",
+    "review_at": "2026-09-07T00:18:53Z",
+    "deletion_authorized": false
+  },
+  "schema_version": "1.0.0",
+  "scientific_authority": {
+    "selects_dataset": false,
+    "assigns_membership": false,
+    "approves_adapter": false,
+    "approves_calibration": false,
+    "approves_ground_truth": false,
+    "approves_model_access": false,
+    "approves_training": false,
+    "approves_inference": false,
+    "approves_evaluation": false,
+    "approves_publication": false
+  },
+  "scope": "bounded_opaque_csv_and_png_ihdr_observation_only",
+  "inspection_limits": {
+    "source_file_count": 8,
+    "source_size_bytes": 5043300,
+    "csv_file_count": 4,
+    "png_file_count": 4,
+    "png_interpreted_bytes_per_file": 33,
+    "maximum_csv_rows_per_file": 1000000,
+    "maximum_csv_line_bytes": 1048576,
+    "maximum_claim_bytes": 1048576,
+    "maximum_receipt_bytes": 1048576,
+    "post_inspection_reserve_bytes": 2147483648
+  },
+  "source_evidence": {
+    "inspection_spec": {
+      "path": "configs/data/tumvi_room4_512_16_format_inspection_v1.json",
+      "sha256": "e8dd0bc98c7be85fed6d92d319bafec75c9f658584ea83d17ac93c6f47bdf1a7"
+    },
+    "slice_receipt": {
+      "path": "governance/datasets/acquisitions/tumvi-room4-512-16-compatibility-slice-2026-08-29.receipt.json",
+      "sha256": "a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820"
+    },
+    "review_report": {
+      "path": "reports/tumvi-room4-512-16-compatibility-slice-2026-08-29.md",
+      "sha256": "b1f4a346eeedd9d8dbadf92bf8042754d5ef640626cf4931265b1efa4b4c966e"
+    },
+    "candidate": {
+      "path": "configs/data/tumvi_room4_512_16_candidate_v1.json",
+      "sha256": "0de942674afcadd2f768385a82c52b8cb65eea14d5e8c4d17dc9e48262023740"
+    },
+    "current_euroc_adapter": {
+      "path": "src/compact_vio/data/euroc.py",
+      "sha256": "bfcddb06e7516d148253e8db38a7247ce51064ef13c28b934cdbb3980fc238fd"
+    }
+  }
+}
