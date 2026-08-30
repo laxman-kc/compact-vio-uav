@@ -26,8 +26,17 @@ revision `cfe863890ad040684ac837c1b5d7f346bc0159cc` passed GitHub Actions run
 `33279713875` and executed once. It published only the exact eight regular
 members and a receipt bound to their sizes and SHA-256 values. The operation
 did not parse CSVs, decode PNGs, select the dataset, assign membership, or
-interpret payload semantics. Independent format/calibration/ground-truth
-review, unit selection, and protocol freeze remain mandatory before any new
+interpret payload semantics. A separate bounded format-inspection controller
+was then implemented at commit `b83eebf3cc24cfada57d2d76da4a19672ef8267a`
+and executed once from CI-green revision
+`7dfe85b8c7a3de04a1c789a79a139fa90ad5d5a4`. Its immutable receipt SHA-256
+`30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846`
+records `completed` / `does_not_conform`: the observed eight-column mocap
+header does not match either 17-column EuRoC full-state target, and the first
+selected camera timestamp falls before both observed IMU and mocap ranges.
+The EuRoC adapter is therefore not reusable for this slice. A TUM-VI-specific
+adapter contract, separately justified minimal calibration-metadata review,
+independent unit selection, and protocol freeze remain mandatory before any
 model work.
 
 ## Planes
@@ -311,8 +320,19 @@ tracked 7,106-byte receipt has SHA-256
 a separate raw-byte walk reconfirmed the exact single-link file tree. No link,
 DSO member, or unlisted member was copied, and no payload was parsed or decoded.
 This is operational staging evidence with scientific authority `none`, not
-format acceptance, adapter compatibility, membership, or dataset selection.
-Also implemented are
+format acceptance, adapter compatibility, membership, or dataset selection. A
+distinct one-use format inspector subsequently streamed only the four bounded
+CSVs and interpreted exactly 33 bytes from each of four PNGs. It retained
+structural observations, not sensor rows, and published a 16,879-byte receipt
+with SHA-256
+`30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846`.
+The result is `completed` / `does_not_conform`: seven of ten frozen comparisons
+passed, but the mocap header and the first selected camera timestamp's IMU and
+mocap range membership failed. It leaves adapter, calibration, and ground-truth
+readiness false and grants no scientific authority. The current EuRoC adapter
+must not be reused; the next implementation boundary is a synthetically tested
+TUM-VI-specific adapter contract, with any necessary minimal calibration read
+separately authorized. Also implemented are
 the generic causal event-release,
 estimator-envelope, execution-recorder, coverage, and payload-omitted trace
 boundaries; typed camera/IMU and trajectory records; raw exact-pair residual,
@@ -367,7 +387,7 @@ gate.
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
 | Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
-| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer, structural-audit, and regular-slice controllers; retained TUM VI archive with verified size/MD5/SHA; recorded failed strict inventory; completed receipt-backed 4,485-member header classification; and the completed receipt-backed eight-file `mav0` operational slice | The TUM VI header layout is recorded, including two inert DSO symlinks, so strict whole-archive extraction compatibility is false. Only the exact eight regular allowlisted members were copied. No payload parsing/decoding, format or adapter validation, scientific selection, membership, or protocol is approved. Other sources and any later TUM VI use require separate rights, calibration, provenance, semantic-compatibility, and role records. |
+| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer, structural-audit, regular-slice, and bounded format-inspection controllers; retained TUM VI archive with verified size/MD5/SHA; completed receipt-backed 4,485-member header classification; completed eight-file `mav0` slice; and completed negative format comparison | The exact slice returned `does_not_conform`: its eight-column mocap header differs from the current 17-column EuRoC full-state targets, and the first camera timestamp precedes both observed IMU and mocap ranges. Do not reuse the EuRoC adapter or begin model work. Design a TUM-VI-specific adapter contract first; separately authorize only minimal calibration metadata proven necessary by that contract. Scientific selection, membership, and protocol remain unapproved. |
 | Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, five completed A10 runs, and a rejected controlled v5 loss ablation | No v5 retry or direct model work is authorized. A new full-pose unit/protocol must be selected and frozen independently before later model work. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |

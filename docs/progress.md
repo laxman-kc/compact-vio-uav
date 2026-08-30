@@ -1709,3 +1709,68 @@ recommendation into a decision.
   extraction boundary. Any payload-semantic compatibility check, unit
   selection, leakage/membership decision, and full-pose protocol remains a
   separate future gate before model or evaluation access.
+
+## 2026-08-29 — M9 TUM VI bounded format inspection completed; current EuRoC adapter rejected
+
+- The bounded format inspector was implemented at commit
+  `b83eebf3cc24cfada57d2d76da4a19672ef8267a`; GitHub Actions run
+  [33282946955](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33282946955)
+  passed before authorization. The one-use authorization and execution revision
+  `7dfe85b8c7a3de04a1c789a79a139fa90ad5d5a4` passed GitHub Actions run
+  [33283206142](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33283206142)
+  before the permanent claim was created.
+- The exact 24-hour, single-execution authorization had SHA-256
+  `be49077af024e301dcada292384d19309adb8d5d08ea3ae4bb62be7c86a25d9f`.
+  It bound checked-spec SHA-256
+  `e8dd0bc98c7be85fed6d92d319bafec75c9f658584ea83d17ac93c6f47bdf1a7`,
+  compatibility-slice receipt SHA-256
+  `a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820`,
+  exact tracked source/tool bytes, eight files, 5,043,300 source bytes, a
+  600-second deadline, capacity limits, and zero paid-service authority.
+- The authorization executed once. The controller started at
+  `2026-08-30T00:24:14Z`, prepared its receipt at `2026-08-30T00:24:15Z`,
+  and recorded 0.2793292919814121 seconds at receipt preparation and USD 0
+  controller-initiated paid-service cost. Consumed ignored claim SHA-256 is
+  `cfec13978853239e5517d0c06d298191adebbe5d4d954d9604b51ef2ddb379ff`.
+  Initial free space was 94,684,848,128 bytes and the pre-receipt observation
+  was 94,684,831,744 bytes, above the 2,149,580,800-byte authorized minimum and
+  2,147,483,648-byte retained reserve.
+- The immutable 16,879-byte receipt at
+  `governance/datasets/acquisitions/tumvi-room4-512-16-format-inspection-2026-08-29.receipt.json`
+  has SHA-256
+  `30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846`.
+  It records `execution_outcome: completed` and
+  `format_comparison_outcome: does_not_conform`; adapter, calibration, and
+  ground-truth readiness are false and scientific authority is `none`.
+- Seven of ten frozen operational gates passed: camera and IMU headers, exact
+  camera-index equality, exact-once selected-name membership, filename-stem
+  timestamp equality, common selected names, and equality of the four PNG IHDR
+  tuples. Three gates failed: the observed eight-column mocap header matches
+  neither current 17-column EuRoC full-state target; the first selected camera
+  timestamp precedes the first observed IMU timestamp by 3,273,404 ns; and it
+  precedes the first observed mocap timestamp by 27,431,374 ns. This count is
+  an operational predicate summary, not a scientific or dataset-quality score.
+- The method streamed four bounded CSV structures without retaining sensor rows
+  and interpreted exactly 33 bytes from each of four PNGs. It observed headers,
+  arities, row counts, timestamp boundaries and gaps, BOM flags, bounded issue
+  counts, selected-name membership, opaque hashes, and four 512x512, 16-bit
+  PNG IHDR records. It did not establish units, frames, synchronization cause,
+  calibration, ground-truth semantics, whole-file PNG validity or decodability,
+  complete indexed-image existence, dataset quality, selection, membership, or
+  any model result.
+- The current EuRoC adapter must not be reused and no model/checkpoint work is
+  authorized. The next falsifiable gate is a separately reviewed
+  TUM-VI-specific adapter contract with exact accepted grammars, bounded parser
+  behavior, synthetic negative fixtures, and an explicit interval policy. Only
+  if that contract proves a calibration dependency necessary may a separate
+  one-use authorization inspect exact minimal calibration metadata. Unit
+  selection, leakage/membership review, and full-pose protocol freeze remain
+  later independent gates.
+- The [production result report](../reports/tumvi-room4-512-16-format-inspection-2026-08-29.md)
+  and its evidence graph record the receipt-backed methodology, exact observed
+  facts, limitations, decision, and next gates. Protocol deviation: none.
+- Documentation validation passed: `git diff --check`; repository policy over
+  180 files with zero violations; the schema harness with 10 schemas and 7
+  templates; YAML parsing of the dataset registry; XML parsing and raster
+  rendering of the SVG evidence graph; unchanged receipt SHA-256; and 74 local
+  Markdown targets across the edited documents with zero broken links.

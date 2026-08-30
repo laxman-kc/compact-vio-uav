@@ -1,11 +1,12 @@
 # Dataset archive acquisition records
 
-Status: Operational transfer control
+Status: Operational dataset-evidence control
 
 This directory holds immutable, machine-readable authorizations and receipts
-for bounded dataset archive transfers. These records are separate from dataset
-candidate records so that authorizing network I/O cannot silently select a
-dataset or revise historical source evidence.
+for bounded dataset archive transfers and later local evidence inspections.
+These records are separate from dataset candidate records so that authorizing
+network I/O or bounded payload observation cannot silently select a dataset or
+revise historical source evidence.
 
 An authorization is executable only when the controller validates all of its
 closed fields and runtime gates. The current contract requires one execution,
@@ -40,9 +41,9 @@ defense against a hostile same-user process racing directory entries. Failed
 claims and inventories are ignored local evidence; they are not remotely
 durable until separately reviewed and retained.
 
-The `room4` transfer, structural-audit, and compatibility-slice authorizations
-are based on the active workspace user's instruction to continue the immediate
-production execution plan. Each record
+The `room4` transfer, structural-audit, compatibility-slice, and
+format-inspection authorizations are based on the active workspace user's
+instruction to continue the immediate production execution plan. Each record
 states that the user's identity was not independently authenticated; it must
 not be presented as independent identity assurance or third-party approval.
 
@@ -75,6 +76,22 @@ Current records:
   bytes, per-file SHA-256 values, bounded capacity/time, zero paid-service cost,
   and `scientific_authority: none`. Its own SHA-256 is
   `a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820`.
+- `tumvi-room4-512-16-format-inspection-2026-08-29.authorization.json` — one
+  bounded observation of the exact compatibility slice: four streamed CSV
+  structures and exactly 33 interpreted bytes from each of four PNG files.
+  Implementation revision `b83eebf3cc24cfada57d2d76da4a19672ef8267a`
+  passed GitHub Actions run `33282946955`; authorization revision
+  `7dfe85b8c7a3de04a1c789a79a139fa90ad5d5a4` passed run `33283206142`
+  before execution. Its SHA-256 is
+  `be49077af024e301dcada292384d19309adb8d5d08ea3ae4bb62be7c86a25d9f`.
+- `tumvi-room4-512-16-format-inspection-2026-08-29.receipt.json` — tracked
+  completed-inspection receipt with SHA-256
+  `30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846`.
+  It records `format_comparison_outcome: does_not_conform`: the current EuRoC
+  adapter's 17-column full-state reference targets do not match the observed
+  eight-column mocap header, and the first selected camera timestamp is outside
+  the observed IMU and mocap intervals. Adapter, calibration, and ground-truth
+  readiness are false; scientific authority is none.
 - `tumvi-room4-512-16-transfer-2026-08-29.receipt.json` — reserved success
   receipt path. It does not exist because every success gate did not pass.
 
@@ -90,3 +107,12 @@ slice remains operational preparation only; CSV parsing, PNG decoding, payload
 interpretation, format/calibration/ground-truth or adapter acceptance, dataset
 selection, membership, model/checkpoint access, training, inference,
 evaluation, publication, and source deletion stay outside its authority.
+
+The format inspection is consumed and completed, not failed. Its negative
+comparison forbids reuse of the EuRoC adapter and does not authorize a repair,
+broader payload access, or model work. The next safe boundary is a reviewed
+TUM-VI-specific adapter contract with synthetic negative tests. Only if that
+contract identifies a necessary minimal dependency may a later, separate
+one-use authorization inspect exact calibration metadata. Dataset selection,
+membership, leakage review, protocol freeze, checkpoint access, training,
+inference, and evaluation remain separate gates.

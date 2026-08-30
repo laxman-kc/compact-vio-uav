@@ -23,6 +23,10 @@ its presence is not evidence that a run happened or that a hypothesis passed.
 
 ## Reviewed reports
 
+- [TUM VI room4 512x512 bounded format inspection](tumvi-room4-512-16-format-inspection-2026-08-29.md)
+  — completed `does_not_conform`: mocap-header and initial timestamp-range
+  gates failed; adapter/calibration/ground-truth readiness false and scientific
+  authority none.
 - [TUM VI room4 512x512 audit-bound regular-file compatibility slice](tumvi-room4-512-16-compatibility-slice-2026-08-29.md)
   — completed exact eight-file operational extraction; payloads uninterpreted
   and scientific authority none.

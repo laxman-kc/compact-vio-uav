@@ -104,6 +104,16 @@ datasets:
     compatibility_slice_receipt_sha256: a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820
     compatibility_slice_file_count: 8
     compatibility_slice_expanded_size_bytes: 5043300
+    format_inspection_spec: configs/data/tumvi_room4_512_16_format_inspection_v1.json
+    format_inspection_authorization: governance/datasets/acquisitions/tumvi-room4-512-16-format-inspection-2026-08-29.authorization.json
+    format_inspection_receipt: governance/datasets/acquisitions/tumvi-room4-512-16-format-inspection-2026-08-29.receipt.json
+    format_inspection_report: reports/tumvi-room4-512-16-format-inspection-2026-08-29.md
+    format_inspection_state: completed_does_not_conform_no_scientific_authority
+    format_inspection_receipt_sha256: 30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846
+    format_comparison_outcome: does_not_conform
+    adapter_ready: false
+    calibration_ready: false
+    ground_truth_ready: false
     received_archive_sha256: 2c3633407693988cf24faef5f874cba08bbc3c2d2ec1168c86b6da55ae9f2e68
     identity_state: published_identity_only
     proposed_lane: external_full_pose_generalization_candidate_only
@@ -116,6 +126,7 @@ datasets:
       - The one-use transfer retained publisher-size/MD5-verified bytes and computed SHA-256, then strict TAR inventory rejected an official DSO-tree symbolic link; the authorization is consumed and no success receipt exists.
       - The completed header-only audit recorded 4,472 regular files, 11 directories, and two inert DSO-tree symlinks without following or extracting them; strict extraction compatibility is false and scientific authority is none.
       - The audit-bound one-use operation copied exactly the eight allowlisted regular mav0 files, totaling 5,043,300 bytes, after its authorization revision passed CI; it excluded dso, followed no link, and is consumed with a tracked receipt.
-      - The compatibility-slice name denotes an operational input boundary, not a compatibility result. No CSV was parsed and no PNG was decoded; payload validity, exact calibration and ground-truth schema, 16-bit preprocessing, synchronization, adapter compatibility, scientific selection, and source membership remain unresolved, and no evaluation occurred.
+      - The compatibility-slice name denotes an operational input boundary, not a compatibility result. Its later bounded format inspection parsed only CSV structure and exactly four PNG signature/IHDR records; it completed with does_not_conform because the observed eight-column mocap header does not match either current 17-column EuRoC full-state target and the first selected camera timestamp falls before both observed IMU and mocap ranges.
+      - The format receipt does not establish units, frames, synchronization correction, calibration, ground-truth meaning, whole-file PNG validity/decodability, full image existence, scientific selection, or source membership. The EuRoC adapter must not be reused; a TUM-VI-specific adapter contract and, only if justified, separately authorized minimal calibration metadata are the next safe gates before any model work.
       - The motion/domain is not a substitute for UAV-domain evidence.
       - Ground-truth availability varies and must be recorded per sequence.

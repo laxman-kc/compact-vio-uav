@@ -182,8 +182,21 @@ records the source layout, and the
 [reviewed compatibility-slice report](reports/tumvi-room4-512-16-compatibility-slice-2026-08-29.md)
 records the exact execution and output identities. The slice grants no
 dataset selection, membership, payload interpretation, model, inference,
-evaluation, or publication authority. Format, timestamp, calibration,
-ground-truth, preprocessing, and adapter checks remain separate future work.
+evaluation, or publication authority. A separately authorized bounded format
+inspection was then implemented at commit
+`b83eebf3cc24cfada57d2d76da4a19672ef8267a` after GitHub Actions run
+`33282946955` passed and executed once from revision
+`7dfe85b8c7a3de04a1c789a79a139fa90ad5d5a4` after run `33283206142`
+passed. Its 16,879-byte receipt has SHA-256
+`30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846`
+and records `completed` / `does_not_conform`: seven of ten frozen operational
+gates passed, while the eight-column mocap header and two first-camera
+timestamp range checks failed. Adapter, calibration, and ground-truth readiness
+remain false; scientific authority is `none`. The current EuRoC adapter must
+not be reused and no model work follows. The next safe gate is a reviewed
+TUM-VI-specific adapter contract; minimal calibration metadata may be inspected
+only if that contract proves it necessary and a separate exact authorization
+permits it.
 
 All five training result bundles were copied to ignored local paths and
 checksum-verified against the worker copies. The original v5 trainer output is
@@ -311,6 +324,7 @@ and verified.
 - [Experiment lifecycle](docs/protocols/experiment-lifecycle.md)
 - [Controlled v5 magnitude-loss result](reports/euroc-compact-vio-v5-magnitude-result-2026-08-28.md)
 - [Controlled v5 magnitude-loss experiment](reports/euroc-compact-vio-v5-magnitude-loss-plan-2026-08-28.md)
+- [TUM VI bounded format-inspection result](reports/tumvi-room4-512-16-format-inspection-2026-08-29.md)
 - [Dataset governance policy](governance/datasets/policy.md)
 - [Candidate dataset registry](governance/datasets/registry.yaml)
 - [Artifact policy](governance/artifacts/policy.md)

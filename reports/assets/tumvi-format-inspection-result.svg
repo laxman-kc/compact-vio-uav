@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
+  <title id="title">TUM VI bounded format-inspection result</title>
+  <desc id="desc">The one-use format inspection completed with seven of ten frozen gates passing and three failing. The result is does not conform, the EuRoC adapter is not ready, and the next safe gate is a separately reviewed TUM-VI-specific adapter contract.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .bg { fill: #ffffff; }
+    .panel { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; }
+    .panel-pass { fill: #f0fdf4; stroke: #16a34a; stroke-width: 1.5; }
+    .panel-fail { fill: #fff7ed; stroke: #c2410c; stroke-width: 1.5; }
+    .panel-next { fill: #eff6ff; stroke: #2563eb; stroke-width: 2; }
+    .fg { fill: #172033; }
+    .muted { fill: #536176; }
+    .pass { fill: #15803d; font-weight: 700; }
+    .fail { fill: #b42318; font-weight: 700; }
+    .next { fill: #1d4ed8; font-weight: 700; }
+    .arrow { stroke: #64748b; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    text { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; }
+    .title { font-size: 25px; font-weight: 700; }
+    .section { font-size: 18px; font-weight: 700; }
+    .large { font-size: 22px; font-weight: 750; }
+    .small { font-size: 12px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 9.5px; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #101522; }
+      .panel { fill: #161f2e; stroke: #465267; }
+      .panel-pass { fill: #10271b; stroke: #4ade80; }
+      .panel-fail { fill: #301911; stroke: #fb923c; }
+      .panel-next { fill: #12233f; stroke: #60a5fa; }
+      .fg { fill: #eef3fa; }
+      .muted { fill: #acb8c8; }
+      .pass { fill: #86efac; }
+      .fail { fill: #ff9b8f; }
+      .next { fill: #93c5fd; }
+      .arrow { stroke: #94a3b8; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="1200" height="820"/>
+
+  <text class="title fg" x="48" y="45">TUM VI room4 512x512 bounded format inspection</text>
+  <text class="muted" x="48" y="70">Operational evidence graph · completed / does_not_conform · scientific authority: none</text>
+
+  <text class="section fg" x="48" y="108">Exact evidence chain</text>
+  <rect class="panel" x="48" y="124" width="250" height="118" rx="8"/>
+  <text class="fg" x="64" y="148" font-weight="700">Exact compatibility slice</text>
+  <text class="fg small" x="64" y="169">8 files · 5,043,300 opaque bytes</text>
+  <text class="muted small" x="64" y="190">receipt SHA-256</text>
+  <text class="fg mono" x="64" y="207">a60402b91d3fcd8fa893ee3d15bd7a4314ac</text>
+  <text class="fg mono" x="64" y="222">60cfbee22254cf40bdd97134a820</text>
+
+  <path class="arrow" d="M298 183 H326"/>
+  <rect class="panel" x="328" y="124" width="250" height="118" rx="8"/>
+  <text class="fg" x="344" y="148" font-weight="700">Frozen inspection contract</text>
+  <text class="fg small" x="344" y="169">spec + current EuRoC comparison</text>
+  <text class="muted small" x="344" y="190">spec SHA-256</text>
+  <text class="fg mono" x="344" y="207">e8dd0bc98c7be85fed6d92d319bafec75c9f</text>
+  <text class="fg mono" x="344" y="222">658584ea83d17ac93c6f47bdf1a7</text>
+
+  <path class="arrow" d="M578 183 H606"/>
+  <rect class="panel" x="608" y="124" width="250" height="118" rx="8"/>
+  <text class="fg" x="624" y="148" font-weight="700">One-use authorization</text>
+  <text class="fg small" x="624" y="169">CI passed before claim</text>
+  <text class="fg small" x="624" y="184">runs 33282946955 and 33283206142</text>
+  <text class="muted small" x="624" y="202">authorization SHA-256</text>
+  <text class="fg mono" x="624" y="217">be49077af024e301dcada292384d19309adb8</text>
+  <text class="fg mono" x="624" y="231">d5d08ea3ae4bb62be7c86a25d9f</text>
+
+  <path class="arrow" d="M858 183 H886"/>
+  <rect class="panel" x="888" y="124" width="264" height="118" rx="8"/>
+  <text class="fg" x="904" y="148" font-weight="700">Immutable completed receipt</text>
+  <text class="fg small" x="904" y="169">completed · does_not_conform</text>
+  <text class="muted small" x="904" y="190">receipt SHA-256</text>
+  <text class="fg mono" x="904" y="207">30697326550331146f676c88ad5a50756701</text>
+  <text class="fg mono" x="904" y="222">c91e57084e0ff7178e9d3fbb7846</text>
+
+  <text class="section fg" x="48" y="286">Frozen comparison gates</text>
+  <rect class="panel-pass" x="48" y="302" width="516" height="292" rx="8"/>
+  <text class="large pass" x="68" y="335">7 / 10 passed</text>
+  <text class="muted small" x="68" y="356">Operational predicate count; not a scientific score.</text>
+  <text class="fg" x="68" y="389">✓ camera index header matches</text>
+  <text class="fg" x="68" y="418">✓ IMU header matches</text>
+  <text class="fg" x="68" y="447">✓ cam0/cam1 indexes are byte-identical</text>
+  <text class="fg" x="68" y="476">✓ selected names occur exactly once</text>
+  <text class="fg" x="68" y="505">✓ selected filename stems equal row timestamps</text>
+  <text class="fg" x="68" y="534">✓ selected names are common to both camera indexes</text>
+  <text class="fg" x="68" y="563">✓ all four 33-byte PNG IHDR tuples are equal</text>
+
+  <rect class="panel-fail" x="588" y="302" width="564" height="292" rx="8"/>
+  <text class="large fail" x="608" y="335">3 gates failed</text>
+  <text class="muted small" x="608" y="356">Any failure yields does_not_conform under the frozen contract.</text>
+  <text class="fail" x="608" y="393">1 · Mocap header mismatch</text>
+  <text class="fg small" x="628" y="415">Observed 8 columns; current EuRoC targets require 17.</text>
+  <text class="fail" x="608" y="459">2 · First camera timestamp outside IMU range</text>
+  <text class="fg small" x="628" y="481">Camera precedes first observed IMU timestamp by 3,273,404 ns.</text>
+  <text class="fail" x="608" y="525">3 · First camera timestamp outside mocap range</text>
+  <text class="fg small" x="628" y="547">Camera precedes first observed mocap timestamp by 27,431,374 ns.</text>
+
+  <path class="arrow" d="M600 594 V625"/>
+  <rect class="panel-next" x="48" y="628" width="1104" height="126" rx="8"/>
+  <text class="section next" x="68" y="660">Next safe gate</text>
+  <text class="fg" x="68" y="687">Design and review a TUM-VI-specific adapter contract with synthetic negative fixtures and an explicit interval policy.</text>
+  <text class="fg" x="68" y="713">Do not reuse the EuRoC adapter and do not access models or checkpoints. Inspect minimal calibration metadata only if</text>
+  <text class="fg" x="68" y="737">the adapter contract proves it necessary, under a separate exact one-use authorization.</text>
+
+  <text class="muted small" x="48" y="790">This graph reports bounded structural evidence only; it makes no dataset-quality, selection, membership, calibration, ground-truth, or model claim.</text>
+</svg>

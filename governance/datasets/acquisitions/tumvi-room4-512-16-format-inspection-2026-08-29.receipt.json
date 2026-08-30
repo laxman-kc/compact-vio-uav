@@ -1,0 +1,498 @@
+{
+  "authorization": {
+    "id": "tumvi-room4-512-16-format-inspection-2026-08-29",
+    "path": "governance/datasets/acquisitions/tumvi-room4-512-16-format-inspection-2026-08-29.authorization.json",
+    "sha256": "be49077af024e301dcada292384d19309adb8d5d08ea3ae4bb62be7c86a25d9f"
+  },
+  "capacity": {
+    "authorized_minimum_free_bytes": 2149580800,
+    "free_bytes_before_receipt": 94684831744,
+    "initial_free_bytes": 94684848128,
+    "maximum_claim_bytes": 1048576,
+    "maximum_receipt_bytes": 1048576,
+    "post_inspection_reserve_bytes": 2147483648
+  },
+  "claim": {
+    "path": "data/quarantine/tum-vi/room4-512-16/format-inspection.claim.json",
+    "sha256": "cfec13978853239e5517d0c06d298191adebbe5d4d954d9604b51ef2ddb379ff"
+  },
+  "comparison": {
+    "adapter_headers": {
+      "camera_matches": true,
+      "imu_matches": true,
+      "mocap_matches_one_full_state_target": false
+    },
+    "format_comparison_outcome": "does_not_conform",
+    "predicates": {
+      "cam0_cam1_index_bytes_equal": true,
+      "four_png_ihdr_tuples_equal": true,
+      "selected_camera_timestamps_within_observed_imu_range": false,
+      "selected_camera_timestamps_within_observed_mocap_range": false,
+      "selected_filename_stem_equals_row_timestamp": true,
+      "selected_names_common_to_both_camera_indexes": true,
+      "selected_png_names_present_once_in_own_index": true
+    }
+  },
+  "controller_started_at": "2026-08-30T00:24:14Z",
+  "execution": {
+    "controller_initiated_paid_service_cost_usd": 0,
+    "elapsed_seconds_at_receipt_preparation": 0.2793292919814121,
+    "git_revision": "7dfe85b8c7a3de04a1c789a79a139fa90ad5d5a4",
+    "maximum_elapsed_seconds": 600,
+    "tool_files": [
+      {
+        "path": "src/compact_vio/data/tumvi_format_inspection.py",
+        "sha256": "a1cb881bfeed74b22f601157515fe69866f3b133e4bedb74496fcfa30e99d748"
+      },
+      {
+        "path": "src/compact_vio/data/tumvi_format.py",
+        "sha256": "c69bbe867c6a01e44f2203f6356d0381ce3afa2d139af83a8f4cfc10ac3c1a96"
+      },
+      {
+        "path": "src/compact_vio/data/acquisition.py",
+        "sha256": "6896f0fdd130e78ada923b2df48d16c8ee84f84f6429090759678c16b02734e7"
+      }
+    ]
+  },
+  "execution_outcome": "completed",
+  "inspection": {
+    "csv": {
+      "imu": {
+        "arity": 7,
+        "conforms": true,
+        "expected_header": [
+          "#timestamp [ns]",
+          "w_RS_S_x [rad s^-1]",
+          "w_RS_S_y [rad s^-1]",
+          "w_RS_S_z [rad s^-1]",
+          "a_RS_S_x [m s^-2]",
+          "a_RS_S_y [m s^-2]",
+          "a_RS_S_z [m s^-2]"
+        ],
+        "first_timestamp_ns": 1520531124153717567,
+        "gaps": {
+          "gap_count": 22211,
+          "maximum_gap_ns": 5036000,
+          "minimum_gap_ns": 4995000,
+          "total_gap_ns": 111401680000
+        },
+        "header": [
+          "#timestamp [ns]",
+          "w_RS_S_x [rad s^-1]",
+          "w_RS_S_y [rad s^-1]",
+          "w_RS_S_z [rad s^-1]",
+          "a_RS_S_x [m s^-2]",
+          "a_RS_S_y [m s^-2]",
+          "a_RS_S_z [m s^-2]"
+        ],
+        "issues": {
+          "blank_row_count": 0,
+          "duplicate_camera_filename_count": 0,
+          "duplicate_timestamp_count": 0,
+          "invalid_numeric_field_count": 0,
+          "invalid_timestamp_lexeme_count": 0,
+          "non_finite_numeric_field_count": 0,
+          "out_of_order_timestamp_count": 0,
+          "ragged_row_count": 0,
+          "timestamp_exceeds_int64_count": 0,
+          "unexpected_comment_row_count": 0,
+          "unsafe_camera_filename_count": 0,
+          "valid_timestamp_count": 22212
+        },
+        "last_timestamp_ns": 1520531235555397567,
+        "observed_required_png_basenames": [],
+        "required_png_basenames": [],
+        "required_png_occurrence_counts": [],
+        "role": "imu_stream",
+        "row_count": 22212,
+        "source_sha256": "4249d4036b3c03c55b709f6f634d975d024999fb017ab3539cfa71580793a3be",
+        "source_size_bytes": 2232296,
+        "utf8_bom_present": false,
+        "violations": []
+      },
+      "mocap": {
+        "arity": 8,
+        "conforms": false,
+        "expected_header": [
+          "#timestamp",
+          "p_RS_R_x [m]",
+          "p_RS_R_y [m]",
+          "p_RS_R_z [m]",
+          "q_RS_w []",
+          "q_RS_x []",
+          "q_RS_y []",
+          "q_RS_z []",
+          "v_RS_R_x [m s^-1]",
+          "v_RS_R_y [m s^-1]",
+          "v_RS_R_z [m s^-1]",
+          "b_w_RS_S_x [rad s^-1]",
+          "b_w_RS_S_y [rad s^-1]",
+          "b_w_RS_S_z [rad s^-1]",
+          "b_a_RS_S_x [m s^-2]",
+          "b_a_RS_S_y [m s^-2]",
+          "b_a_RS_S_z [m s^-2]"
+        ],
+        "first_timestamp_ns": 1520531124177875537,
+        "gaps": {
+          "gap_count": 13074,
+          "maximum_gap_ns": 483334000,
+          "minimum_gap_ns": 8333000,
+          "total_gap_ns": 111366666000
+        },
+        "header": [
+          "#timestamp [ns]",
+          "p_RS_R_x [m]",
+          "p_RS_R_y [m]",
+          "p_RS_R_z [m]",
+          "q_RS_w []",
+          "q_RS_x []",
+          "q_RS_y []",
+          "q_RS_z []"
+        ],
+        "issues": {
+          "blank_row_count": 0,
+          "duplicate_camera_filename_count": 0,
+          "duplicate_timestamp_count": 0,
+          "invalid_numeric_field_count": 0,
+          "invalid_timestamp_lexeme_count": 0,
+          "non_finite_numeric_field_count": 0,
+          "out_of_order_timestamp_count": 0,
+          "ragged_row_count": 0,
+          "timestamp_exceeds_int64_count": 0,
+          "unexpected_comment_row_count": 0,
+          "unsafe_camera_filename_count": 0,
+          "valid_timestamp_count": 13075
+        },
+        "last_timestamp_ns": 1520531235544541537,
+        "observed_required_png_basenames": [],
+        "required_png_basenames": [],
+        "required_png_occurrence_counts": [],
+        "role": "mocap_stream",
+        "row_count": 13075,
+        "source_sha256": "073a3e957efa8ff638ea41402cac9654b40897631d566a3ffee090208597db2a",
+        "source_size_bytes": 1481244,
+        "utf8_bom_present": false,
+        "violations": [
+          "header_mismatch"
+        ]
+      },
+      "stereo_camera_indexes": {
+        "cam0": {
+          "arity": 2,
+          "conforms": true,
+          "expected_header": [
+            "#timestamp [ns]",
+            "filename"
+          ],
+          "first_timestamp_ns": 1520531124150444163,
+          "gaps": {
+            "gap_count": 2227,
+            "maximum_gap_ns": 51727965,
+            "minimum_gap_ns": 48306702,
+            "total_gap_ns": 111353674175
+          },
+          "header": [
+            "#timestamp [ns]",
+            "filename"
+          ],
+          "issues": {
+            "blank_row_count": 0,
+            "duplicate_camera_filename_count": 0,
+            "duplicate_timestamp_count": 0,
+            "invalid_numeric_field_count": 0,
+            "invalid_timestamp_lexeme_count": 0,
+            "non_finite_numeric_field_count": 0,
+            "out_of_order_timestamp_count": 0,
+            "ragged_row_count": 0,
+            "timestamp_exceeds_int64_count": 0,
+            "unexpected_comment_row_count": 0,
+            "unsafe_camera_filename_count": 0,
+            "valid_timestamp_count": 2228
+          },
+          "last_timestamp_ns": 1520531235504118338,
+          "observed_required_png_basenames": [
+            "1520531124150444163.png",
+            "1520531124200446163.png"
+          ],
+          "required_png_basenames": [
+            "1520531124150444163.png",
+            "1520531124200446163.png"
+          ],
+          "required_png_occurrence_counts": [
+            1,
+            1
+          ],
+          "role": "cam0_index",
+          "row_count": 2228,
+          "source_sha256": "feff54e5a721df968901ae0ec5af1d6ca45c12e758ef8e9e965b812ca87c8d67",
+          "source_size_bytes": 98057,
+          "utf8_bom_present": false,
+          "violations": []
+        },
+        "cam1": {
+          "arity": 2,
+          "conforms": true,
+          "expected_header": [
+            "#timestamp [ns]",
+            "filename"
+          ],
+          "first_timestamp_ns": 1520531124150444163,
+          "gaps": {
+            "gap_count": 2227,
+            "maximum_gap_ns": 51727965,
+            "minimum_gap_ns": 48306702,
+            "total_gap_ns": 111353674175
+          },
+          "header": [
+            "#timestamp [ns]",
+            "filename"
+          ],
+          "issues": {
+            "blank_row_count": 0,
+            "duplicate_camera_filename_count": 0,
+            "duplicate_timestamp_count": 0,
+            "invalid_numeric_field_count": 0,
+            "invalid_timestamp_lexeme_count": 0,
+            "non_finite_numeric_field_count": 0,
+            "out_of_order_timestamp_count": 0,
+            "ragged_row_count": 0,
+            "timestamp_exceeds_int64_count": 0,
+            "unexpected_comment_row_count": 0,
+            "unsafe_camera_filename_count": 0,
+            "valid_timestamp_count": 2228
+          },
+          "last_timestamp_ns": 1520531235504118338,
+          "observed_required_png_basenames": [
+            "1520531124150444163.png",
+            "1520531124200446163.png"
+          ],
+          "required_png_basenames": [
+            "1520531124150444163.png",
+            "1520531124200446163.png"
+          ],
+          "required_png_occurrence_counts": [
+            1,
+            1
+          ],
+          "role": "cam1_index",
+          "row_count": 2228,
+          "source_sha256": "feff54e5a721df968901ae0ec5af1d6ca45c12e758ef8e9e965b812ca87c8d67",
+          "source_size_bytes": 98057,
+          "utf8_bom_present": false,
+          "violations": []
+        },
+        "conforms": true,
+        "exact_index_equality": true,
+        "violations": []
+      }
+    },
+    "full_indexed_image_existence": "not_checked",
+    "observation_field_contract": "tumvi-bounded-format-observations/v1",
+    "png_ihdr": {
+      "cam0_png_0": {
+        "decodability": "not_checked",
+        "interpreted_bytes": 33,
+        "observation": {
+          "bit_depth": 16,
+          "color_type": 0,
+          "compression_method": 0,
+          "conforms": true,
+          "filter_method": 0,
+          "height": 512,
+          "ihdr_crc32": 2172868453,
+          "interlace_method": 0,
+          "total_size_bytes": 284188,
+          "violations": [],
+          "width": 512
+        },
+        "whole_file_validity": "not_checked"
+      },
+      "cam0_png_1": {
+        "decodability": "not_checked",
+        "interpreted_bytes": 33,
+        "observation": {
+          "bit_depth": 16,
+          "color_type": 0,
+          "compression_method": 0,
+          "conforms": true,
+          "filter_method": 0,
+          "height": 512,
+          "ihdr_crc32": 2172868453,
+          "interlace_method": 0,
+          "total_size_bytes": 283946,
+          "violations": [],
+          "width": 512
+        },
+        "whole_file_validity": "not_checked"
+      },
+      "cam1_png_0": {
+        "decodability": "not_checked",
+        "interpreted_bytes": 33,
+        "observation": {
+          "bit_depth": 16,
+          "color_type": 0,
+          "compression_method": 0,
+          "conforms": true,
+          "filter_method": 0,
+          "height": 512,
+          "ihdr_crc32": 2172868453,
+          "interlace_method": 0,
+          "total_size_bytes": 283001,
+          "violations": [],
+          "width": 512
+        },
+        "whole_file_validity": "not_checked"
+      },
+      "cam1_png_1": {
+        "decodability": "not_checked",
+        "interpreted_bytes": 33,
+        "observation": {
+          "bit_depth": 16,
+          "color_type": 0,
+          "compression_method": 0,
+          "conforms": true,
+          "filter_method": 0,
+          "height": 512,
+          "ihdr_crc32": 2172868453,
+          "interlace_method": 0,
+          "total_size_bytes": 282511,
+          "violations": [],
+          "width": 512
+        },
+        "whole_file_validity": "not_checked"
+      }
+    },
+    "png_standard": {
+      "id": "W3C-PNG-Third-Edition-2025-06-24",
+      "url": "https://www.w3.org/TR/2025/REC-png-3-20250624/"
+    }
+  },
+  "limitations": [
+    "deterministic_four_png_headers_only_not_full_image_population",
+    "csv_structure_does_not_establish_units_frames_or_semantics",
+    "png_ihdr_does_not_establish_whole_file_validity_decodability_or_preprocessing",
+    "full_indexed_image_existence_not_checked_sparse_slice",
+    "mocap_reference_semantics_and_calibration_remain_uninterpreted",
+    "does_not_select_dataset_or_assign_membership",
+    "does_not_approve_model_access_training_inference_evaluation_or_publication"
+  ],
+  "operations_not_performed": [
+    "network_access",
+    "archive_access",
+    "reextract_or_copy_files",
+    "access_unlisted_files",
+    "read_dso",
+    "follow_links",
+    "interpret_png_bytes_after_33",
+    "decode_images",
+    "decompress_images",
+    "retain_sensor_row_values",
+    "infer_units_frames_calibration_or_ground_truth",
+    "resample_interpolate_or_correct_synchronization",
+    "load_dataset_samples",
+    "assign_protocol_membership",
+    "select_dataset",
+    "load_checkpoint",
+    "train",
+    "infer",
+    "evaluate",
+    "publish_scientific_result",
+    "modify_or_delete_source_evidence"
+  ],
+  "operations_performed": [
+    "write_claim",
+    "verify_bound_spec_and_source_receipt",
+    "verify_exact_slice_tree_as_opaque_bytes",
+    "inspect_four_csv_structures",
+    "inspect_four_png_signature_ihdr_records",
+    "compare_frozen_format_predicates",
+    "write_receipt"
+  ],
+  "readiness": {
+    "adapter_ready": false,
+    "calibration_ready": false,
+    "ground_truth_ready": false
+  },
+  "receipt_prepared_at": "2026-08-30T00:24:15Z",
+  "record_type": "dataset_format_inspection_receipt",
+  "retention": {
+    "deletion_authorized": false,
+    "policy": "retain_format_inspection_evidence_until_review",
+    "review_at": "2026-09-07T00:18:53Z"
+  },
+  "schema_version": "1.0.0",
+  "scientific_authority": "none",
+  "source": {
+    "candidate": {
+      "path": "configs/data/tumvi_room4_512_16_candidate_v1.json",
+      "sha256": "0de942674afcadd2f768385a82c52b8cb65eea14d5e8c4d17dc9e48262023740"
+    },
+    "current_euroc_adapter": {
+      "path": "src/compact_vio/data/euroc.py",
+      "sha256": "bfcddb06e7516d148253e8db38a7247ce51064ef13c28b934cdbb3980fc238fd"
+    },
+    "files": [
+      {
+        "path": "dataset-room4_512_16/mav0/cam0/data.csv",
+        "role": "cam0_index",
+        "sha256": "feff54e5a721df968901ae0ec5af1d6ca45c12e758ef8e9e965b812ca87c8d67",
+        "size_bytes": 98057
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/cam1/data.csv",
+        "role": "cam1_index",
+        "sha256": "feff54e5a721df968901ae0ec5af1d6ca45c12e758ef8e9e965b812ca87c8d67",
+        "size_bytes": 98057
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/imu0/data.csv",
+        "role": "imu_stream",
+        "sha256": "4249d4036b3c03c55b709f6f634d975d024999fb017ab3539cfa71580793a3be",
+        "size_bytes": 2232296
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/mocap0/data.csv",
+        "role": "mocap_stream",
+        "sha256": "073a3e957efa8ff638ea41402cac9654b40897631d566a3ffee090208597db2a",
+        "size_bytes": 1481244
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/cam0/data/1520531124150444163.png",
+        "role": "cam0_png_0",
+        "sha256": "1c8371dd64a55790c561f98611f132a645a1944291da63f18c054263ed0c5963",
+        "size_bytes": 284188
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/cam1/data/1520531124150444163.png",
+        "role": "cam1_png_0",
+        "sha256": "e5a853fc43776237e9536e90443fdbd2ae3f8349c6385cbea77133c66542be1f",
+        "size_bytes": 283001
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/cam0/data/1520531124200446163.png",
+        "role": "cam0_png_1",
+        "sha256": "77f022fd752680fde1ad52d3347eb0c7548f7939ecd3742bc7be807984c38c65",
+        "size_bytes": 283946
+      },
+      {
+        "path": "dataset-room4_512_16/mav0/cam1/data/1520531124200446163.png",
+        "role": "cam1_png_1",
+        "sha256": "cb616c08af29f4a413577fc00ad189fc029597800cdead394435ef52ebf1dc42",
+        "size_bytes": 282511
+      }
+    ],
+    "inspection_spec": {
+      "path": "configs/data/tumvi_room4_512_16_format_inspection_v1.json",
+      "sha256": "e8dd0bc98c7be85fed6d92d319bafec75c9f658584ea83d17ac93c6f47bdf1a7"
+    },
+    "review_report": {
+      "path": "reports/tumvi-room4-512-16-compatibility-slice-2026-08-29.md",
+      "sha256": "b1f4a346eeedd9d8dbadf92bf8042754d5ef640626cf4931265b1efa4b4c966e"
+    },
+    "slice_destination_path": "data/quarantine/tum-vi/room4-512-16/tumvi-room4-512-16-compatibility-slice-v1",
+    "slice_receipt": {
+      "path": "governance/datasets/acquisitions/tumvi-room4-512-16-compatibility-slice-2026-08-29.receipt.json",
+      "sha256": "a60402b91d3fcd8fa893ee3d15bd7a4314ac60cfbee22254cf40bdd97134a820"
+    }
+  }
+}

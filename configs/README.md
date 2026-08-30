@@ -63,6 +63,21 @@ Current namespaces:
   configuration, audit, and operational output do not establish payload
   validity, adapter compatibility, scientific dataset selection, membership,
   model access, training, inference, evaluation, or publication authority.
+  A separate checked format-inspection specification at
+  `data/tumvi_room4_512_16_format_inspection_v1.json` then froze three current
+  EuRoC adapter-header comparisons, structural inspection of four CSV streams,
+  four 33-byte PNG signature/IHDR observations, and seven separate cross-file
+  predicates. The
+  CI-green one-use authorization executed once and completed with
+  `format_comparison_outcome: does_not_conform`. Camera and IMU headers, both
+  camera indexes, selected-name membership, filename stems, and all four PNG
+  IHDR tuples passed; the eight-column mocap header matched neither frozen
+  17-column full-state target, and the first selected camera timestamp preceded
+  both observed IMU and mocap ranges. Adapter, calibration, and ground-truth
+  readiness remain false and scientific authority remains none. The next safe
+  configuration work is a TUM-VI-specific adapter contract; minimal calibration
+  metadata may be opened only under a later separate authorization if that
+  contract justifies it. The EuRoC adapter and all model work remain closed.
 - `training/` contains the fully resolved v1-v5 experiment configurations.
   Each new candidate changes only the fields declared by its reviewed plan.
 - `evaluation/` contains frozen checkpoint-evaluation protocols after source,

@@ -53,10 +53,15 @@ deployment work is permitted. The retained TUM VI `room4` candidate archive has
 now completed a bounded header-only structural audit and a separately
 authorized exact eight-file regular-member slice. The latter copied 5,043,300
 bytes under `mav0` without following links, parsing CSVs, or decoding PNGs.
-Neither operation selects a dataset or establishes format, calibration,
-ground-truth, preprocessing, synchronization, or adapter compatibility.
-Independent compatibility evidence, unit selection, and protocol freeze remain
-required before any new model work.
+Neither operation selected a dataset. A later one-use bounded format inspection
+completed from revision `7dfe85b8c7a3de04a1c789a79a139fa90ad5d5a4`
+and recorded `does_not_conform`: seven of ten frozen operational gates passed,
+but the eight-column mocap header and two first-camera timestamp range gates
+failed. Adapter, calibration, and ground-truth readiness remain false. The
+EuRoC adapter must not be reused. A TUM-VI-specific adapter contract, any
+separately authorized minimal calibration evidence it proves necessary,
+independent unit selection, and protocol freeze remain required before any new
+model work.
 
 Milestone bullets summarize permitted scope and required outcomes. Where a
 milestone links an artifact policy, dataset policy, research protocol, or
@@ -1060,13 +1065,22 @@ Execute these as separate small slices; do not combine them into one long phase:
    training, inference, evaluation, dataset selection/membership, publication,
    or source deletion. The authorization is consumed; its operational output
    is not scientific compatibility or selection evidence.
-6. Define and execute separately governed format, timestamp, calibration,
-   ground-truth, preprocessing, and adapter checks without model access. Then
-   complete the independent unit-selection gate only if sufficient
-   compatibility evidence exists.
-   Select or reject TUM VI `room4` without inspecting any candidate prediction,
-   then freeze its source group, leakage review, and membership role. A
-   different rights-compatible full-pose unit may be chosen instead.
+6. The separately governed format inspection was implemented at commit
+   `b83eebf3cc24cfada57d2d76da4a19672ef8267a` after GitHub Actions run
+   `33282946955` passed and executed once from revision
+   `7dfe85b8c7a3de04a1c789a79a139fa90ad5d5a4` after run `33283206142`
+   passed. Receipt SHA-256
+   `30697326550331146f676c88ad5a50756701c91e57084e0ff7178e9d3fbb7846`
+   records `completed` / `does_not_conform`: the mocap header and both
+   first-camera timestamp range predicates failed. Do not reuse the EuRoC
+   adapter and do not begin model/checkpoint work. Next, design and review a
+   TUM-VI-specific adapter contract with synthetic negative fixtures and an
+   explicit interval policy. Only if that contract demonstrates a necessary
+   dependency may a separate one-use authorization inspect exact minimal
+   calibration metadata. Then complete the independent unit-selection gate
+   only if sufficient evidence exists, without inspecting any candidate
+   prediction, and freeze the source group, leakage review, and membership
+   role. A different rights-compatible full-pose unit may be chosen instead.
 7. Freeze one full-pose protocol before any new model work: candidates and
    controls, native classical backend, association/alignment/scale semantics,
    ATE/RPE/rotation/drift measures, coverage and failure rules, latency/memory
