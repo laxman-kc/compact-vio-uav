@@ -854,6 +854,14 @@ def _hard_deadline(seconds: float) -> Iterator[None]:
         raise AcquisitionError("no elapsed-time authority remains")
     if not hasattr(signal, "SIGALRM") or not hasattr(signal, "setitimer"):
         raise AcquisitionError("hard acquisition deadlines require POSIX interval timers")
+    if not hasattr(signal, "pthread_sigmask"):
+        raise AcquisitionError("hard acquisition deadlines require signal-mask inspection")
+    try:
+        blocked_signals = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+    except (OSError, ValueError) as exc:
+        raise AcquisitionError("cannot inspect the process signal mask") from exc
+    if signal.SIGALRM in blocked_signals:
+        raise AcquisitionError("SIGALRM is blocked; hard elapsed deadline is unavailable")
 
     def timeout_handler(_signum: int, _frame: object) -> None:
         raise AcquisitionError("maximum elapsed time exceeded")

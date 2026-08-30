@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import signal
 import subprocess
 import tempfile
 import time
@@ -672,6 +673,21 @@ class AcquisitionTests(unittest.TestCase):
             )
         self.assertTrue(self.fixture.claim_path.exists())
         self.assertFalse(self.fixture.receipt_path.exists())
+
+    @unittest.skipUnless(
+        hasattr(signal, "pthread_sigmask") and hasattr(signal, "SIGALRM"),
+        "requires POSIX signal-mask inspection",
+    )
+    def test_hard_deadline_rejects_preblocked_sigalrm(self) -> None:
+        previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGALRM})
+        try:
+            with (
+                self.assertRaisesRegex(AcquisitionError, "SIGALRM is blocked"),
+                acquisition_module._hard_deadline(1),
+            ):
+                self.fail("a blocked SIGALRM must not enter bounded work")
+        finally:
+            signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
 
     def test_inventory_hard_cap_rejects_authorization(self) -> None:
         document = self.fixture.document()
