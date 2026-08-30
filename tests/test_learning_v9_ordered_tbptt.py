@@ -51,13 +51,14 @@ class V9PolicyConfigTests(unittest.TestCase):
         normalized.pop("initialization")
         normalized.pop("training_sequence_state_policy")
         normalized["experiment_id"] = v6["experiment_id"]
-        for field in ("epochs", "batch_size", "learning_rate"):
+        for field in ("epochs", "batch_size", "learning_rate", "trajectory_loss_weight"):
             normalized["optimization"][field] = v6["optimization"][field]
 
         self.assertEqual(normalized, v6)
         spec = load_run_spec(V9_CONFIG_PATH)
         self.assertEqual(spec.training.epochs, 5)
-        self.assertEqual(spec.training.learning_rate, 3e-5)
+        self.assertEqual(spec.training.learning_rate, 3e-6)
+        self.assertEqual(spec.training.trajectory_loss_weight, 0.01)
         self.assertEqual(spec.training.batch_size, 8)
         self.assertEqual(spec.training_unroll_pairs, 8)
         self.assertTrue(spec.initial_checkpoint_required)
