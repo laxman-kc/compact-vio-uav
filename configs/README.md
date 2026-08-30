@@ -75,7 +75,10 @@ Current namespaces:
   17-column full-state target, and the first selected camera timestamp preceded
   both observed IMU and mocap ranges. Adapter, calibration, and ground-truth
   readiness remain false and scientific authority remains none. The next safe
-  configuration gate is now implemented at
+  configuration gate is now implemented at pushed commit
+  `bc71dd5ebfdc636994a384a0a5dd2fd22184720d`; GitHub Actions
+  [run 33286985057](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33286985057)
+  passed its Python 3.10 and 3.12 jobs. The canonical contract is
   `data/tumvi_room4_512_16_adapter_contract_v1.json`. The strict loader at
   `src/compact_vio/data/tumvi_adapter_contract.py` accepts only the canonical
   tracked contract at exact `HEAD`, revalidates six exact tracked evidence

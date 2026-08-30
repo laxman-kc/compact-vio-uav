@@ -2,13 +2,13 @@
 
 Review date: 2026-08-29
 
-Status: Strict contract and loader implemented and locally verified; immutable
-implementation revision and GitHub Actions result pending; no real payload
-access; every readiness flag false; scientific authority none
+Status: Strict contract and loader implemented, pushed, and CI-green on Python
+3.10 and 3.12; no real payload access; every readiness flag false; scientific
+authority none
 
 ## Technical summary
 
-Gate 1 is complete at the local source-validation boundary. The project now has
+Gate 1 is complete at the immutable source-and-CI boundary. The project now has
 an exact TUM-VI-specific grammar and source-labelled output-policy contract plus
 a sealed loader that accepts only the canonical tracked record and its six
 exact tracked evidence inputs. Focused tests passed 22/22 and the full repository
@@ -41,12 +41,15 @@ No real-payload or calibration read is implied by this result.
 | Strict JSON parse and formatting | passed |
 | `git diff --check` | passed |
 | Independent adversarial review | final pass; no P0 or P1 finding |
-| Immutable implementation revision | pending until commit |
-| GitHub Actions | pending until push |
+| Immutable implementation revision | `bc71dd5ebfdc636994a384a0a5dd2fd22184720d`, pushed to `origin/main` |
+| GitHub Actions | [run 33286985057](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33286985057), success |
+| Python 3.12 CI job | `99191772715`, success, `2026-08-30T02:01:20Z`–`02:01:44Z` |
+| Python 3.10 CI job | `99191772864`, success, `2026-08-30T02:01:20Z`–`02:01:46Z` |
 
-The pending revision and CI fields are not inferred from local checks. They must
-be appended after the exact source and documentation slice is committed, pushed,
-and observed in CI.
+The workflow run was created and started at `2026-08-30T02:01:16Z`, reached
+terminal success at `2026-08-30T02:01:47Z`, and passed both supported Python
+jobs. These observed remote results close the Gate 1 implementation/CI evidence
+boundary without expanding the contract's authority.
 
 ## The contract freezes syntax without claiming semantics
 

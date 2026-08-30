@@ -35,8 +35,12 @@ records `completed` / `does_not_conform`: the observed eight-column mocap
 header does not match either 17-column EuRoC full-state target, and the first
 selected camera timestamp falls before both observed IMU and mocap ranges.
 The EuRoC adapter is therefore not reusable for this slice. A TUM-VI-specific
-adapter contract and strict loader are now implemented and locally verified as
-Gate 1. They freeze syntax, source-labelled record shapes, bounded resource
+adapter contract and strict loader are now implemented as Gate 1 at pushed
+commit `bc71dd5ebfdc636994a384a0a5dd2fd22184720d`.
+GitHub Actions
+[run 33286985057](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33286985057)
+passed its Python 3.10 and 3.12 jobs. The contract and loader freeze syntax,
+source-labelled record shapes, bounded resource
 behavior, and prohibited transformations without opening real payloads. They do
 not implement a parser or adapter and leave every readiness flag false.
 Gate 2 is limited to pure synthetic parsers and adversarial fixtures. Separately
@@ -404,7 +408,7 @@ gate.
 |---|---|---|
 | Repository/core | Python `>=3.10`, standard library, setuptools, unittest, Git/GitHub, JSON, JSON Schema Draft 2020-12, Ruff | Estimator-specific numeric/image packages must be pinned in the learned environment. |
 | Common VIO substrate | Generic causal replay, estimator envelope with explicit declaration/init/reset validation, direct replay-to-session recording, payload-omitted terminal envelope encoding, typed camera/IMU records, translation trajectories, raw residual/RMSE and SE(3) metrics, position-magnitude evaluation, output coverage plus batch and terminal-recorder binding, and strict calibration profile/assessment contracts | Payload-complete traces and remaining common lifecycle/full-pose evaluator behavior are open; final success, failure, latency, and confirmatory metric semantics remain unresolved. |
-| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer, structural-audit, regular-slice, and bounded format-inspection controllers; retained TUM VI archive with verified size/MD5/SHA; completed receipt-backed 4,485-member header classification; completed eight-file `mav0` slice; completed negative format comparison; and a strict, non-executable, locally verified TUM-VI grammar/output-policy contract loader | The contract is not a payload parser or adapter. Gate 2 may implement pure synthetic parsers only. Real payloads, clock mapping, gap thresholds, segment construction, pose association, calibration, image decoding/preprocessing, scientific selection, membership, protocol, and all model work remain blocked. |
+| Development data | Strict EuRoC Vicon full-state and sensor-only/Leica-position adapters; safe verified ZIP/TAR acquisition primitives; SHA-pinned strict TAR inventory; inert header-only structural audit; versioned Vicon/Machine Hall evidence; non-executable TUM VI `room4` candidate identity; one-use operational transfer, structural-audit, regular-slice, and bounded format-inspection controllers; retained TUM VI archive with verified size/MD5/SHA; completed receipt-backed 4,485-member header classification; completed eight-file `mav0` slice; completed negative format comparison; and a strict, non-executable, pushed and CI-green TUM-VI grammar/output-policy contract loader | The contract is not a payload parser or adapter. Gate 2 may implement pure synthetic parsers only. Real payloads, clock mapping, gap thresholds, segment construction, pose association, calibration, image decoding/preprocessing, scientific selection, membership, protocol, and all model work remain blocked. |
 | Learned estimator | PyTorch 2.7.0 execution evidence; compact image-pair CNN, variable-window IMU GRU, recurrent fusion, relative translation/rotation head, pair and sequence training/inference, strict checkpoints, five completed A10 runs, and a rejected controlled v5 loss ablation | No v5 retry or direct model work is authorized. A new full-pose unit/protocol must be selected and frozen independently before later model work. |
 | Native reference and A/B/C/D | Not on the Version 1 critical path | Later rights-reviewed research ablations retain their native/fairness boundaries and cannot be inferred from prototype results. |
 | Tracking | Tracker-independent schemas/files only | MLflow is optional and currently absent. |

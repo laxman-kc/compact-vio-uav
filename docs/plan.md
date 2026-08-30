@@ -59,9 +59,12 @@ and recorded `does_not_conform`: seven of ten frozen operational gates passed,
 but the eight-column mocap header and two first-camera timestamp range gates
 failed. Adapter, calibration, and ground-truth readiness remain false. The
 EuRoC adapter must not be reused. Gate 1 of the replacement path is now
-implemented and locally verified: a strict non-executable TUM-VI grammar,
-source-labelled output-policy contract, and sealed loader. It reads only the
-contract plus six exact tracked evidence files and leaves every readiness flag
+implemented at pushed commit `bc71dd5ebfdc636994a384a0a5dd2fd22184720d`;
+GitHub Actions
+[run 33286985057](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33286985057)
+passed its Python 3.10 and 3.12 jobs. The strict non-executable TUM-VI grammar,
+source-labelled output-policy contract, and sealed loader read only the
+contract plus six exact tracked evidence files and leave every readiness flag
 false. Gate 2 is restricted to pure synthetic parsers and positive/adversarial
 fixtures. Any separately authorized minimal calibration evidence, real-payload
 validation, independent unit selection, and protocol freeze remain required
@@ -1078,7 +1081,10 @@ Execute these as separate small slices; do not combine them into one long phase:
    records `completed` / `does_not_conform`: the mocap header and both
    first-camera timestamp range predicates failed. Do not reuse the EuRoC
    adapter and do not begin model/checkpoint work.
-7. Gate 1 of the replacement path is implemented and locally verified. The
+7. Gate 1 of the replacement path is implemented at pushed commit
+   `bc71dd5ebfdc636994a384a0a5dd2fd22184720d`. GitHub Actions
+   [run 33286985057](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33286985057)
+   completed successfully; its Python 3.10 and 3.12 jobs both passed. The
    canonical contract SHA-256 is
    `4368580eb601958f1c402ee6f85d3207d9bb41282c51f4dee505482c1a6542d5`;
    strict-loader SHA-256 is
@@ -1092,8 +1098,7 @@ Execute these as separate small slices; do not combine them into one long phase:
    limits, and blocked/null interval, pose, image, preprocessing, and segment
    choices. They opened no real payload, calibration, image, learning, or model
    path. All readiness remains false and scientific authority is `none`.
-   Immutable implementation revision and GitHub Actions evidence are pending
-   until this slice is committed and pushed.
+   Immutable implementation and CI gates are therefore closed for Gate 1.
 8. Implement Gate 2 as pure synthetic parsers only. Positive fixtures must
    prove exact accepted camera-index, IMU, and eight-column source-labelled pose
    rows. Adversarial fixtures must fail closed on lexical, header, arity,

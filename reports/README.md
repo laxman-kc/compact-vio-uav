@@ -25,8 +25,8 @@ its presence is not evidence that a run happened or that a hypothesis passed.
 
 - [TUM VI room4 512x512 adapter-contract Gate 1](tumvi-room4-512-16-adapter-contract-v1-2026-08-29.md)
   — strict grammar/source-labelled-output policy and loader implemented and
-  locally verified; no payload parser or adapter, every readiness flag false,
-  scientific authority none, implementation revision and CI pending.
+  CI-green on Python 3.10 and 3.12; no payload parser or adapter, every
+  readiness flag false, and scientific authority none.
 - [TUM VI room4 512x512 bounded format inspection](tumvi-room4-512-16-format-inspection-2026-08-29.md)
   — completed `does_not_conform`: mocap-header and initial timestamp-range
   gates failed; adapter/calibration/ground-truth readiness false and scientific

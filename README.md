@@ -194,14 +194,17 @@ gates passed, while the eight-column mocap header and two first-camera
 timestamp range checks failed. Adapter, calibration, and ground-truth readiness
 remain false; scientific authority is `none`. The current EuRoC adapter must
 not be reused and no model work follows. Gate 1 of the replacement path is now
-implemented and locally verified: a strict TUM-VI-specific adapter **contract**
-and loader freeze exact source-lexeme grammars, source-labelled output shapes,
-stereo-index identity requirements, resource ceilings, and an integer-token
-interval policy that makes no clock-equivalence claim. The loader reads only
-the canonical contract and six exact tracked evidence files; it opens no real
-dataset payload, calibration, image, learning, or model path. It is not a
-payload parser or adapter. All operational readiness flags remain false and
-scientific authority remains `none`. The immediate next gate is a pure
+implemented at pushed commit
+`bc71dd5ebfdc636994a384a0a5dd2fd22184720d`; GitHub Actions
+[run 33286985057](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33286985057)
+passed its Python 3.10 and 3.12 jobs. The strict TUM-VI-specific adapter
+**contract** and loader freeze exact source-lexeme grammars, source-labelled
+output shapes, stereo-index identity requirements, resource ceilings, and an
+integer-token interval policy that makes no clock-equivalence claim. The
+loader reads only the canonical contract and six exact tracked evidence files;
+it opens no real dataset payload, calibration, image, learning, or model path.
+It is not a payload parser or adapter. All operational readiness flags remain
+false and scientific authority remains `none`. The immediate next gate is a pure
 synthetic parser slice with positive and adversarial negative fixtures. Real
 payload access, calibration review, segment construction, dataset selection,
 membership, and model work remain separately blocked.

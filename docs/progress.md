@@ -1826,3 +1826,34 @@ recommendation into a decision.
   labels, fail closed at the frozen grammar/resource boundary, and keep real
   payload, calibration, images, segment construction, dataset selection,
   membership, and model work closed.
+
+## 2026-08-29 — M9 TUM-VI adapter-contract Gate 1 pushed and CI green
+
+- The exact Gate 1 implementation/documentation slice was committed as
+  `bc71dd5ebfdc636994a384a0a5dd2fd22184720d` and pushed to `origin/main`.
+  This closes the immutable-revision field that remained pending in the prior
+  append-only local-validation entry; that entry remains unchanged as the
+  pre-commit evidence state.
+- GitHub Actions
+  [run 33286985057](https://github.com/laxman-kc/compact-vio-uav/actions/runs/33286985057)
+  was created and started at `2026-08-30T02:01:16Z` and reached terminal
+  `success` at `2026-08-30T02:01:47Z`. Python 3.12 job `99191772715` passed
+  from `02:01:20Z` through `02:01:44Z`; Python 3.10 job `99191772864` passed
+  from `02:01:20Z` through `02:01:46Z`.
+- The committed source identities remain contract SHA-256
+  `4368580eb601958f1c402ee6f85d3207d9bb41282c51f4dee505482c1a6542d5`,
+  strict-loader SHA-256
+  `26a018504568c213dfa94dca9988544bd3bc7a5ce28770a30b932c9b0f25bf20`,
+  and focused-test SHA-256
+  `612ed53ff3ed1dbe2d7a51e9c69d99b83a60ea19eeeb922ed2da2a1f813a7a3c`.
+  The focused suite passed 22/22 and the full suite passed 517/517 before the
+  push; the successful two-version CI run independently closed the remote gate.
+- This closeout changes no scientific or operational boundary. Gate 1 remains
+  a strict contract loader, not a TUM-VI payload parser or adapter. It grants no
+  real payload, calibration, image, segment, dataset-membership, model,
+  training, inference, evaluation, or publication authority. Every readiness
+  flag remains false and scientific authority remains `none`.
+- The immediate next gate remains pure synthetic parsing with positive and
+  adversarial negative fixtures. Real payloads, calibration, decoding,
+  preprocessing, segment construction, dataset selection/membership, and all
+  model work remain closed.

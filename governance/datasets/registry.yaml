@@ -118,7 +118,11 @@ datasets:
     adapter_contract_tests: tests/test_tumvi_adapter_contract.py
     adapter_contract_tests_sha256: 612ed53ff3ed1dbe2d7a51e9c69d99b83a60ea19eeeb922ed2da2a1f813a7a3c
     adapter_contract_report: reports/tumvi-room4-512-16-adapter-contract-v1-2026-08-29.md
-    adapter_contract_state: locally_verified_contract_only_revision_and_ci_pending_no_scientific_authority
+    adapter_contract_implementation_revision: bc71dd5ebfdc636994a384a0a5dd2fd22184720d
+    adapter_contract_github_actions_run: 33286985057
+    adapter_contract_github_actions_url: https://github.com/laxman-kc/compact-vio-uav/actions/runs/33286985057
+    adapter_contract_ci_state: passed_python_3_10_and_3_12
+    adapter_contract_state: implemented_pushed_ci_green_contract_only_no_scientific_authority
     adapter_ready: false
     calibration_ready: false
     clock_mapping_ready: false
@@ -145,7 +149,7 @@ datasets:
       - The audit-bound one-use operation copied exactly the eight allowlisted regular mav0 files, totaling 5,043,300 bytes, after its authorization revision passed CI; it excluded dso, followed no link, and is consumed with a tracked receipt.
       - The compatibility-slice name denotes an operational input boundary, not a compatibility result. Its later bounded format inspection parsed only CSV structure and exactly four PNG signature/IHDR records; it completed with does_not_conform because the observed eight-column mocap header does not match either current 17-column EuRoC full-state target and the first selected camera timestamp falls before both observed IMU and mocap ranges.
       - The format receipt does not establish units, frames, synchronization correction, calibration, ground-truth meaning, whole-file PNG validity/decodability, full image existence, scientific selection, or source membership. The EuRoC adapter must not be reused. At that point, the receipt identified a TUM-VI-specific adapter contract and, only if justified, separately authorized minimal calibration metadata as future gates before any model work.
-      - The locally verified adapter contract is a strict grammar and source-labelled output-policy record, not a payload parser or adapter. Its interval comparisons order integer timestamp tokens without asserting a common clock; segment, pose-association, decoding, preprocessing, and all readiness decisions remain blocked. It reads no real payload, calibration, image, learning, or model path and grants no scientific authority.
+      - The pushed and CI-green adapter contract is a strict grammar and source-labelled output-policy record, not a payload parser or adapter. Its interval comparisons order integer timestamp tokens without asserting a common clock; segment, pose-association, decoding, preprocessing, and all readiness decisions remain blocked. It reads no real payload, calibration, image, learning, or model path and grants no scientific authority.
       - Gate 2 is restricted to pure synthetic parsers and adversarial fixtures. Any real-payload or calibration read requires a later exact authorization after the dependency is independently reviewed.
       - The motion/domain is not a substitute for UAV-domain evidence.
       - Ground-truth availability varies and must be recorded per sequence.
