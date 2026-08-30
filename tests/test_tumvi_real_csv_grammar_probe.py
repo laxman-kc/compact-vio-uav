@@ -69,6 +69,11 @@ from compact_vio.data.tumvi_real_csv_grammar_probe import (
 
 _WORKSPACE = Path(__file__).resolve().parents[1]
 _FIXED_NOW = datetime(2026, 8, 29, 21, 0, 0, tzinfo=timezone.utc)
+_CONSUMED_AUTHORIZATION_ID = "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-29"
+_CONSUMED_CLAIM_PATH = (
+    "governance/datasets/acquisitions/"
+    "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-29.claim.json"
+)
 
 
 def _sha(payload: bytes) -> str:
@@ -288,6 +293,39 @@ def _run_fixture(
 
 
 class ProbeSpecAndAuthorizationTests(unittest.TestCase):
+    def test_superseding_operational_identity_is_exact_and_scientific_probe_is_unchanged(
+        self,
+    ) -> None:
+        self.assertEqual(
+            _AUTHORIZATION_ID,
+            "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30",
+        )
+        self.assertEqual(
+            _AUTHORIZATION_PATH,
+            "governance/datasets/acquisitions/"
+            "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30.authorization.json",
+        )
+        self.assertEqual(
+            _CLAIM_PATH,
+            "governance/datasets/acquisitions/"
+            "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30.claim.json",
+        )
+        self.assertEqual(
+            _RECEIPT_PATH,
+            "governance/datasets/acquisitions/"
+            "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30.receipt.json",
+        )
+        self.assertNotEqual(_AUTHORIZATION_ID, _CONSUMED_AUTHORIZATION_ID)
+        self.assertNotEqual(_CLAIM_PATH, _CONSUMED_CLAIM_PATH)
+        self.assertEqual(
+            probe_module._PROBE_ID,
+            "tumvi-room4-512-16-real-csv-grammar-probe-v1",
+        )
+        self.assertEqual(
+            probe_module._SPEC_PATH,
+            "configs/data/tumvi_room4_512_16_real_csv_grammar_probe_v1.json",
+        )
+
     def test_checked_spec_loads_without_payload_access(self) -> None:
         with mock.patch.object(
             probe_module, "_bind_exact_sources_after_claim", side_effect=AssertionError
@@ -957,6 +995,25 @@ class Gate2DifferentialAndFreezeTests(unittest.TestCase):
 
 
 class GitBackedProbeRunnerTests(unittest.TestCase):
+    def test_tracked_consumed_claim_cannot_collide_with_superseding_outputs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            authorization_path, authorization, _ = _git_backed_fixture(root, _valid_payloads())
+            consumed_claim = root / _CONSUMED_CLAIM_PATH
+            consumed_claim.parent.mkdir(parents=True, exist_ok=True)
+            consumed_bytes = b'{"synthetic_incident":"preserve-no-retry"}\n'
+            consumed_claim.write_bytes(consumed_bytes)
+            _git(root, "add", _CONSUMED_CLAIM_PATH)
+            _git(root, "commit", "-qm", "preserve synthetic consumed claim")
+
+            result = _run_fixture(root, authorization_path, authorization)
+
+            self.assertEqual(result.grammar_outcome, "accepts_frozen_gate1_grammar")
+            self.assertEqual(consumed_claim.read_bytes(), consumed_bytes)
+            self.assertTrue((root / _CLAIM_PATH).is_file())
+            self.assertTrue((root / _RECEIPT_PATH).is_file())
+            self.assertNotEqual(consumed_claim, root / _CLAIM_PATH)
+
     def test_mid_truth_gate_head_swap_is_rejected_against_entry_revision(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()

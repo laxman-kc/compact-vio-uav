@@ -61,18 +61,18 @@ _SPEC_SCOPE = (
 )
 _AUTHORIZATION_SCOPE = "one_use_exact_four_real_csv_grammar_probe_aggregate_only"
 _SPEC_PATH = "configs/data/tumvi_room4_512_16_real_csv_grammar_probe_v1.json"
-_AUTHORIZATION_ID = "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-29"
+_AUTHORIZATION_ID = "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30"
 _AUTHORIZATION_PATH = (
     "governance/datasets/acquisitions/"
-    "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-29.authorization.json"
+    "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30.authorization.json"
 )
 _CLAIM_PATH = (
     "governance/datasets/acquisitions/"
-    "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-29.claim.json"
+    "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30.claim.json"
 )
 _RECEIPT_PATH = (
     "governance/datasets/acquisitions/"
-    "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-29.receipt.json"
+    "tumvi-room4-512-16-real-csv-grammar-probe-2026-08-30.receipt.json"
 )
 _SOURCE_ROOT = "data/quarantine/tum-vi/room4-512-16/tumvi-room4-512-16-compatibility-slice-v1"
 _SOURCE_SCOPE = (
