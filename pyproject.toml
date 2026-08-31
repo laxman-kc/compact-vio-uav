@@ -5,13 +5,22 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "compact-vio-uav"
 version = "0.1.0.dev0"
-description = "Evidence-gated research infrastructure for compact UAV visual-inertial odometry"
+description = "Camera and IMU recordings to inspectable local 3D trajectories"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "compact-vio-uav contributors" }]
 dependencies = []
 
+[project.urls]
+Documentation = "https://github.com/laxman-kc/compact-vio-uav/tree/main/docs"
+Homepage = "https://github.com/laxman-kc/compact-vio-uav"
+Issues = "https://github.com/laxman-kc/compact-vio-uav/issues"
+Repository = "https://github.com/laxman-kc/compact-vio-uav.git"
+
 [project.optional-dependencies]
+dev = [
+  "ruff==0.16.4",
+]
 data = [
   "Pillow>=10.4,<13",
   "PyYAML>=6.0.2,<7",

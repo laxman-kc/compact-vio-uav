@@ -33,6 +33,17 @@ jobs:
       - name: Build and install package
         run: python -m pip install --disable-pip-version-check --no-deps .
 
+      - name: Install lightweight example dependencies
+        run: >-
+          python -m pip install --disable-pip-version-check
+          "Pillow>=10.4,<13"
+          "PyYAML>=6.0.2,<7"
+
+      - name: Exercise clean-clone workflow example
+        run: |
+          python examples/create_example_bundle.py --output /tmp/compact-vio-example.zip
+          python -m zipfile -l /tmp/compact-vio-example.zip
+
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
@@ -76,3 +87,34 @@ jobs:
 
       - name: Validate schemas and contract fixtures
         run: python scripts/validate_schemas.py
+
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install model and demo runtimes
+        run: python -m pip install --disable-pip-version-check ".[demo,onnx]"
+
+      - name: Exercise the packaged inference surface
+        run: >-
+          python -m unittest -v
+          tests.test_recording_inference
+          tests.test_raft_hybrid
+          tests.test_demo_bundle
+          tests.test_inference_checkpoint
+          tests.test_onnx_export
+          tests.test_raft_head_onnx
+          tests.test_learning_sequence_dataset
+          tests.test_learning_inference_dataset

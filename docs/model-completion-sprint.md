@@ -2,6 +2,9 @@
 
 Status: Software complete; model quality rejected
 
+> Historical sprint record. For the current public capability and benchmark verdict, use the
+> [model card](model-card.md). This file preserves the bounded experiment sequence and stop result.
+
 ## Outcome
 
 Finish the current offline compact-VIO model phase with one runnable path:
@@ -9,7 +12,7 @@ Finish the current offline compact-VIO model phase with one runnable path:
 ```text
 recording + synchronized IMU + calibration
                     |
-              selected model
+              candidate model
                     |
            integrated 6-DoF trajectory
                     |
@@ -53,7 +56,8 @@ image-to-trajectory ONNX graph was not produced.
 2. The bounded model iterations and fresh-sequence evaluation were completed.
 3. `compact-vio-run` accepts an MP4, image ZIP, or timestamped image directory
    plus synchronized IMU and calibration, then writes CSV/SVG/HTML/JSON.
-4. `compact-vio-demo` provides a local upload-and-run interface.
+4. `compact-vio-demo` provides a one-click example, one-file recording-bundle upload, and an
+   advanced separate-file path. It labels successful processing separately from model accuracy.
 5. The translation head has a checked ONNX export and the complete local model
    package binds the TorchVision RAFT weights, head, clamp, ONNX, input contract,
    and evaluation summary.

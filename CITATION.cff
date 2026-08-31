@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: >-
+  If this research software informs your work, cite the repository URL and the exact Git commit
+  you used. No archival software release or project paper has been published yet.
+title: "CompactVIO-UAV: Camera and IMU recordings to inspectable local 3D trajectories"
+type: software
+authors:
+  - name: CompactVIO-UAV contributors
+repository-code: "https://github.com/laxman-kc/compact-vio-uav"
+url: "https://github.com/laxman-kc/compact-vio-uav"
+abstract: >-
+  A compact hybrid visual-inertial odometry research pipeline that combines optical flow,
+  gyro-derived rotation, and a learned translation head to generate inspectable local
+  trajectories from synchronized monocular-camera and IMU recordings.
+keywords:
+  - visual-inertial odometry
+  - robotics
+  - optical flow
+  - inertial measurement unit
+  - trajectory estimation

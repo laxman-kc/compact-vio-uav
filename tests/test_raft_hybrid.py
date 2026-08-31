@@ -23,6 +23,7 @@ from compact_vio.learning.raft_hybrid import (
     RAFT_WEIGHTS_SHA256,
     RaftHybridBackend,
     RaftHybridError,
+    _assert_package_files_unchanged,
     _sha256_bool_tensor,
     _sha256_float_tensor,
     build_parser,
@@ -181,6 +182,22 @@ class RaftHybridDependencyLightTests(unittest.TestCase):
         nonidentity_imu["imu"]["T_BS"][0][3] = 0.01  # type: ignore[index]
         with self.assertRaisesRegex(RaftHybridError, "imu.T_BS must be identity"):
             parse_hybrid_calibration(nonidentity_imu)
+        reflection = _calibration()
+        reflection["camera"]["T_BS"][0][0] = -1.0  # type: ignore[index]
+        with self.assertRaisesRegex(RaftHybridError, r"determinant \+1"):
+            parse_hybrid_calibration(reflection)
+        excessive_resolution = _calibration()
+        excessive_resolution["camera"]["resolution"] = [100_000, 100_000]  # type: ignore[index]
+        with self.assertRaisesRegex(RaftHybridError, "pixel limit"):
+            parse_hybrid_calibration(excessive_resolution)
+        tiny_focal = _calibration()
+        tiny_focal["camera"]["intrinsics"] = [1e-300, 1e-300, 6.0, 4.0]  # type: ignore[index]
+        with self.assertRaisesRegex(RaftHybridError, "focal lengths are unusable"):
+            parse_hybrid_calibration(tiny_focal)
+        extreme_distortion = _calibration()
+        extreme_distortion["camera"]["distortion_coefficients"] = [1e100, 0, 0, 0]  # type: ignore[index]
+        with self.assertRaisesRegex(RaftHybridError, "distortion coefficients"):
+            parse_hybrid_calibration(extreme_distortion)
 
 
 @unittest.skipUnless(RUNTIME_AVAILABLE, "PyTorch and Pillow runtime extras are not installed")
@@ -299,6 +316,11 @@ class RaftHybridRuntimeTests(unittest.TestCase):
                     "rejected",
                 )
                 self.assertEqual(loaded.manifest["quality_status"], "experimental_rejected")
+                stable_head_bytes = loaded.head_checkpoint_path.read_bytes()
+                loaded.head_checkpoint_path.write_bytes(b"changed-after-validation")
+                with self.assertRaisesRegex(RaftHybridError, "changed after package validation"):
+                    _assert_package_files_unchanged(loaded)
+                loaded.head_checkpoint_path.write_bytes(stable_head_bytes)
                 mismatch_payload = _evaluation_summary(
                     raft_sha256=raft_sha,
                     head_sha256=head_sha,

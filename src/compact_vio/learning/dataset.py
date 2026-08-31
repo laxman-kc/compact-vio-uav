@@ -422,13 +422,17 @@ def _normalized_image_tensor(
 
     try:
         with Image.open(path) as image:
+            if image.width * image.height > 50_000_000:
+                raise LearningError(f"source image exceeds the supported pixel limit: {path}")
             grayscale = image.convert("L")
             resized = grayscale.resize(
                 (model_config.image_width_px, model_config.image_height_px),
                 resample=Image.Resampling.BILINEAR,
             )
             pixels = bytearray(resized.tobytes())
-    except (OSError, ValueError) as exc:
+    except LearningError:
+        raise
+    except (OSError, ValueError, Image.DecompressionBombError) as exc:
         raise LearningError(f"cannot decode EuRoC image {path}: {exc}") from exc
     tensor = torch.frombuffer(pixels, dtype=torch.uint8).reshape(
         model_config.image_height_px,

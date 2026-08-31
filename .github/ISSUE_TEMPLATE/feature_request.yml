@@ -1,0 +1,56 @@
+name: Feature request
+description: Describe a user problem or research need before proposing implementation.
+title: "[Feature] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        External contributions are discussion-only until a source license and contribution terms
+        are selected. Please use this issue to agree on the problem and scope before writing code.
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: What is difficult or impossible today, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe the observable result without prescribing an implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Possible approach
+      description: Optional implementation idea, including compatibility or model-quality effects.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Primary scope
+      options:
+        - First-run experience
+        - Recording or calibration inputs
+        - Inference and trajectory outputs
+        - Model training or evaluation
+        - ONNX or deployment export
+        - Documentation or community
+        - Research reproducibility
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I understand this issue is a scope discussion, not authorization to submit code.
+          required: true
+        - label: I have not described the current research-preview model as navigation-ready.
+          required: true

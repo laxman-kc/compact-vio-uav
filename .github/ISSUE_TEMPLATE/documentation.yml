@@ -1,0 +1,39 @@
+name: Documentation problem
+description: Report unclear, missing, stale, or contradictory documentation.
+title: "[Docs] "
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Document or page
+      description: Link the file, heading, command help, or interface text.
+      placeholder: README.md > Start here
+    validations:
+      required: true
+  - type: textarea
+    id: audience
+    attributes:
+      label: Reader goal
+      description: What was the reader trying to accomplish?
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What was confusing or missing?
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested clarification
+      description: Plain-language wording or an example is welcome; implementation is not required.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I checked the documentation index for an existing explanation.
+          required: true
+        - label: I removed private recordings, credentials, and machine-local paths.
+          required: true

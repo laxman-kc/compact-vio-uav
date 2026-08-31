@@ -10,6 +10,8 @@ import unittest
 import zipfile
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 try:
     import torch
@@ -20,11 +22,20 @@ except ImportError:
     INFERENCE_STACK_AVAILABLE = False
 
 from compact_vio.learning.config import DataConfig, ModelConfig
-from compact_vio.learning.local_demo import _completion_status
+from compact_vio.learning.local_demo import (
+    _completion_panel,
+    _completion_status,
+    _error_panel,
+    _model_is_ready,
+    _model_setup_panel,
+    _path,
+)
 from compact_vio.learning.local_demo import build_parser as build_demo_parser
 from compact_vio.learning.recording_inference import (
+    ImuSample,
     MotionEstimate,
     RecordingInferenceError,
+    assess_model_quality,
     camera_samples,
     load_calibration,
     load_camera_timestamps,
@@ -91,7 +102,86 @@ class _FakeRecordingBackend:
         )
 
 
+def _quality_backend(*, outcome: str = "rejected") -> object:
+    final_passed = outcome == "accepted"
+    final_path_ratio = 0.9 if final_passed else 0.5316322190201012
+    final_drift = 0.01 if final_passed else 0.032806273676682145
+    final_predicted_path = 117.61834450790347 if final_passed else 69.47744609800827
+    final_drift_m = 1.3068704945322608 if final_passed else 4.287355110360628
+    gates = {
+        "coverage_ratio_min": 1.0,
+        "normalized_final_translation_drift_max": 0.02,
+        "path_length_ratio_max": 1.2,
+        "path_length_ratio_min": 0.8,
+        "require_pair_rotation_rmse_below_zero_motion": True,
+        "require_pair_translation_rmse_below_zero_motion": True,
+        "require_translation_ate_below_zero_motion": True,
+    }
+    sequences = [
+        {"all_pass": True, "role": "development_validation"},
+        {"all_pass": True, "role": "development_validation"},
+        {
+            "all_pass": final_passed,
+            "coverage_ratio": 1.0,
+            "final_translation_drift_m": final_drift_m,
+            "normalized_final_translation_drift": final_drift,
+            "pair_rotation_rmse_rad": 0.0000727281,
+            "pair_translation_rmse_m": 0.0351848104,
+            "path_length_ratio": final_path_ratio,
+            "predicted_path_length_m": final_predicted_path,
+            "reference_path_length_m": 130.68704945322608,
+            "role": "final_test",
+            "sequence_id": "MH_03_medium",
+            "translation_ate_m": 3.8248968427,
+            "zero_pair_rotation_rmse_rad": 0.0172287091,
+            "zero_pair_translation_rmse_m": 0.0612102654,
+            "zero_translation_ate_m": 4.6738549597,
+        },
+    ]
+    return SimpleNamespace(
+        quality_status="accepted" if final_passed else "experimental_rejected",
+        package=SimpleNamespace(
+            manifest={"evaluation": {"gates": gates, "outcome": outcome, "sequences": sequences}}
+        ),
+    )
+
+
 class DependencyLightEntrypointTests(unittest.TestCase):
+    def test_demo_builds_with_the_optional_gradio_stack(self) -> None:
+        import gc
+        import warnings
+
+        try:
+            import gradio  # noqa: F401
+        except ImportError:
+            self.skipTest("the optional Gradio demo stack is not installed")
+
+        from compact_vio.learning.local_demo import build_demo
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=ResourceWarning)
+            demo = build_demo(checkpoint_path=Path("placeholder"), device="cpu")
+            workspace_owner = demo._compact_vio_result_workspace
+            workspace = Path(workspace_owner.name)
+            self.assertTrue(workspace.is_dir())
+            demo.close()
+            workspace_owner.cleanup()
+            self.assertFalse(workspace.exists())
+            del demo
+            gc.collect()
+
+    def test_demo_requires_a_model_artifact_before_inference(self) -> None:
+        self.assertFalse(_model_is_ready(None))
+        self.assertFalse(_model_is_ready("  "))
+        self.assertTrue(_model_is_ready("model-package/manifest.json"))
+        panel = _model_setup_panel()
+        self.assertIn("Model package required", panel)
+        self.assertIn("does not include model weights", panel)
+        self.assertIn("Advanced model settings", panel)
+
+    def test_demo_path_keeps_full_pathlib_value(self) -> None:
+        self.assertEqual(_path(Path("/tmp/example.zip"), field="bundle"), "/tmp/example.zip")
+
     def test_demo_help_does_not_import_gradio_torch_or_opencv(self) -> None:
         original_import = builtins.__import__
 
@@ -117,6 +207,11 @@ class DependencyLightEntrypointTests(unittest.TestCase):
         self.assertIn("--checkpoint", output.getvalue())
         self.assertIn("--model-package", output.getvalue())
         self.assertIn("imu.T_BS must be identity", output.getvalue())
+        self.assertIn("Keep the rig stationary", output.getvalue())
+        self.assertNotIn("--share", output.getvalue())
+
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            build_demo_parser().parse_args(["--host", "0.0.0.0"])
 
     def test_package_cli_requires_calibration_before_loading_package(self) -> None:
         error = io.StringIO()
@@ -143,8 +238,164 @@ class DependencyLightEntrypointTests(unittest.TestCase):
             path_length_m=1.25,
             quality_warning="EXPERIMENTAL MODEL: frozen gates failed.",
         )
-        self.assertTrue(status.startswith("⚠️ **MODEL QUALITY WARNING:**"))
-        self.assertIn("EXPERIMENTAL MODEL", status)
+        self.assertTrue(status.startswith("Run completed:"))
+        self.assertIn("Model accuracy is not yet reliable", status)
+
+    def test_quality_assessment_separates_run_success_from_accuracy(self) -> None:
+        quality = assess_model_quality(_quality_backend())
+        self.assertEqual(quality.status, "rejected")
+        self.assertEqual(quality.development_passed, 2)
+        self.assertEqual(quality.development_total, 2)
+        self.assertFalse(quality.final_test_passed)
+        self.assertEqual(quality.failed_gates, ("distance travelled", "end-position drift"))
+        self.assertAlmostEqual(quality.path_error_percent or 0.0, 46.83677809798988)
+        self.assertIn("69.5 m for a 130.7 m path", quality.explanation)
+        self.assertIn("not to measure distance", quality.recommended_use)
+
+        panel = _completion_panel(
+            pair_count=1,
+            frame_count=2,
+            path_length_m=0.034644,
+            final_displacement_m=0.034644,
+            elapsed_s=0.164532,
+            quality=quality,
+        )
+        self.assertIn("Trajectory created", panel)
+        self.assertIn("Accuracy for this recording: unverified", panel)
+        self.assertIn("Packaged model:</strong> Benchmark not passed", panel)
+        self.assertIn("Very short recording", panel)
+        self.assertIn("0.035 m", panel)
+
+    def test_quality_assessment_can_report_accepted_and_unknown_models(self) -> None:
+        accepted = assess_model_quality(_quality_backend(outcome="accepted"))
+        self.assertEqual(accepted.status, "accepted")
+        self.assertTrue(accepted.final_test_passed)
+        self.assertEqual(accepted.failed_gates, ())
+        self.assertIn("All 3 packaged benchmark recordings passed", accepted.explanation)
+
+        unknown = assess_model_quality(object())
+        self.assertEqual(unknown.status, "not_assessed")
+        self.assertIn("does not include a benchmark verdict", unknown.explanation)
+
+    def test_quality_assessment_does_not_hide_failed_development_sequence(self) -> None:
+        backend = _quality_backend(outcome="accepted")
+        backend.quality_status = "experimental_rejected"
+        evaluation = backend.package.manifest["evaluation"]
+        evaluation["outcome"] = "rejected"
+        development = evaluation["sequences"][0]
+        development.update(
+            {
+                "sequence_id": "V1_03_difficult",
+                "all_pass": False,
+                "coverage_ratio": 1.0,
+                "path_length_ratio": 0.5,
+                "normalized_final_translation_drift": 0.01,
+                "translation_ate_m": 1.0,
+                "zero_translation_ate_m": 2.0,
+                "pair_translation_rmse_m": 0.01,
+                "zero_pair_translation_rmse_m": 0.02,
+                "pair_rotation_rmse_rad": 0.01,
+                "zero_pair_rotation_rmse_rad": 0.02,
+            }
+        )
+        quality = assess_model_quality(backend)
+        self.assertEqual(quality.status, "rejected")
+        self.assertTrue(quality.final_test_passed)
+        self.assertEqual(quality.failed_gates, ("V1 03 difficult: distance travelled",))
+        self.assertIn("development benchmark recordings failed", quality.explanation)
+        self.assertNotIn("held-out MH 03 medium test", quality.explanation)
+
+    def test_strict_text_inputs_reject_duplicates_extreme_timestamps_and_csv_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            duplicate_json = root / "duplicate.json"
+            duplicate_json.write_text(
+                '{"camera":{"resolution":[12,8]},"camera":{"resolution":[14,9]}}',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(RecordingInferenceError, "duplicate JSON key"):
+                load_calibration(duplicate_json)
+
+            duplicate_yaml = root / "duplicate.yaml"
+            duplicate_yaml.write_text(
+                "camera:\n  resolution: [12, 8]\n  resolution: [14, 9]\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(RecordingInferenceError, "duplicate YAML key"):
+                load_calibration(duplicate_yaml)
+
+            extreme = root / "extreme.csv"
+            extreme.write_text(
+                f"timestamp_ns,filename\n{1 << 63},a.png\n{(1 << 63) + 1},b.png\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(RecordingInferenceError, "signed 64-bit range"):
+                load_camera_timestamps(extreme)
+
+            malformed = root / "malformed.csv"
+            malformed.write_text(
+                "timestamp_ns,filename\n1," + ("x" * 200_000) + "\n2,b.png\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(RecordingInferenceError, "CSV is malformed"):
+                load_camera_timestamps(malformed)
+
+            malformed_header = root / "malformed-header.csv"
+            malformed_header.write_text(("x" * 200_000) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(RecordingInferenceError, "CSV is malformed"):
+                load_camera_timestamps(malformed_header)
+
+            invalid_utf8 = root / "invalid-utf8.csv"
+            invalid_utf8.write_bytes(
+                b"timestamp_ns,filename\n1,a.png\n2," + bytes((0xFF,)) + b".png\n"
+            )
+            with self.assertRaisesRegex(RecordingInferenceError, "CSV is malformed"):
+                load_camera_timestamps(invalid_utf8)
+
+        with self.assertRaisesRegex(RecordingInferenceError, "gyroscope value"):
+            ImuSample(1, (1e308, 0.0, 0.0), (0.0, 0.0, 9.81))
+        with self.assertRaisesRegex(RecordingInferenceError, "acceleration value"):
+            ImuSample(1, (0.0, 0.0, 0.0), (1e308, 0.0, 9.81))
+
+    def test_image_zip_rejects_case_duplicates_and_corrupted_member(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            duplicate = root / "duplicate.zip"
+            with zipfile.ZipFile(duplicate, "w") as archive:
+                archive.writestr("frames/100.png", b"one")
+                archive.writestr("FRAMES/100.PNG", b"two")
+            with self.assertRaisesRegex(RecordingInferenceError, "repeats a member path"):
+                with camera_samples(duplicate):
+                    pass
+
+            corrupted = root / "corrupted.zip"
+            with zipfile.ZipFile(corrupted, "w", compression=zipfile.ZIP_STORED) as archive:
+                archive.writestr("100.png", b"one")
+                archive.writestr("200.png", b"two")
+            with zipfile.ZipFile(corrupted) as archive:
+                member = archive.getinfo("100.png")
+                offset = (
+                    member.header_offset
+                    + 30
+                    + len(member.filename.encode("utf-8"))
+                    + len(member.extra)
+                )
+            with corrupted.open("r+b") as handle:
+                handle.seek(offset)
+                original = handle.read(1)
+                handle.seek(offset)
+                handle.write(bytes((original[0] ^ 0xFF,)))
+            with self.assertRaisesRegex(RecordingInferenceError, "cannot extract image ZIP"):
+                with camera_samples(corrupted):
+                    pass
+
+    def test_demo_error_panel_is_actionable_and_escapes_content(self) -> None:
+        panel = _error_panel("recording <script> is required")
+        self.assertIn('role="alert"', panel)
+        self.assertIn("This recording could not be processed", panel)
+        self.assertIn("CompactVIO bundle ZIP", panel)
+        self.assertIn("recording &lt;script&gt; is required", panel)
+        self.assertNotIn("<script>", panel)
 
 
 @unittest.skipUnless(
@@ -229,8 +480,64 @@ class RecordingInferenceTests(unittest.TestCase):
         self.assertNotIn("http://", report.replace('xmlns="http://www.w3.org/2000/svg"', ""))
         self.assertIn(svg, report)
         self.assertEqual(summary["predicted_pairs"], 2)
+        self.assertEqual(summary["run_status"], "completed")
+        self.assertEqual(summary["accuracy_for_this_recording"], "unverified_without_ground_truth")
+        self.assertEqual(summary["model_quality"]["status"], "not_assessed")
         self.assertEqual(len(summary["calibration_sha256"]), 64)
         self.assertIn("grayscale-resize-normalize", summary["calibration_usage"])
+        self.assertIn("Run completed", report)
+        self.assertIn("does not prove the estimated path is accurate", report)
+        self.assertIn("Accuracy for this recording:</strong> Unverified", report)
+        self.assertIn("cannot measure whether the uploaded trajectory is correct", report)
+        self.assertIn("Views are autoscaled", svg)
+        self.assertIn(">start<", svg)
+        self.assertIn(">end<", svg)
+        self.assertIn("Estimated local path with 3 poses", svg)
+
+    def test_output_publication_refuses_stale_files_and_cleans_failed_staging(self) -> None:
+        stale = self.root / "stale-result"
+        stale.mkdir()
+        stale_summary = stale / "summary.json"
+        stale_summary.write_text('{"run_status":"completed","sequence_id":"old"}\n')
+        backend = _FakeBackend(
+            [
+                MotionEstimate((0.1, 0.0, 0.0), (0.0, 0.0, 0.0)),
+                MotionEstimate((0.1, 0.0, 0.0), (0.0, 0.0, 0.0)),
+            ]
+        )
+        with self.assertRaisesRegex(RecordingInferenceError, "must be empty"):
+            run_recording(
+                recording_path=self.images,
+                imu_csv_path=self.imu_csv,
+                output_directory=stale,
+                backend=backend,
+                sequence_id="new",
+            )
+        self.assertEqual(
+            json.loads(stale_summary.read_text(encoding="utf-8"))["sequence_id"],
+            "old",
+        )
+
+        failed = self.root / "failed-publication"
+        backend = _FakeBackend(
+            [
+                MotionEstimate((0.1, 0.0, 0.0), (0.0, 0.0, 0.0)),
+                MotionEstimate((0.1, 0.0, 0.0), (0.0, 0.0, 0.0)),
+            ]
+        )
+        with patch(
+            "compact_vio.learning.recording_inference._atomic_text",
+            side_effect=RecordingInferenceError("simulated export failure"),
+        ):
+            with self.assertRaisesRegex(RecordingInferenceError, "simulated export failure"):
+                run_recording(
+                    recording_path=self.images,
+                    imu_csv_path=self.imu_csv,
+                    output_directory=failed,
+                    backend=backend,
+                )
+        self.assertFalse(failed.exists())
+        self.assertEqual(tuple(self.root.glob(".failed-publication.staging-*")), ())
 
     def test_camera_and_imu_alias_csvs_are_accepted_strictly(self) -> None:
         camera_csv = self.root / "camera.csv"
@@ -297,10 +604,10 @@ class RecordingInferenceTests(unittest.TestCase):
         self.assertEqual(summary["motion_frame"], "previous camera/body frame")
         self.assertEqual(summary["quality_status"], "experimental_rejected")
         self.assertIn("EXPERIMENTAL MODEL", summary["quality_warning"])
-        self.assertIn(
-            "MODEL QUALITY WARNING",
-            result.summary_html.read_text(encoding="utf-8"),
-        )
+        self.assertEqual(summary["model_quality"]["status"], "rejected")
+        report = result.summary_html.read_text(encoding="utf-8")
+        self.assertIn("Model quality: Benchmark not passed", report)
+        self.assertIn("Model accuracy is not reliable yet", report)
 
     def test_missing_causal_imu_interval_is_rejected(self) -> None:
         sparse = self.root / "sparse.csv"

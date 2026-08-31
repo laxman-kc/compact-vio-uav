@@ -1,10 +1,11 @@
-"""Run a trained CompactVIO checkpoint on a recorded camera and IMU stream.
+"""Run a packaged RAFT hybrid or legacy CompactVIO checkpoint on a recording.
 
 This module is intentionally the small, user-facing bridge between a recording
-and useful trajectory artifacts.  It accepts either timestamp-named images or
-an MP4 plus an explicit camera timestamp CSV, applies the checkpoint's own
-training preprocessing, carries the causal fusion state, integrates relative
-motions, and writes CSV/SVG/HTML outputs.
+and useful trajectory artifacts. It accepts timestamp-named images, an image
+ZIP, or MP4 plus explicit camera timestamps. The current RAFT hybrid performs
+calibrated image rectification and causal gyro integration; the legacy path
+applies checkpoint preprocessing and optional recurrent-state carry. Both
+paths integrate relative motion and write CSV/SVG/HTML/JSON outputs.
 """
 
 from __future__ import annotations
@@ -17,13 +18,16 @@ import html
 import json
 import math
 import os
+import shutil
+import stat
 import sys
 import tempfile
 import time
 import zipfile
+import zlib
 from collections.abc import Sequence
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Protocol
 
@@ -60,9 +64,34 @@ _IMU_COLUMN_SETS = (
     ),
 )
 _IDENTITY: Matrix3 = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
-_MAX_ARCHIVE_MEMBERS = 100_000
-_MAX_ARCHIVE_MEMBER_BYTES = 512 * 1024 * 1024
-_MAX_ARCHIVE_TOTAL_BYTES = 32 * 1024 * 1024 * 1024
+_MAX_ARCHIVE_MEMBERS = 20_000
+_MAX_ARCHIVE_SOURCE_BYTES = 2 * 1024 * 1024 * 1024
+_MAX_ARCHIVE_MEMBER_BYTES = 256 * 1024 * 1024
+_MAX_ARCHIVE_TOTAL_BYTES = 2 * 1024 * 1024 * 1024
+_MAX_ARCHIVE_COMPRESSION_RATIO = 100
+_MAX_CSV_BYTES = 128 * 1024 * 1024
+_MAX_CAMERA_ROWS = 250_000
+_MAX_IMU_ROWS = 2_000_000
+_MAX_VIDEO_SOURCE_BYTES = 2 * 1024 * 1024 * 1024
+_MAX_VIDEO_FRAMES = 100_000
+_MAX_VIDEO_OUTPUT_BYTES = 2 * 1024 * 1024 * 1024
+_MAX_CALIBRATION_BYTES = 4 * 1024 * 1024
+_MAX_TIMESTAMP_NS = (1 << 63) - 1
+_MAX_GYROSCOPE_ABS_RAD_S = 100.0
+_MAX_ACCELERATION_ABS_M_S2 = 1000.0
+
+
+class _DuplicateMappingKeyError(ValueError):
+    """Raised when strict JSON/YAML parsing encounters a repeated key."""
+
+
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise _DuplicateMappingKeyError(f"duplicate JSON key: {key!r}")
+        result[key] = value
+    return result
 
 
 class RecordingInferenceError(LearningError):
@@ -77,8 +106,12 @@ class CameraSample:
     image_path: Path
 
     def __post_init__(self) -> None:
-        if type(self.timestamp_ns) is not int or self.timestamp_ns < 0:
-            raise RecordingInferenceError("camera timestamp_ns must be non-negative")
+        if (
+            type(self.timestamp_ns) is not int
+            or self.timestamp_ns < 0
+            or self.timestamp_ns > _MAX_TIMESTAMP_NS
+        ):
+            raise RecordingInferenceError("camera timestamp_ns must be in signed 64-bit range")
         if not isinstance(self.image_path, Path):
             raise RecordingInferenceError("camera image_path must be a pathlib.Path")
 
@@ -92,10 +125,18 @@ class ImuSample:
     linear_acceleration_m_s2: Vector3
 
     def __post_init__(self) -> None:
-        if type(self.timestamp_ns) is not int or self.timestamp_ns < 0:
-            raise RecordingInferenceError("IMU timestamp_ns must be non-negative")
+        if (
+            type(self.timestamp_ns) is not int
+            or self.timestamp_ns < 0
+            or self.timestamp_ns > _MAX_TIMESTAMP_NS
+        ):
+            raise RecordingInferenceError("IMU timestamp_ns must be in signed 64-bit range")
         _finite_vector(self.angular_velocity_rad_s, field="angular_velocity_rad_s")
         _finite_vector(self.linear_acceleration_m_s2, field="linear_acceleration_m_s2")
+        if any(abs(value) > _MAX_GYROSCOPE_ABS_RAD_S for value in self.angular_velocity_rad_s):
+            raise RecordingInferenceError("IMU gyroscope value exceeds the supported range")
+        if any(abs(value) > _MAX_ACCELERATION_ABS_M_S2 for value in self.linear_acceleration_m_s2):
+            raise RecordingInferenceError("IMU acceleration value exceeds the supported range")
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,6 +174,290 @@ class InferenceArtifacts:
     path_length_m: float
     final_displacement_m: float
     elapsed_s: float
+
+
+@dataclass(frozen=True, slots=True)
+class ModelQualityAssessment:
+    """Plain-language model evidence shown beside a successful inference run."""
+
+    status: str
+    headline: str
+    explanation: str
+    recommended_use: str
+    current_recording_accuracy: str
+    development_passed: int
+    development_total: int
+    final_test_sequence: str | None
+    final_test_passed: bool | None
+    predicted_path_m: float | None
+    reference_path_m: float | None
+    path_ratio: float | None
+    path_error_percent: float | None
+    endpoint_drift_m: float | None
+    endpoint_drift_percent: float | None
+    endpoint_drift_limit_percent: float | None
+    failed_gates: tuple[str, ...]
+
+
+def _quality_number(record: dict[str, object], field: str) -> float | None:
+    value = record.get(field)
+    if type(value) not in (int, float) or not math.isfinite(float(value)):
+        return None
+    return float(value)
+
+
+def _generic_quality_assessment(status: object) -> ModelQualityAssessment:
+    if status == "experimental_rejected":
+        return ModelQualityAssessment(
+            status="rejected",
+            headline="Model accuracy is not reliable yet",
+            explanation=(
+                "The software can generate a trajectory, but this model is marked as having "
+                "failed its accuracy checks."
+            ),
+            recommended_use=(
+                "Use the output to test the workflow and inspect rough motion only—not to "
+                "measure distance or position."
+            ),
+            current_recording_accuracy="unverified_without_ground_truth",
+            development_passed=0,
+            development_total=0,
+            final_test_sequence=None,
+            final_test_passed=None,
+            predicted_path_m=None,
+            reference_path_m=None,
+            path_ratio=None,
+            path_error_percent=None,
+            endpoint_drift_m=None,
+            endpoint_drift_percent=None,
+            endpoint_drift_limit_percent=None,
+            failed_gates=(),
+        )
+    if status == "accepted":
+        return ModelQualityAssessment(
+            status="accepted",
+            headline="The packaged model passed its recorded accuracy checks",
+            explanation=(
+                "This recording was processed successfully, but its individual accuracy "
+                "cannot be measured here without a reference trajectory."
+            ),
+            recommended_use="Verify important measurements against an external reference.",
+            current_recording_accuracy="unverified_without_ground_truth",
+            development_passed=0,
+            development_total=0,
+            final_test_sequence=None,
+            final_test_passed=None,
+            predicted_path_m=None,
+            reference_path_m=None,
+            path_ratio=None,
+            path_error_percent=None,
+            endpoint_drift_m=None,
+            endpoint_drift_percent=None,
+            endpoint_drift_limit_percent=None,
+            failed_gates=(),
+        )
+    return ModelQualityAssessment(
+        status="not_assessed",
+        headline="Accuracy has not been verified for this model",
+        explanation=(
+            "The software produced a trajectory, but this checkpoint does not include a "
+            "benchmark verdict."
+        ),
+        recommended_use="Treat the trajectory as an unverified estimate.",
+        current_recording_accuracy="unverified_without_ground_truth",
+        development_passed=0,
+        development_total=0,
+        final_test_sequence=None,
+        final_test_passed=None,
+        predicted_path_m=None,
+        reference_path_m=None,
+        path_ratio=None,
+        path_error_percent=None,
+        endpoint_drift_m=None,
+        endpoint_drift_percent=None,
+        endpoint_drift_limit_percent=None,
+        failed_gates=(),
+    )
+
+
+def _failed_quality_gates(
+    row: dict[str, object],
+    gate_values: dict[str, object],
+) -> tuple[str, ...]:
+    """Return plain-language failures for one validated evaluation row."""
+
+    failed: list[str] = []
+    coverage = _quality_number(row, "coverage_ratio")
+    coverage_min = _quality_number(gate_values, "coverage_ratio_min")
+    if coverage is not None and coverage_min is not None and coverage < coverage_min:
+        failed.append("complete recording coverage")
+
+    path_ratio = _quality_number(row, "path_length_ratio")
+    path_min = _quality_number(gate_values, "path_length_ratio_min")
+    path_max = _quality_number(gate_values, "path_length_ratio_max")
+    if (
+        path_ratio is not None
+        and path_min is not None
+        and path_max is not None
+        and not path_min <= path_ratio <= path_max
+    ):
+        failed.append("distance travelled")
+
+    normalized_drift = _quality_number(row, "normalized_final_translation_drift")
+    drift_limit = _quality_number(gate_values, "normalized_final_translation_drift_max")
+    if normalized_drift is not None and drift_limit is not None and normalized_drift > drift_limit:
+        failed.append("end-position drift")
+
+    comparisons = (
+        (
+            "overall position error",
+            "translation_ate_m",
+            "zero_translation_ate_m",
+            "require_translation_ate_below_zero_motion",
+        ),
+        (
+            "frame-to-frame translation",
+            "pair_translation_rmse_m",
+            "zero_pair_translation_rmse_m",
+            "require_pair_translation_rmse_below_zero_motion",
+        ),
+        (
+            "frame-to-frame rotation",
+            "pair_rotation_rmse_rad",
+            "zero_pair_rotation_rmse_rad",
+            "require_pair_rotation_rmse_below_zero_motion",
+        ),
+    )
+    for label, observed_field, baseline_field, required_field in comparisons:
+        observed = _quality_number(row, observed_field)
+        baseline = _quality_number(row, baseline_field)
+        if (
+            gate_values.get(required_field) is True
+            and observed is not None
+            and baseline is not None
+            and observed >= baseline
+        ):
+            failed.append(label)
+    return tuple(failed)
+
+
+def assess_model_quality(backend: object) -> ModelQualityAssessment:
+    """Translate a validated backend package into an honest user-facing verdict."""
+
+    declared_status = getattr(backend, "quality_status", "not_declared")
+    package = getattr(backend, "package", None)
+    manifest = getattr(package, "manifest", None)
+    evaluation = manifest.get("evaluation") if type(manifest) is dict else None
+    if type(evaluation) is not dict:
+        return _generic_quality_assessment(declared_status)
+
+    sequences = evaluation.get("sequences")
+    sequence_rows = (
+        tuple(item for item in sequences if type(item) is dict) if type(sequences) is list else ()
+    )
+    development = tuple(row for row in sequence_rows if row.get("role") == "development_validation")
+    development_passed = sum(row.get("all_pass") is True for row in development)
+    final = next((row for row in sequence_rows if row.get("role") == "final_test"), None)
+    gates = evaluation.get("gates")
+    gate_values = gates if type(gates) is dict else {}
+    status = "accepted" if evaluation.get("outcome") == "accepted" else "rejected"
+
+    final_sequence = final.get("sequence_id") if final is not None else None
+    final_sequence = final_sequence if type(final_sequence) is str else None
+    final_passed = final.get("all_pass") if final is not None else None
+    final_passed = final_passed if type(final_passed) is bool else None
+    predicted_path = _quality_number(final, "predicted_path_length_m") if final else None
+    reference_path = _quality_number(final, "reference_path_length_m") if final else None
+    path_ratio = _quality_number(final, "path_length_ratio") if final else None
+    drift_m = _quality_number(final, "final_translation_drift_m") if final else None
+    normalized_drift = (
+        _quality_number(final, "normalized_final_translation_drift") if final else None
+    )
+    drift_limit = _quality_number(gate_values, "normalized_final_translation_drift_max")
+    failed: list[str] = []
+    for row in sequence_rows:
+        row_failures = _failed_quality_gates(row, gate_values)
+        if row is final:
+            failed.extend(row_failures)
+            if row.get("all_pass") is False and not row_failures:
+                failed.append("held-out benchmark")
+            continue
+        if row.get("all_pass") is False:
+            sequence = row.get("sequence_id")
+            prefix = sequence.replace("_", " ") if type(sequence) is str else "development test"
+            if row_failures:
+                failed.extend(f"{prefix}: {label}" for label in row_failures)
+            else:
+                failed.append(f"{prefix}: recorded accuracy gate")
+
+    path_error_percent = abs(1.0 - path_ratio) * 100.0 if path_ratio is not None else None
+    drift_percent = normalized_drift * 100.0 if normalized_drift is not None else None
+    drift_limit_percent = drift_limit * 100.0 if drift_limit is not None else None
+
+    if status == "accepted":
+        headline = "The packaged model passed its recorded accuracy checks"
+        explanation = (
+            f"All {len(sequence_rows)} packaged benchmark recordings passed. This uploaded "
+            "recording still has no ground-truth path, so its individual accuracy is unverified."
+        )
+        recommended_use = "Inspect the result and verify important measurements independently."
+    elif final_passed is False and (
+        final_sequence is not None
+        and predicted_path is not None
+        and reference_path is not None
+        and path_ratio is not None
+        and drift_m is not None
+        and drift_percent is not None
+        and drift_limit_percent is not None
+        and path_error_percent is not None
+    ):
+        direction = "short" if path_ratio < 1.0 else "long"
+        headline = "Model accuracy is not reliable yet"
+        explanation = (
+            f"On the held-out {final_sequence.replace('_', ' ')} test, it estimated "
+            f"{predicted_path:.1f} m for a {reference_path:.1f} m path "
+            f"({path_error_percent:.1f}% {direction}) and ended {drift_m:.2f} m away "
+            f"({drift_percent:.2f}% drift; limit {drift_limit_percent:.2f}%)."
+        )
+        recommended_use = (
+            "Use the output to test the workflow and inspect rough motion only—not to measure "
+            "distance or position."
+        )
+    elif development and development_passed < len(development):
+        headline = "Model accuracy is not reliable yet"
+        explanation = (
+            f"{len(development) - development_passed} of {len(development)} development "
+            "benchmark recordings failed the packaged accuracy checks. A successful held-out "
+            "row does not override that failure."
+        )
+        recommended_use = (
+            "Use the output to test the workflow and inspect rough motion only—not to measure "
+            "distance or position."
+        )
+    else:
+        headline = "Model accuracy is not reliable yet"
+        explanation = "The packaged model failed at least one recorded accuracy check."
+        recommended_use = "Treat this trajectory as an unverified estimate."
+
+    return ModelQualityAssessment(
+        status=status,
+        headline=headline,
+        explanation=explanation,
+        recommended_use=recommended_use,
+        current_recording_accuracy="unverified_without_ground_truth",
+        development_passed=development_passed,
+        development_total=len(development),
+        final_test_sequence=final_sequence,
+        final_test_passed=final_passed,
+        predicted_path_m=predicted_path,
+        reference_path_m=reference_path,
+        path_ratio=path_ratio,
+        path_error_percent=path_error_percent,
+        endpoint_drift_m=drift_m,
+        endpoint_drift_percent=drift_percent,
+        endpoint_drift_limit_percent=drift_limit_percent,
+        failed_gates=tuple(failed),
+    )
 
 
 class MotionBackend(Protocol):
@@ -261,11 +586,22 @@ def _dict_reader(path: Path, *, kind: str) -> tuple[csv.DictReader[str], Any]:
     if path.is_symlink() or not path.is_file():
         raise RecordingInferenceError(f"{kind} CSV must be a regular file: {path}")
     try:
+        source_bytes = path.stat().st_size
+    except OSError as exc:
+        raise RecordingInferenceError(f"cannot inspect {kind} CSV {path}: {exc}") from exc
+    if source_bytes > _MAX_CSV_BYTES:
+        raise RecordingInferenceError(f"{kind} CSV exceeds the size limit")
+    try:
         handle = path.open("r", encoding="utf-8-sig", newline="")
     except (OSError, UnicodeError) as exc:
         raise RecordingInferenceError(f"cannot read {kind} CSV {path}: {exc}") from exc
-    reader = csv.DictReader(handle)
-    if not reader.fieldnames or len(reader.fieldnames) != len(set(reader.fieldnames)):
+    try:
+        reader = csv.DictReader(handle)
+        fieldnames = reader.fieldnames
+    except (csv.Error, UnicodeError) as exc:
+        handle.close()
+        raise RecordingInferenceError(f"{kind} CSV is malformed: {exc}") from exc
+    if not fieldnames or len(fieldnames) != len(set(fieldnames)):
         handle.close()
         raise RecordingInferenceError(f"{kind} CSV header is missing or repeats a column")
     return reader, handle
@@ -289,16 +625,24 @@ def load_camera_timestamps(path: Path | str) -> tuple[tuple[int, str | None], ..
         filename_field = filename_matches[0] if filename_matches else None
         result: list[tuple[int, str | None]] = []
         for line, row in enumerate(reader, start=2):
+            if line > _MAX_CAMERA_ROWS + 1:
+                raise RecordingInferenceError("camera timestamp CSV contains too many rows")
             try:
                 timestamp_ns = int(row[timestamp_field])
             except (KeyError, TypeError, ValueError) as exc:
                 raise RecordingInferenceError(
                     f"{source}:{line}: camera timestamp_ns must be an integer"
                 ) from exc
+            if not 0 <= timestamp_ns <= _MAX_TIMESTAMP_NS:
+                raise RecordingInferenceError(
+                    f"{source}:{line}: camera timestamp_ns must be in signed 64-bit range"
+                )
             filename = row.get(filename_field, "").strip() if filename_field else None
             if filename_field and not filename:
                 raise RecordingInferenceError(f"{source}:{line}: filename must not be empty")
             result.append((timestamp_ns, filename))
+    except (csv.Error, UnicodeError) as exc:
+        raise RecordingInferenceError(f"camera timestamp CSV is malformed: {exc}") from exc
     finally:
         handle.close()
     if len(result) < 2:
@@ -331,6 +675,8 @@ def load_imu_csv(path: Path | str) -> tuple[ImuSample, ...]:
         gyro_fields, acceleration_fields = column_match[0]
         result: list[ImuSample] = []
         for line, row in enumerate(reader, start=2):
+            if line > _MAX_IMU_ROWS + 1:
+                raise RecordingInferenceError("IMU CSV contains too many rows")
             try:
                 timestamp_ns = int(row[timestamp_field])
                 gyro = tuple(float(row[field]) for field in gyro_fields)
@@ -349,6 +695,8 @@ def load_imu_csv(path: Path | str) -> tuple[ImuSample, ...]:
                 )
             except RecordingInferenceError as exc:
                 raise RecordingInferenceError(f"{source}:{line}: {exc}") from exc
+    except (csv.Error, UnicodeError) as exc:
+        raise RecordingInferenceError(f"IMU CSV is malformed: {exc}") from exc
     finally:
         handle.close()
     if not result:
@@ -364,22 +712,29 @@ def load_imu_csv(path: Path | str) -> tuple[ImuSample, ...]:
 def load_calibration(path: Path | str) -> tuple[dict[str, object], str]:
     """Validate a JSON/YAML calibration mapping and return it with its SHA-256.
 
-    The current trained model does not undistort or rectify frames; its exact
-    preprocessing is grayscale, resize, and normalization.  Calibration is
-    nevertheless accepted and fingerprinted so a recording result remains
-    bound to the sensor description supplied by the user.
+    The current RAFT hybrid validates and uses camera/IMU calibration for image
+    rectification and gyro-frame handling. The legacy checkpoint path only
+    fingerprints calibration and keeps its grayscale/resize normalization.
     """
 
     source = Path(path)
     if source.is_symlink() or not source.is_file():
         raise RecordingInferenceError(f"calibration must be a regular file: {source}")
     try:
+        source_bytes = source.stat().st_size
+    except OSError as exc:
+        raise RecordingInferenceError(f"cannot inspect calibration {source}: {exc}") from exc
+    if source_bytes > _MAX_CALIBRATION_BYTES:
+        raise RecordingInferenceError("calibration exceeds the size limit")
+    try:
         encoded = source.read_bytes()
         document = encoded.decode("utf-8-sig")
     except (OSError, UnicodeError) as exc:
         raise RecordingInferenceError(f"cannot read calibration {source}: {exc}") from exc
     try:
-        value = json.loads(document)
+        value = json.loads(document, object_pairs_hook=_unique_json_object)
+    except _DuplicateMappingKeyError as exc:
+        raise RecordingInferenceError(f"cannot parse calibration {source}: {exc}") from exc
     except json.JSONDecodeError:
         try:
             import yaml  # type: ignore[import-not-found]
@@ -387,9 +742,35 @@ def load_calibration(path: Path | str) -> tuple[dict[str, object], str]:
             raise RecordingInferenceError(
                 "non-JSON calibration requires PyYAML from the data extra"
             ) from exc
+
+        class _UniqueKeyLoader(yaml.SafeLoader):  # type: ignore[misc, name-defined]
+            pass
+
+        def _construct_unique_mapping(loader: object, node: object, deep: bool = False) -> object:
+            loader.flatten_mapping(node)  # type: ignore[attr-defined]
+            mapping: dict[object, object] = {}
+            for key_node, value_node in node.value:  # type: ignore[attr-defined]
+                key = loader.construct_object(key_node, deep=deep)  # type: ignore[attr-defined]
+                try:
+                    repeated = key in mapping
+                except TypeError as exc:
+                    raise _DuplicateMappingKeyError(
+                        "calibration mapping keys must be scalar values"
+                    ) from exc
+                if repeated:
+                    raise _DuplicateMappingKeyError(f"duplicate YAML key: {key!r}")
+                mapping[key] = loader.construct_object(  # type: ignore[attr-defined]
+                    value_node, deep=deep
+                )
+            return mapping
+
+        _UniqueKeyLoader.add_constructor(  # type: ignore[attr-defined]
+            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+            _construct_unique_mapping,
+        )
         try:
-            value = yaml.safe_load(document)
-        except yaml.YAMLError as exc:
+            value = yaml.load(document, Loader=_UniqueKeyLoader)
+        except (yaml.YAMLError, _DuplicateMappingKeyError) as exc:
             raise RecordingInferenceError(f"cannot parse calibration {source}: {exc}") from exc
     if type(value) is not dict or not value or any(type(key) is not str for key in value):
         raise RecordingInferenceError("calibration document must be a non-empty mapping")
@@ -430,12 +811,31 @@ def _resolve_manifest_frames(
         rows_list: list[CameraSample] = []
         for timestamp, filename in timestamp_rows:
             assert filename is not None
-            candidate = (recording / filename).resolve()
+            relative = PurePosixPath(filename)
+            if (
+                relative.is_absolute()
+                or not relative.parts
+                or any(part in {"", ".", ".."} for part in relative.parts)
+                or "\\" in filename
+                or "\x00" in filename
+            ):
+                raise RecordingInferenceError(f"camera filename is unsafe: {filename}")
+            if len(relative.parts) > 1 and relative.parts[0] == recording.name:
+                relative = PurePosixPath(*relative.parts[1:])
+            unresolved = recording.joinpath(*relative.parts)
+            current = recording
+            for part in relative.parts:
+                current /= part
+                if current.is_symlink():
+                    raise RecordingInferenceError(
+                        f"camera image path must not contain symbolic links: {filename}"
+                    )
+            candidate = unresolved.resolve()
             if not candidate.is_relative_to(root):
                 raise RecordingInferenceError(
                     f"camera filename escapes recording directory: {filename}"
                 )
-            if candidate.is_symlink() or not candidate.is_file():
+            if not candidate.is_file():
                 raise RecordingInferenceError(f"camera image is not a regular file: {candidate}")
             rows_list.append(CameraSample(timestamp, candidate))
         rows = tuple(rows_list)
@@ -462,6 +862,12 @@ def _resolve_manifest_frames(
 
 def _safe_extract_image_archive(source: Path, destination: Path) -> None:
     try:
+        source_bytes = source.stat().st_size
+    except OSError as exc:
+        raise RecordingInferenceError(f"cannot inspect image ZIP {source}: {exc}") from exc
+    if source_bytes > _MAX_ARCHIVE_SOURCE_BYTES:
+        raise RecordingInferenceError("image ZIP exceeds the compressed size limit")
+    try:
         archive = zipfile.ZipFile(source)
     except (OSError, zipfile.BadZipFile) as exc:
         raise RecordingInferenceError(f"cannot open image ZIP {source}: {exc}") from exc
@@ -470,6 +876,8 @@ def _safe_extract_image_archive(source: Path, destination: Path) -> None:
         if len(members) > _MAX_ARCHIVE_MEMBERS:
             raise RecordingInferenceError("image ZIP contains too many members")
         total_bytes = 0
+        seen: set[str] = set()
+        seen_casefold: set[str] = set()
         for member in members:
             pure = PurePosixPath(member.filename)
             if (
@@ -477,17 +885,39 @@ def _safe_extract_image_archive(source: Path, destination: Path) -> None:
                 or not pure.parts
                 or any(part in {"", ".", ".."} for part in pure.parts)
                 or "\\" in member.filename
+                or "\x00" in member.filename
             ):
                 raise RecordingInferenceError(
                     f"image ZIP contains an unsafe member path: {member.filename!r}"
                 )
+            canonical = pure.as_posix()
+            folded = canonical.casefold()
+            if canonical in seen or folded in seen_casefold:
+                raise RecordingInferenceError(
+                    f"image ZIP repeats a member path: {member.filename!r}"
+                )
+            seen.add(canonical)
+            seen_casefold.add(folded)
             unix_mode = member.external_attr >> 16
-            if unix_mode and (unix_mode & 0o170000) == 0o120000:
+            file_type = stat.S_IFMT(unix_mode)
+            if file_type == stat.S_IFLNK:
                 raise RecordingInferenceError("image ZIP must not contain symbolic links")
+            if file_type not in {0, stat.S_IFREG, stat.S_IFDIR}:
+                raise RecordingInferenceError("image ZIP must contain only files/directories")
+            if member.flag_bits & 0x1:
+                raise RecordingInferenceError("encrypted image ZIPs are not supported")
             if member.is_dir():
                 continue
             if member.file_size > _MAX_ARCHIVE_MEMBER_BYTES:
                 raise RecordingInferenceError("image ZIP member exceeds the size limit")
+            if member.file_size and member.compress_size == 0:
+                raise RecordingInferenceError("image ZIP has an invalid compression size")
+            if (
+                member.file_size
+                and member.compress_size
+                and member.file_size > member.compress_size * _MAX_ARCHIVE_COMPRESSION_RATIO
+            ):
+                raise RecordingInferenceError("image ZIP compression ratio is unsafe")
             total_bytes += member.file_size
             if total_bytes > _MAX_ARCHIVE_TOTAL_BYTES:
                 raise RecordingInferenceError("image ZIP exceeds the total expansion limit")
@@ -495,17 +925,31 @@ def _safe_extract_image_archive(source: Path, destination: Path) -> None:
                 continue
             target = destination.joinpath(*pure.parts)
             target.parent.mkdir(parents=True, exist_ok=True)
+            written = 0
             try:
                 with archive.open(member, "r") as input_handle, target.open("xb") as output_handle:
                     while chunk := input_handle.read(1024 * 1024):
+                        written += len(chunk)
+                        if written > member.file_size or written > _MAX_ARCHIVE_MEMBER_BYTES:
+                            raise RecordingInferenceError(
+                                "image ZIP member expanded beyond its declared size"
+                            )
                         output_handle.write(chunk)
-            except OSError as exc:
+            except (OSError, EOFError, RuntimeError, zipfile.BadZipFile, zlib.error) as exc:
                 raise RecordingInferenceError(
                     f"cannot extract image ZIP member {member.filename!r}: {exc}"
                 ) from exc
+            if written != member.file_size:
+                raise RecordingInferenceError("image ZIP member size changed during extraction")
 
 
 def _decode_mp4_opencv(source: Path, destination: Path) -> None:
+    try:
+        source_bytes = source.stat().st_size
+    except OSError as exc:
+        raise RecordingInferenceError(f"cannot inspect MP4 recording {source}: {exc}") from exc
+    if source_bytes > _MAX_VIDEO_SOURCE_BYTES:
+        raise RecordingInferenceError("MP4 exceeds the compressed size limit")
     try:
         import cv2  # type: ignore[import-not-found]
     except ImportError as exc:
@@ -517,15 +961,26 @@ def _decode_mp4_opencv(source: Path, destination: Path) -> None:
         capture.release()
         raise RecordingInferenceError(f"OpenCV cannot open MP4 recording: {source}")
     count = 0
+    output_bytes = 0
     try:
         while True:
             ok, frame = capture.read()
             if not ok:
                 break
             count += 1
+            if count > _MAX_VIDEO_FRAMES:
+                raise RecordingInferenceError("MP4 decodes to too many frames")
             output = destination / f"{count:09d}.png"
             if not cv2.imwrite(os.fspath(output), frame):
                 raise RecordingInferenceError(f"OpenCV cannot write decoded frame {count}")
+            try:
+                output_bytes += output.stat().st_size
+            except OSError as exc:
+                raise RecordingInferenceError(
+                    f"cannot inspect decoded frame {count}: {exc}"
+                ) from exc
+            if output_bytes > _MAX_VIDEO_OUTPUT_BYTES:
+                raise RecordingInferenceError("MP4 decoded frames exceed the size limit")
     finally:
         capture.release()
     if count < 2:
@@ -755,7 +1210,9 @@ def _trajectory_csv(poses: Sequence[PoseSample]) -> str:
     return output.getvalue()
 
 
-def _plot_points(values: Sequence[tuple[float, float]], box: tuple[int, int, int, int]) -> str:
+def _plot_geometry(
+    values: Sequence[tuple[float, float]], box: tuple[int, int, int, int]
+) -> tuple[tuple[tuple[float, float], ...], tuple[float, float, float, float]]:
     left, top, width, height = box
     xs = tuple(point[0] for point in values)
     ys = tuple(point[1] for point in values)
@@ -767,24 +1224,68 @@ def _plot_points(values: Sequence[tuple[float, float]], box: tuple[int, int, int
     maximum_x += padding_x
     minimum_y -= padding_y
     maximum_y += padding_y
-    return " ".join(
-        f"{left + (x - minimum_x) / (maximum_x - minimum_x) * width:.2f},"
-        f"{top + height - (y - minimum_y) / (maximum_y - minimum_y) * height:.2f}"
+    mapped = tuple(
+        (
+            left + (x - minimum_x) / (maximum_x - minimum_x) * width,
+            top + height - (y - minimum_y) / (maximum_y - minimum_y) * height,
+        )
         for x, y in values
     )
+    return mapped, (minimum_x, maximum_x, minimum_y, maximum_y)
+
+
+def _plot_points(values: Sequence[tuple[float, float]], box: tuple[int, int, int, int]) -> str:
+    mapped, _ = _plot_geometry(values, box)
+    return " ".join(f"{x:.2f},{y:.2f}" for x, y in mapped)
 
 
 def _trajectory_svg(poses: Sequence[PoseSample], *, title: str) -> str:
     xy = tuple((pose.position_m[0], pose.position_m[1]) for pose in poses)
     xz = tuple((pose.position_m[0], pose.position_m[2]) for pose in poses)
+    xy_mapped, xy_bounds = _plot_geometry(xy, (55, 120, 400, 270))
+    xz_mapped, xz_bounds = _plot_geometry(xz, (545, 120, 400, 270))
+    path_length = math.fsum(
+        math.dist(previous.position_m, current.position_m)
+        for previous, current in zip(poses, poses[1:], strict=False)
+    )
+    final = poses[-1].position_m
     safe_title = html.escape(title)
+    description = html.escape(
+        f"Estimated local path with {len(poses)} poses and {path_length:.3f} metres of motion. "
+        f"It ends at x {final[0]:.3f}, y {final[1]:.3f}, z {final[2]:.3f} metres. "
+        "Both views are autoscaled and contain no ground-truth reference."
+    )
+    xy_start, xy_end = xy_mapped[0], xy_mapped[-1]
+    xz_start, xz_end = xz_mapped[0], xz_mapped[-1]
+
+    def axis_labels(
+        *, left: int, right: int, top: int, bottom: int, bounds: tuple[float, float, float, float]
+    ) -> str:
+        minimum_x, maximum_x, minimum_y, maximum_y = bounds
+        return (
+            '<g fill="#94a3b8" font-family="sans-serif" font-size="11">'
+            f'<text x="{left}" y="{bottom}" text-anchor="start">x {minimum_x:.3f}</text>'
+            f'<text x="{right}" y="{bottom}" text-anchor="end">{maximum_x:.3f}</text>'
+            f'<text x="{left - 5}" y="{top}" text-anchor="end">{maximum_y:.3f}</text>'
+            f'<text x="{left - 5}" y="{bottom - 22}" text-anchor="end">{minimum_y:.3f}</text>'
+            "</g>"
+        )
+
+    def marker(point: tuple[float, float], *, color: str, label: str) -> str:
+        x, y = point
+        return (
+            f'<g fill="{color}"><circle cx="{x:.2f}" cy="{y:.2f}" r="5"/>'
+            f'<text x="{x + 8:.2f}" y="{y - 8:.2f}" fill="#e2e8f0" '
+            f'font-family="sans-serif" font-size="12">{label}</text></g>'
+        )
+
     return "\n".join(
         (
-            '<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="500" '
-            'viewBox="0 0 1000 500" role="img" aria-labelledby="title desc">',
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="540" '
+            'viewBox="0 0 1000 540" role="img" aria-labelledby="title desc">',
             f'<title id="title">{safe_title}</title>',
-            '<desc id="desc">Integrated CompactVIO trajectory in XY and XZ views.</desc>',
-            '<rect width="1000" height="500" fill="#0b1020"/>',
+            f'<desc id="desc">{description}</desc>',
+            '<rect width="1000" height="540" fill="#0b1020"/>',
             '<text x="40" y="44" fill="#f8fafc" font-family="sans-serif" '
             f'font-size="24" font-weight="700">{safe_title}</text>',
             '<g fill="none" stroke="#334155" stroke-width="1">'
@@ -793,51 +1294,145 @@ def _trajectory_svg(poses: Sequence[PoseSample], *, title: str) -> str:
             '<g fill="#cbd5e1" font-family="sans-serif" font-size="16">'
             '<text x="50" y="105">XY top view (metres)</text>'
             '<text x="540" y="105">XZ side view (metres)</text></g>',
-            f'<polyline points="{_plot_points(xy, (55, 120, 400, 290))}" fill="none" '
+            f'<polyline points="{_plot_points(xy, (55, 120, 400, 270))}" fill="none" '
             'stroke="#38bdf8" stroke-width="3" stroke-linejoin="round"/>',
-            f'<polyline points="{_plot_points(xz, (545, 120, 400, 290))}" fill="none" '
+            f'<polyline points="{_plot_points(xz, (545, 120, 400, 270))}" fill="none" '
             'stroke="#a78bfa" stroke-width="3" stroke-linejoin="round"/>',
-            '<g fill="#22c55e"><circle cx="55" cy="410" r="5"/>'
-            '<text x="68" y="416" fill="#cbd5e1" font-family="sans-serif" '
-            'font-size="13">start</text></g>',
-            '<text x="40" y="470" fill="#94a3b8" font-family="sans-serif" '
-            'font-size="13">Raw integrated model output; no alignment, smoothing, '
-            "or ground truth.</text>",
+            axis_labels(left=55, right=455, top=124, bottom=422, bounds=xy_bounds),
+            axis_labels(left=545, right=945, top=124, bottom=422, bounds=xz_bounds),
+            marker(xy_start, color="#22c55e", label="start"),
+            marker(xy_end, color="#f59e0b", label="end"),
+            marker(xz_start, color="#22c55e", label="start"),
+            marker(xz_end, color="#f59e0b", label="end"),
+            '<text x="40" y="474" fill="#cbd5e1" font-family="sans-serif" '
+            f'font-size="14">Estimated path: {path_length:.3f} m across {len(poses)} poses.</text>',
+            '<text x="40" y="500" fill="#94a3b8" font-family="sans-serif" '
+            'font-size="13">Views are autoscaled to this recording. Raw local estimate; no '
+            "alignment, smoothing, or ground truth.</text>",
             "</svg>",
         )
     )
 
 
 def _summary_html(summary: dict[str, object], svg: str) -> str:
+    quality = summary.get("model_quality")
+    quality_record = quality if type(quality) is dict else {}
+    quality_status = quality_record.get("status", "not_assessed")
+    quality_headline = html.escape(
+        str(quality_record.get("headline", "Accuracy has not been verified for this model"))
+    )
+    quality_explanation = html.escape(
+        str(
+            quality_record.get(
+                "explanation",
+                "This recording has no ground-truth trajectory, so its accuracy is unknown.",
+            )
+        )
+    )
+    recommended_use = html.escape(
+        str(quality_record.get("recommended_use", "Treat this as an unverified estimate."))
+    )
+    current_recording_accuracy = html.escape(
+        str(
+            quality_record.get(
+                "current_recording_accuracy",
+                "unverified_without_ground_truth",
+            )
+        )
+    )
+    current_recording_html = (
+        "<p><strong>Accuracy for this recording:</strong> Unverified. "
+        "No reference path was supplied, so this report cannot measure whether the uploaded "
+        "trajectory is correct.</p>"
+        if current_recording_accuracy == "unverified_without_ground_truth"
+        else ""
+    )
+    quality_label = {
+        "accepted": "Benchmark passed",
+        "rejected": "Benchmark not passed",
+    }.get(str(quality_status), "Benchmark not available")
+    quality_class = {
+        "accepted": "verdict accepted",
+        "rejected": "verdict limited",
+    }.get(str(quality_status), "verdict unknown")
+    development_passed = quality_record.get("development_passed")
+    development_total = quality_record.get("development_total")
+    development_html = ""
+    if type(development_passed) is int and type(development_total) is int and development_total:
+        development_html = (
+            '<p class="supporting">Development checks: '
+            f"{development_passed}/{development_total} passed. "
+            "The held-out test determines the overall verdict.</p>"
+        )
+    failed_gates = quality_record.get("failed_gates")
+    failed_html = ""
+    if type(failed_gates) in (list, tuple) and failed_gates:
+        safe_failures = ", ".join(html.escape(str(item)) for item in failed_gates)
+        failed_html = f'<p class="supporting"><strong>Failed checks:</strong> {safe_failures}.</p>'
+
     rows = "".join(
         f"<tr><th>{html.escape(str(key))}</th><td>{html.escape(str(value))}</td></tr>"
         for key, value in summary.items()
+        if key not in {"model_quality", "quality_warning"}
     )
-    warning = summary.get("quality_warning")
-    warning_html = (
-        '<div class="warning"><strong>MODEL QUALITY WARNING</strong><br>'
-        f"{html.escape(str(warning))}</div>"
-        if warning
-        else ""
+    metrics = (
+        ("Frames processed", summary.get("frames", "—")),
+        ("Motion estimates", summary.get("predicted_pairs", "—")),
+        ("Estimated path", f"{float(summary.get('predicted_path_length_m', 0.0)):.3f} m"),
+        ("Start-to-end", f"{float(summary.get('final_displacement_m', 0.0)):.3f} m"),
+        ("Processing time", f"{float(summary.get('runtime_s', 0.0)):.3f} s"),
+    )
+    metric_cards = "".join(
+        '<div class="metric"><span>'
+        f"{html.escape(label)}</span><strong>{html.escape(str(value))}</strong></div>"
+        for label, value in metrics
     )
     return "\n".join(
         (
             "<!doctype html>",
             '<html lang="en"><head><meta charset="utf-8">',
             '<meta name="viewport" content="width=device-width,initial-scale=1">',
-            "<title>CompactVIO recording result</title><style>",
-            "body{margin:0;background:#070b16;color:#e2e8f0;font-family:system-ui,sans-serif}",
-            "main{max-width:1040px;margin:auto;padding:28px}h1{margin-bottom:6px}",
-            "p{color:#94a3b8}table{border-collapse:collapse;width:100%;"
-            "margin:20px 0;background:#0f172a}",
-            "th,td{padding:10px 14px;border:1px solid #334155;text-align:left}"
-            "th{width:45%;color:#7dd3fc}",
-            ".warning{margin:18px 0;padding:16px;border:2px solid #f59e0b;"
-            "background:#451a03;color:#fef3c7;border-radius:8px}",
-            "svg{max-width:100%;height:auto;border-radius:12px}</style></head>",
-            "<body><main><h1>CompactVIO recording result</h1>",
-            "<p>Raw causal model inference and integrated local trajectory.</p>",
-            f"{warning_html}<table>{rows}</table>{svg}</main></body></html>",
+            "<title>CompactVIO trajectory result</title><style>",
+            ":root{color-scheme:dark}*{box-sizing:border-box}",
+            "body{margin:0;background:#070b16;color:#e2e8f0;font-family:Inter,system-ui,sans-serif}",
+            "main{max-width:1080px;margin:auto;padding:40px 24px 64px}",
+            "h1{font-size:2.25rem;margin:0 0 8px}h2{margin:0 0 10px;font-size:1.35rem}",
+            "p{color:#cbd5e1;line-height:1.6}.eyebrow{text-transform:uppercase;letter-spacing:.12em;"
+            "font-size:.75rem;font-weight:800;color:#86efac}",
+            ".run{padding:20px 22px;border:1px solid #166534;background:#052e16;border-radius:14px;"
+            "margin:24px 0}",
+            ".metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;"
+            "margin:20px 0}.metric{padding:16px;background:#0f172a;border:1px solid #334155;"
+            "border-radius:12px}.metric span{display:block;color:#94a3b8;font-size:.82rem;"
+            "margin-bottom:6px}.metric strong{font-size:1.2rem}",
+            ".verdict{padding:22px;border-radius:14px;border:1px solid #475569;margin:24px 0}",
+            ".verdict.limited{background:#451a03;border-color:#f59e0b}.verdict.accepted{"
+            "background:#052e16;border-color:#22c55e}.verdict.unknown{background:#172033}",
+            ".verdict .label{font-weight:800;margin:0 0 8px}.supporting{font-size:.92rem}",
+            "section.chart{margin-top:30px}svg{max-width:100%;height:auto;border-radius:14px;"
+            "border:1px solid #334155}",
+            "details{margin-top:28px;border:1px solid #334155;border-radius:12px;padding:14px 18px;"
+            "background:#0f172a}summary{cursor:pointer;font-weight:700}",
+            "table{border-collapse:collapse;width:100%;margin-top:16px}th,td{padding:9px 12px;"
+            "border-top:1px solid #334155;text-align:left;vertical-align:top;word-break:break-word}"
+            "th{width:42%;color:#7dd3fc}@media(max-width:640px){main{padding:24px 14px 40px}"
+            "h1{font-size:1.75rem}}</style></head>",
+            "<body><main><h1>Your estimated trajectory</h1>",
+            "<p>This report separates a successful software run from model accuracy.</p>",
+            '<section class="run" role="status"><div class="eyebrow">Run completed</div>',
+            "<h2>The recording was processed and result files were created</h2>",
+            "<p>This confirms that the camera, IMU, calibration, model, and export pipeline "
+            "worked. "
+            "It does not prove the estimated path is accurate.</p></section>",
+            f'<section class="metrics" aria-label="Run summary">{metric_cards}</section>',
+            f'<section class="{quality_class}"><p class="label">Model quality: '
+            f"{quality_label}</p><h2>{quality_headline}</h2>",
+            f"<p>{quality_explanation}</p>{current_recording_html}"
+            "<p><strong>What you can use it for:</strong> "
+            f"{recommended_use}</p>{development_html}{failed_html}</section>",
+            f'<section class="chart"><h2>Estimated local path</h2>{svg}</section>',
+            f"<details><summary>Technical run details</summary><table>{rows}</table></details>",
+            "</main></body></html>",
         )
     )
 
@@ -867,9 +1462,13 @@ def run_recording(
     if output.is_symlink() or (output.exists() and not output.is_dir()):
         raise RecordingInferenceError(f"output must be a regular directory: {output}")
     try:
-        output.mkdir(parents=True, exist_ok=True)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        if output.exists() and any(output.iterdir()):
+            raise RecordingInferenceError(
+                f"output directory must be empty to avoid mixing run artifacts: {output}"
+            )
     except OSError as exc:
-        raise RecordingInferenceError(f"cannot create output directory {output}: {exc}") from exc
+        raise RecordingInferenceError(f"cannot prepare output directory {output}: {exc}") from exc
 
     started = time.perf_counter()
     calibration_sha256: str | None = None
@@ -940,7 +1539,9 @@ def run_recording(
     )
     final_displacement = math.hypot(*poses[-1].position_m)
     duration_s = (poses[-1].timestamp_ns - poses[0].timestamp_ns) * 1e-9
+    model_quality = assess_model_quality(backend)
     summary: dict[str, object] = {
+        "run_status": "completed",
         "sequence_id": sequence_id,
         "frames": len(poses),
         "predicted_pairs": len(motions),
@@ -955,6 +1556,8 @@ def run_recording(
         "motion_frame": getattr(backend, "motion_frame", "previous camera/body frame"),
         "quality_status": getattr(backend, "quality_status", "not_declared"),
         "quality_warning": getattr(backend, "quality_warning", None),
+        "accuracy_for_this_recording": model_quality.current_recording_accuracy,
+        "model_quality": asdict(model_quality),
         "calibration_sha256": calibration_sha256 or "not-supplied",
         "calibration_usage": getattr(
             backend,
@@ -962,15 +1565,48 @@ def run_recording(
             "recorded-only; current model uses grayscale-resize-normalize",
         ),
     }
+    svg = _trajectory_svg(poses, title=f"CompactVIO — {sequence_id}")
+    try:
+        staging = Path(
+            tempfile.mkdtemp(prefix=f".{output.name or 'result'}.staging-", dir=output.parent)
+        )
+    except OSError as exc:
+        raise RecordingInferenceError(f"cannot stage output directory {output}: {exc}") from exc
+    try:
+        _atomic_text(staging / "trajectory.csv", _trajectory_csv(poses))
+        _atomic_text(staging / "trajectory.svg", svg)
+        _atomic_text(staging / "summary.html", _summary_html(summary, svg))
+        _atomic_text(
+            staging / "summary.json",
+            json.dumps(summary, indent=2, sort_keys=True, allow_nan=False) + "\n",
+        )
+        if output.is_symlink() or (output.exists() and not output.is_dir()):
+            raise RecordingInferenceError(f"output changed before publication: {output}")
+        if output.exists():
+            try:
+                if any(output.iterdir()):
+                    raise RecordingInferenceError(
+                        f"output directory changed before publication: {output}"
+                    )
+                output.rmdir()
+            except OSError as exc:
+                raise RecordingInferenceError(
+                    f"cannot publish result to output directory {output}: {exc}"
+                ) from exc
+        try:
+            staging.replace(output)
+        except OSError as exc:
+            raise RecordingInferenceError(
+                f"cannot publish complete result directory {output}: {exc}"
+            ) from exc
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging, ignore_errors=True)
+
     csv_path = output / "trajectory.csv"
     svg_path = output / "trajectory.svg"
     html_path = output / "summary.html"
     json_path = output / "summary.json"
-    svg = _trajectory_svg(poses, title=f"CompactVIO — {sequence_id}")
-    _atomic_text(csv_path, _trajectory_csv(poses))
-    _atomic_text(svg_path, svg)
-    _atomic_text(html_path, _summary_html(summary, svg))
-    _atomic_text(json_path, json.dumps(summary, indent=2, sort_keys=True, allow_nan=False) + "\n")
     return InferenceArtifacts(
         trajectory_csv=csv_path.resolve(),
         trajectory_svg=svg_path.resolve(),
@@ -998,14 +1634,18 @@ the IMU sensor frame; imu.T_BS must be identity):
   "imu": {"T_BS": [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]}
 }
 Every source frame must exactly match resolution. The IMU CSV must include at least two
-samples strictly before the first camera timestamp; 1.0-1.84 s of pre-roll matches training.
+samples strictly before the first camera timestamp. Keep the rig stationary during the
+recommended 1.0-1.84 s pre-roll so mean angular velocity represents gyro bias, not motion.
 """
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="compact-vio-run",
-        description="Run a CompactVIO checkpoint on MP4, image ZIP, or timestamped images.",
+        description=(
+            "Run a RAFT hybrid model package or legacy CompactVIO checkpoint on a recorded "
+            "camera and IMU stream."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=_RAFT_CALIBRATION_EXAMPLE,
     )
@@ -1018,7 +1658,8 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help=(
             "timestamped six-axis IMU CSV; hybrid requires >=2 samples strictly before the "
-            "first camera frame (1.0-1.84 s pre-roll matches training)"
+            "first camera frame; keep the rig stationary during the recommended 1.0-1.84 s "
+            "gyro-bias pre-roll"
         ),
     )
     parser.add_argument(
@@ -1145,6 +1786,7 @@ __all__ = [
     "CameraSample",
     "ImuSample",
     "InferenceArtifacts",
+    "ModelQualityAssessment",
     "MotionBackend",
     "RecordingBackend",
     "MotionEstimate",
@@ -1152,6 +1794,7 @@ __all__ = [
     "RecordingInferenceError",
     "TorchCheckpointBackend",
     "build_parser",
+    "assess_model_quality",
     "camera_samples",
     "load_camera_timestamps",
     "load_calibration",

@@ -1,0 +1,16 @@
+include CHANGELOG.md
+include CITATION.cff
+include CODE_OF_CONDUCT.md
+include CONTRIBUTING.md
+include SECURITY.md
+include THIRD_PARTY_NOTICES.md
+recursive-include .github *.md *.yml *.yaml
+recursive-include configs *.json *.md *.yaml *.yml
+recursive-include docs *.md *.png *.svg
+recursive-include environments *.json *.md
+recursive-include examples *.csv *.json *.md *.py *.yaml *.yml
+recursive-include experiments *.json *.md *.yaml *.yml
+recursive-include governance *.json *.md *.yaml *.yml
+recursive-include reports *.json *.md *.png *.svg *.yaml *.yml
+recursive-include schemas *.json
+recursive-include scripts *.py

@@ -2159,3 +2159,52 @@ recommendation into a decision.
   open-source code and commands but not the local experimental weights. The
   translation head is portable ONNX; the RAFT/gyro front end still uses
   PyTorch/Python. ROS/PX4 and physical hardware remain later work.
+
+## 2026-08-30 — Public repository structure and terminology corrected
+
+- The public entry path was refactored around three reader goals: run the current offline
+  workflow, understand the current RAFT-hybrid model and its rejected quality result, or work on
+  the repository. `docs/README.md` is now the documentation landing page, with separate guides for
+  inputs, outputs, CLI ownership, training, evaluation, export, troubleshooting, repository
+  layout, and historical records.
+- The current RAFT-hybrid runtime is now separated explicitly from the historical CNN/GRU
+  training and evaluation commands. No new model, checkpoint, metric, evaluation, or scientific
+  result was created by this documentation and repository-structure change.
+- A rights-cleared synthetic bundle generator and community/release scaffolding were added. The
+  generator can exercise input preparation, but inference still requires the local checked model
+  package and the fixture is not benchmark evidence.
+- Terminology correction: the earlier statement that a fresh clone contains “open-source code”
+  was inaccurate. The repository is publicly readable, but no source license has been selected;
+  public visibility grants no open-source reuse or redistribution right. External contributions
+  remain discussion-only until exact terms are selected.
+- Historical plans, receipts, reports, and evidence paths remain in place because tests and prior
+  records bind them. Source-module moves are deferred until compatibility wrappers and import/CLI
+  tests can preserve the installed command surface.
+- UI-label correction: the earlier completion entry names a **Run VIO** button that no longer
+  exists. The current actions are **Run built-in example**, **Analyze uploaded bundle**, and
+  **Analyze separate files**; the dated completion report now uses those exact labels.
+
+## 2026-08-30 — Local demo browser QA and one-upload flow
+
+- The current local app was restarted from the updated workspace and exercised in the in-app
+  browser at its desktop and narrow mobile layouts. The built-in example completed end to end,
+  produced the trajectory chart, and exposed the ZIP, HTML, JSON, CSV, and SVG downloads.
+- A newly generated deterministic recording bundle was uploaded through the real file chooser.
+  Inference started automatically and completed successfully. The redundant **Analyze uploaded
+  bundle** button was removed, so the primary path is now select one ZIP and wait for the result.
+  **Analyze separate files** remains available only in the advanced section.
+- The visible result keeps execution and accuracy separate: the run can complete while accuracy
+  for an upload without ground truth remains unverified. The package is still labeled benchmark
+  not passed, with the held-out MH03 path underestimate and drift evidence available in the
+  warning explanation. No model weights, benchmark metrics, or acceptance decision changed.
+- Focused recording-inference and bundle tests passed after the simplification, and browser QA
+  observed no application exception. Two generic Gradio `Method not implemented` console
+  warnings remain framework noise and did not affect upload, inference, rendering, or downloads.
+- A clean-clone configuration audit found that the no-package UI previously defaulted to the
+  legacy checkpoint type and left inference controls enabled. The no-package state now defaults
+  to the current RAFT package type, displays a visible package-required explanation, and disables
+  example, upload, and separate-file inference until an artifact path is present. The hero now
+  uses neutral pre-run wording; the actual package verdict appears only after inference.
+- Terminology clarification: earlier entries use “train-only feature clamp” to mean that the
+  clamp bounds were derived only from training data. The clamp is applied during inference; active
+  documentation now calls it the training-derived feature clamp.

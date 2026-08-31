@@ -10,7 +10,8 @@ Outcome: software path completed; model quality rejected
   timestamps, six-axis IMU, calibration, and a model package.
 - It integrates relative translation and rotation into a trajectory and writes
   CSV, SVG, self-contained HTML, and JSON outputs.
-- `compact-vio-demo` provides a local upload page with a **Run VIO** button.
+- `compact-vio-demo` provides a local page with **Run built-in example**, automatic one-ZIP
+  processing after upload, and an advanced **Analyze separate files** action.
 - The packaged runtime binds frozen TorchVision RAFT-small `C_T_V2`, causal
   gyro rotation, a train-only feature clamp, and a stateless
   `831 -> 128 -> 128 -> 3` translation head.

@@ -1,0 +1,80 @@
+name: Bug report
+description: Report a reproducible software or interface problem using non-sensitive inputs.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve CompactVIO-UAV. Use synthetic or otherwise non-sensitive data.
+        A successful run does not establish model accuracy; use the model-quality section for
+        benchmark questions.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      options:
+        - Web demo
+        - Recording bundle or input parsing
+        - Command-line inference
+        - Training or evaluation
+        - ONNX export or verification
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Git revision
+      description: Run `git rev-parse HEAD` and paste the commit hash.
+      placeholder: 40-character commit hash
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include exact commands and a minimal synthetic-input description.
+      placeholder: |
+        1. Install ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include OS, Python, CPU/GPU, CUDA if relevant, and installation command.
+      placeholder: macOS/Linux; Python 3.x; CPU or GPU; CUDA version; install command
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted logs or screenshots
+      description: Remove paths, credentials, recordings, and other private information.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed private recordings, credentials, machine-local paths, and secrets.
+          required: true
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: This is not a private security vulnerability.
+          required: true

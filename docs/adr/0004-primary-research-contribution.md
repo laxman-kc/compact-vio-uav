@@ -1,8 +1,12 @@
 # ADR-0004: Training-first compact VIO development slice
 
-- Status: Accepted
+- Status: Superseded
 - Decision owner: Project owner
 - Decision date: 2026-08-28
+
+> Superseded for the current runnable model boundary by
+> [ADR-0007](0007-raft-gyro-hybrid-runtime.md). This record remains authoritative historical
+> context for the completed learned CNN/IMU prototype experiments.
 
 ## Context
 

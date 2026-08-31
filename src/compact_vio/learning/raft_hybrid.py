@@ -2,7 +2,7 @@
 
 The model package intentionally keeps three independently hash-bound assets:
 official RAFT-small C_T_V2 weights, a compatible 831-feature translation-head
-checkpoint, and the train-only standardized-feature clamp bound to that head.
+checkpoint, and a training-derived standardized-feature clamp bound to that head.
 The runtime consumes raw timestamped images and IMU measurements so the exact
 rectification and causal gyro integration are not lost in a generic tensor
 adapter.
@@ -45,6 +45,10 @@ EXPERIMENTAL_QUALITY_WARNING = (
 )
 INPUT_HEIGHT = 240
 INPUT_WIDTH = 376
+_MAX_SOURCE_IMAGE_PIXELS = 50_000_000
+_MIN_SCALED_FOCAL_LENGTH_PX = 1.0
+_MAX_ABS_DISTORTION_COEFFICIENT = 10.0
+_MIN_RECTIFIED_VALID_FRACTION = 0.10
 GRID_HEIGHT = 10
 GRID_WIDTH = 16
 FLOW_FEATURE_DIM = 809
@@ -99,6 +103,31 @@ class RaftHybridPackage:
     head_onnx_manifest_path: Path
     head_onnx_manifest_sha256: str
     manifest: dict[str, object]
+
+
+def _assert_package_files_unchanged(package: RaftHybridPackage) -> None:
+    """Recheck every package file after parsing/loading to preserve its identity."""
+
+    expected = (
+        (package.manifest_path, package.manifest_sha256, "model package manifest"),
+        (package.raft_weights_path, package.raft_weights_sha256, "RAFT weights"),
+        (package.head_checkpoint_path, package.head_checkpoint_sha256, "translation head"),
+        (package.clamp_path, package.clamp_sha256, "feature clamp"),
+        (
+            package.evaluation_summary_path,
+            package.evaluation_summary_sha256,
+            "evaluation summary",
+        ),
+        (package.head_onnx_path, package.head_onnx_sha256, "translation-head ONNX"),
+        (
+            package.head_onnx_manifest_path,
+            package.head_onnx_manifest_sha256,
+            "translation-head ONNX manifest",
+        ),
+    )
+    for path, digest, field in expected:
+        if _sha256_file(path, field=field) != digest:
+            raise RaftHybridError(f"{field} changed after package validation")
 
 
 @dataclass(frozen=True, slots=True)
@@ -843,6 +872,11 @@ def load_raft_hybrid_package(
         document = json.loads(raw_manifest.decode("utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise RaftHybridError(f"cannot parse model package manifest {source}: {exc}") from exc
+    if (
+        hashlib.sha256(raw_manifest).hexdigest() != observed_manifest_sha
+        or _sha256_file(source, field="model package manifest") != observed_manifest_sha
+    ):
+        raise RaftHybridError("model package manifest changed while it was validated")
     root = _exact_mapping(
         document,
         {
@@ -976,7 +1010,7 @@ def load_raft_hybrid_package(
     )
     if root != expected_manifest:
         raise RaftHybridError("model package manifest does not match the packaged artifacts")
-    return RaftHybridPackage(
+    package = RaftHybridPackage(
         manifest_path=source.resolve(),
         manifest_sha256=observed_manifest_sha,
         raft_weights_path=resolved["raft_weights"],
@@ -993,6 +1027,8 @@ def load_raft_hybrid_package(
         head_onnx_manifest_sha256=hashes["translation_head_onnx_manifest"],
         manifest=root,
     )
+    _assert_package_files_unchanged(package)
+    return package
 
 
 def _real_tuple(value: object, length: int, *, field: str) -> tuple[float, ...]:
@@ -1027,6 +1063,13 @@ def _matrix4(value: object, *, field: str) -> Matrix4:
             expected = 1.0 if row == column else 0.0
             if abs(dot - expected) > 1e-5:
                 raise RaftHybridError(f"{field} rotation must be orthonormal")
+    determinant = (
+        rotation[0][0] * (rotation[1][1] * rotation[2][2] - rotation[1][2] * rotation[2][1])
+        - rotation[0][1] * (rotation[1][0] * rotation[2][2] - rotation[1][2] * rotation[2][0])
+        + rotation[0][2] * (rotation[1][0] * rotation[2][1] - rotation[1][1] * rotation[2][0])
+    )
+    if abs(determinant - 1.0) > 1e-5:
+        raise RaftHybridError(f"{field} rotation must be proper with determinant +1")
     return rows  # type: ignore[return-value]
 
 
@@ -1056,9 +1099,27 @@ def parse_hybrid_calibration(value: Mapping[str, object]) -> HybridCalibration:
         or any(type(item) is not int or item <= 1 for item in resolution)
     ):
         raise RaftHybridError("camera resolution must be [width, height] positive integers")
+    if resolution[0] * resolution[1] > _MAX_SOURCE_IMAGE_PIXELS:
+        raise RaftHybridError("camera resolution exceeds the supported pixel limit")
     intrinsics = _real_tuple(camera["intrinsics"], 4, field="camera intrinsics")
     if intrinsics[0] <= 0 or intrinsics[1] <= 0:
         raise RaftHybridError("camera focal lengths must be positive")
+    scaled_fx = intrinsics[0] * INPUT_WIDTH / resolution[0]
+    scaled_fy = intrinsics[1] * INPUT_HEIGHT / resolution[1]
+    if (
+        not math.isfinite(scaled_fx)
+        or not math.isfinite(scaled_fy)
+        or scaled_fx < _MIN_SCALED_FOCAL_LENGTH_PX
+        or scaled_fy < _MIN_SCALED_FOCAL_LENGTH_PX
+    ):
+        raise RaftHybridError("camera focal lengths are unusable at the runtime resolution")
+    if not 0.0 <= intrinsics[2] < resolution[0] or not 0.0 <= intrinsics[3] < resolution[1]:
+        raise RaftHybridError("camera principal point must lie inside the source image")
+    distortion = _real_tuple(
+        camera["distortion_coefficients"], 4, field="camera distortion coefficients"
+    )
+    if any(abs(value) > _MAX_ABS_DISTORTION_COEFFICIENT for value in distortion):
+        raise RaftHybridError("camera distortion coefficients exceed the supported range")
     camera_t_bs = _matrix4(camera["T_BS"], field="camera.T_BS")
     imu_t_bs = _matrix4(imu["T_BS"], field="imu.T_BS")
     if any(
@@ -1075,9 +1136,7 @@ def parse_hybrid_calibration(value: Mapping[str, object]) -> HybridCalibration:
         resolution_width_px=resolution[0],
         resolution_height_px=resolution[1],
         intrinsics=intrinsics,  # type: ignore[arg-type]
-        distortion_coefficients=_real_tuple(
-            camera["distortion_coefficients"], 4, field="camera distortion coefficients"
-        ),  # type: ignore[arg-type]
+        distortion_coefficients=distortion,  # type: ignore[arg-type]
     )
 
 
@@ -1169,10 +1228,13 @@ def _causal_prefix_bias(imu_samples: Sequence[ImuSample], first_frame_timestamp_
         raise RaftHybridError(
             "hybrid runtime requires at least two causal IMU samples before the first camera frame"
         )
-    return tuple(
-        math.fsum(sample.angular_velocity_rad_s[axis] for sample in prefix) / len(prefix)
-        for axis in range(3)
-    )  # type: ignore[return-value]
+    try:
+        return tuple(
+            math.fsum(sample.angular_velocity_rad_s[axis] for sample in prefix) / len(prefix)
+            for axis in range(3)
+        )  # type: ignore[return-value]
+    except OverflowError as exc:
+        raise RaftHybridError("IMU pre-roll values overflow gyro-bias estimation") from exc
 
 
 def _integrate_gyro(
@@ -1248,6 +1310,8 @@ def _integrate_gyro(
     )
     if tuple(summary.shape) != (IMU_FEATURE_DIM,):
         raise RaftHybridError("internal IMU summary dimension changed")
+    if not bool(torch.isfinite(summary).all()):
+        raise RaftHybridError("IMU summary contains non-finite values")
     return result, rotation_vector, summary
 
 
@@ -1300,7 +1364,7 @@ def _read_image(
             pixels = bytearray(grayscale.tobytes())
     except RaftHybridError:
         raise
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, Image.DecompressionBombError) as exc:
         raise RaftHybridError(f"cannot decode hybrid input image {path}: {exc}") from exc
     tensor = torch.frombuffer(pixels, dtype=torch.uint8).reshape(INPUT_HEIGHT, INPUT_WIDTH)
     return tensor.unsqueeze(0).repeat(3, 1, 1).to(torch.float32).div_(255.0)
@@ -1335,7 +1399,12 @@ def _rectification_grid(
         ),
         -1,
     )
+    if not bool(torch.isfinite(grid).all()):
+        raise RaftHybridError("camera calibration produces a non-finite rectification grid")
     valid = ((grid[..., 0].abs() <= 1.0) & (grid[..., 1].abs() <= 1.0)).unsqueeze(0).unsqueeze(0)
+    minimum_valid = math.ceil(INPUT_HEIGHT * INPUT_WIDTH * _MIN_RECTIFIED_VALID_FRACTION)
+    if int(valid.sum().item()) < minimum_valid:
+        raise RaftHybridError("camera calibration leaves too little valid rectified image area")
     return grid.unsqueeze(0), valid
 
 
@@ -1510,6 +1579,7 @@ class RaftHybridBackend:
         except (RuntimeError, TypeError, ValueError) as exc:
             raise RaftHybridError(f"translation-head state_dict is incompatible: {exc}") from exc
         head.to(actual_device).eval()
+        _assert_package_files_unchanged(package)
 
         self.package = package
         self.model_identity = package.manifest_sha256
@@ -1650,6 +1720,8 @@ class RaftHybridBackend:
                 features = torch.cat((flow_features, imu_features), dim=1)
                 if tuple(features.shape) != (end - start, FEATURE_DIM):
                     raise RaftHybridError("hybrid feature tensor has an incompatible shape")
+                if not bool(torch.isfinite(features).all()):
+                    raise RaftHybridError("hybrid feature tensor contains non-finite values")
                 standardized = (features - self.feature_mean) / self.feature_std
                 clamped = torch.maximum(torch.minimum(standardized, self.clamp_max), self.clamp_min)
                 decoded = self.target_mean + self.target_std * self.head(clamped)
